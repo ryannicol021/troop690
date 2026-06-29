@@ -1,236 +1,256 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>Scouting America Troop 690 | Seaford, NY</title>
+<title>Troop 690 | Scouting America Long Island</title>
 
 <style>
 
+/* =========================
+   CORE STYLE
+========================= */
+
 :root{
-    --troop-red:#C72727;
-    --troop-blue:#14365D;
-    --cream:#FFFEE0;
-    --light:#f6f6f6;
-    --dark:#333;
+  --red:#C72727;
+  --navy:#14365D;
+  --cream:#FFFEE0;
+  --bg:#F6F6F6;
+  --text:#333;
 }
 
 *{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
-}
-
-html{
-    scroll-behavior:smooth;
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
 }
 
 body{
-    font-family:Arial, Helvetica, sans-serif;
-    background:var(--light);
-    color:var(--dark);
-    line-height:1.7;
+  font-family: "Segoe UI", Arial, sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  line-height:1.6;
 }
 
-h1,h2,h3{
-    font-family:Georgia,"Times New Roman",serif;
-    font-weight:normal;
-}
+/* =========================
+   HEADER
+========================= */
 
 header{
-    background:white;
-    border-bottom:4px solid var(--troop-red);
-    position:sticky;
-    top:0;
-    z-index:1000;
+  background:white;
+  border-bottom:3px solid var(--red);
+  position:sticky;
+  top:0;
+  z-index:1000;
 }
 
-nav{
-    max-width:1200px;
-    margin:auto;
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    padding:18px 25px;
+.navbar{
+  max-width:1200px;
+  margin:auto;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:16px 22px;
 }
 
-.logo h1{
-    color:var(--troop-red);
-    font-size:2rem;
+.brand h1{
+  font-family: Georgia, serif;
+  color:var(--red);
+  font-size:1.8rem;
 }
 
-.logo p{
-    color:#666;
-    font-size:.9rem;
-}
-
-nav ul{
-    list-style:none;
-    display:flex;
-    gap:28px;
+.brand span{
+  font-size:0.85rem;
+  color:#666;
 }
 
 nav a{
-    text-decoration:none;
-    color:#444;
-    font-weight:bold;
-    transition:.25s;
+  margin-left:18px;
+  text-decoration:none;
+  color:#444;
+  font-weight:600;
 }
 
 nav a:hover{
-    color:var(--troop-red);
+  color:var(--red);
 }
+
+/* =========================
+   HERO
+========================= */
 
 .hero{
-    height:520px;
-    background:
-        linear-gradient(rgba(0,0,0,.45),rgba(0,0,0,.45)),
-        url("images/hero.jpg") center center/cover;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    text-align:center;
-    color:white;
-}
-
-.hero-content{
-    max-width:850px;
-    padding:20px;
+  height:520px;
+  background:
+    linear-gradient(rgba(0,0,0,0.45),rgba(0,0,0,0.45)),
+    url("images/hero.jpg") center/cover no-repeat;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  color:white;
+  padding:20px;
 }
 
 .hero h2{
-    font-size:3.6rem;
-    margin-bottom:15px;
+  font-family: Georgia, serif;
+  font-size:3.2rem;
+  margin-bottom:10px;
 }
 
 .hero p{
-    font-size:1.3rem;
+  font-size:1.2rem;
+  max-width:800px;
+  margin:auto;
 }
 
-.button{
-    display:inline-block;
-    margin-top:35px;
-    background:var(--troop-red);
-    color:white;
-    text-decoration:none;
-    padding:15px 35px;
-    border-radius:5px;
-    font-weight:bold;
-    transition:.3s;
+.hero-buttons{
+  margin-top:25px;
 }
 
-.button:hover{
-    background:#9b1d1d;
+.btn{
+  display:inline-block;
+  padding:12px 26px;
+  margin:6px;
+  border-radius:8px;
+  text-decoration:none;
+  font-weight:600;
+  transition:0.25s;
 }
+
+.btn-primary{
+  background:var(--red);
+  color:white;
+}
+
+.btn-primary:hover{
+  background:#9f1f1f;
+}
+
+.btn-outline{
+  border:2px solid white;
+  color:white;
+}
+
+.btn-outline:hover{
+  background:white;
+  color:#111;
+}
+
+/* =========================
+   SECTIONS
+========================= */
 
 section{
-    max-width:1150px;
-    margin:auto;
-    padding:70px 25px;
+  max-width:1100px;
+  margin:auto;
+  padding:65px 22px;
 }
 
 .section-title{
-    text-align:center;
-    color:var(--troop-red);
-    font-size:2.3rem;
-    margin-bottom:35px;
+  text-align:center;
+  font-family:Georgia, serif;
+  color:var(--red);
+  font-size:2.2rem;
+  margin-bottom:25px;
 }
 
-.intro{
-    background:white;
-}
+/* =========================
+   INTRO
+========================= */
 
 .intro p{
-    max-width:900px;
-    margin:20px auto;
-    text-align:justify;
+  margin-bottom:18px;
+  text-align:justify;
 }
 
-.highlight{
-    background:var(--cream);
-    border-left:6px solid var(--troop-red);
-    padding:30px;
-    margin-top:35px;
+.callout{
+  background:var(--cream);
+  border-left:5px solid var(--red);
+  padding:20px;
+  margin-top:25px;
+  border-radius:6px;
 }
 
-.highlight h3{
-    margin-bottom:15px;
-    color:var(--troop-red);
+.callout h3{
+  color:var(--red);
+  margin-bottom:10px;
 }
 
-.highlight ul{
-    margin-left:25px;
-}
+/* =========================
+   STATS
+========================= */
 
 .stats{
-    background:var(--troop-red);
-    color:white;
+  background:var(--red);
+  color:white;
+  text-align:center;
 }
 
 .stats-grid{
-    display:grid;
-    grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
-    gap:40px;
-    text-align:center;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:30px;
 }
 
-.stat-number{
-    font-size:4.5rem;
-    font-family:Georgia,serif;
+.stat{
+  padding:10px;
 }
 
-.stat-label{
-    font-size:1.2rem;
-    margin-top:10px;
+.stat h2{
+  font-size:3.5rem;
+  font-family:Georgia, serif;
 }
+
+.stat p{
+  font-size:1.1rem;
+}
+
+/* =========================
+   FOOTER
+========================= */
 
 footer{
-    background:#222;
-    color:#ddd;
-    text-align:center;
-    padding:60px 20px;
+  background:#1f1f1f;
+  color:#ddd;
+  text-align:center;
+  padding:50px 20px;
 }
 
 footer h3{
-    color:white;
-    margin-bottom:15px;
+  color:white;
+  margin-bottom:10px;
+  font-family:Georgia, serif;
 }
 
 footer a{
-    color:#ddd;
+  color:#ddd;
 }
 
-footer hr{
-    margin:35px auto;
-    max-width:500px;
-    border:none;
-    border-top:1px solid #555;
-}
+/* =========================
+   MOBILE
+========================= */
 
-@media(max-width:800px){
-
-nav{
-    flex-direction:column;
-}
-
-nav ul{
-    margin-top:20px;
-    flex-wrap:wrap;
-    justify-content:center;
-}
+@media(max-width:768px){
 
 .hero h2{
-    font-size:2.5rem;
+  font-size:2.2rem;
 }
 
-.hero{
-    height:420px;
+.stats-grid{
+  grid-template-columns:1fr;
 }
 
-.stat-number{
-    font-size:3.3rem;
+nav{
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:center;
+  margin-top:10px;
+}
+
+.navbar{
+  flex-direction:column;
 }
 
 }
@@ -242,170 +262,109 @@ nav ul{
 <body>
 
 <header>
+  <div class="navbar">
 
-<nav>
+    <div class="brand">
+      <h1>Troop 690</h1>
+      <span>Seaford, New York</span>
+    </div>
 
-<div class="logo">
-<h1>Troop 690</h1>
-<p>Seaford, New York</p>
-</div>
+    <nav>
+      <a href="#">Home</a>
+      <a href="#">About</a>
+      <a href="#">Eagle Scouts</a>
+      <a href="#">Summer Camp</a>
+      <a href="#">Resources</a>
+      <a href="#">Contact</a>
+    </nav>
 
-<ul>
-<li><a href="#">Home</a></li>
-<li><a href="#">About</a></li>
-<li><a href="#">Eagle Scouts</a></li>
-<li><a href="#">Summer Camp</a></li>
-<li><a href="#">Resources</a></li>
-<li><a href="#">Contact</a></li>
-</ul>
-
-</nav>
-
+  </div>
 </header>
 
+<!-- HERO -->
 <section class="hero">
 
-<div class="hero-content">
+  <div>
+    <h2>Adventure. Leadership. Service.</h2>
 
-<h2>Adventure. Leadership. Service.</h2>
+    <p>
+      Troop 690 is based in Seaford, New York and proudly serves Scouts and families from Seaford, Massapequa, Wantagh, and surrounding communities.
+      Chartered by St. William the Abbot RC Church and part of Scouting America Long Island, our troop has been building leaders since 1962.
+    </p>
 
-<p>
-Founded in 1962, Troop 690 has proudly served the Seaford community by helping young people develop character, leadership, citizenship, and a love of the outdoors.
-</p>
-
-<a href="#" class="button">Learn About Our Troop</a>
-
-</div>
+    <div class="hero-buttons">
+      <a class="btn btn-primary" href="#">Join Troop 690</a>
+      <a class="btn btn-outline" href="#">Learn More</a>
+    </div>
+  </div>
 
 </section>
 
+<!-- INTRO -->
 <section class="intro">
 
-<h2 class="section-title">Welcome to Troop 690</h2>
+  <h2 class="section-title">Welcome to Troop 690</h2>
 
-<p>
+  <p>
+    Founded in 1962, Troop 690 has served the Seaford community for over six decades.
+    Through outdoor adventure, leadership development, and community service, Scouts grow in character and responsibility while building lifelong friendships.
+  </p>
 
-Troop 690 is chartered by <strong>St. William the Abbot Roman Catholic Church</strong> and is part of the <strong>East Nassau District</strong> of <strong>Scouting America Long Island Council</strong>. Through camping, hiking, service projects, leadership opportunities, and outdoor adventure, our Scouts build friendships and skills that last a lifetime.
+  <p>
+    Our troop is youth-led, with Scouts planning meetings, leading patrols, and organizing campouts. Adult leaders serve as mentors, ensuring safety and guiding Scouts through the program.
+  </p>
 
-</p>
+  <p>
+    Scouting is also a family experience, and parents are encouraged to stay involved in their Scout’s journey from joining through Eagle Scout.
+  </p>
 
-<p>
-
-The emphasis of our troop is youth leadership. Scouts plan meetings, organize campouts, and lead activities while adult leaders serve as mentors and advisors. This allows every Scout to grow in confidence, responsibility, and decision-making while experiencing the values of Scouting.
-
-</p>
-
-<p>
-
-Scouting is also a family activity. Parents are encouraged to participate, volunteer, and support their Scout throughout their journey from Scout Rank to Eagle Scout.
-
-</p>
-
-<div class="highlight">
-
-<h3>Things to Know</h3>
-
-<ul>
-
-<li>Troop meetings are held every Monday at <strong>7:30 PM</strong>.</li>
-
-<li>We camp nearly every month throughout the year.</li>
-
-<li>Each summer we attend resident summer camp in Upstate New York.</li>
-
-<li>New Scouts are always welcome. Visiting a meeting is a great way to learn more before joining.</li>
-
-</ul>
-
-</div>
+  <div class="callout">
+    <h3>Things to Know</h3>
+    <p>• Meetings: Mondays at 7:30 PM in Seaford</p>
+    <p>• Monthly campouts throughout the year</p>
+    <p>• Summer camp in Upstate New York</p>
+    <p>• New Scouts are always welcome</p>
+  </div>
 
 </section>
 
+<!-- STATS -->
 <section class="stats">
 
-<div class="stats-grid">
+  <div class="stats-grid">
 
-<div>
+    <div class="stat">
+      <h2>148</h2>
+      <p>Eagle Scouts</p>
+    </div>
 
-<div class="stat-number">148</div>
+    <div class="stat">
+      <h2 id="years"></h2>
+      <p>Years in Seaford</p>
+    </div>
 
-<div class="stat-label">
-Troop 690 Eagle Scouts
-</div>
-
-</div>
-
-<div>
-
-<div class="stat-number" id="years"></div>
-
-<div class="stat-label">
-Years Serving Seaford
-</div>
-
-</div>
-
-</div>
+  </div>
 
 </section>
 
-<section>
-
-<h2 class="section-title">The Scout Oath and Law</h2>
-
-<p style="text-align:center; max-width:900px; margin:auto;">
-
-Our Scouts strive to live by the Scout Oath and Scout Law every day, committing themselves to be trustworthy, loyal, helpful, friendly, courteous, kind, obedient, cheerful, thrifty, brave, clean, and reverent. These values guide our troop both in the outdoors and in everyday life.
-
-</p>
-
-</section>
-
+<!-- FOOTER -->
 <footer>
 
-<h3>Scouting America Troop 690</h3>
+  <h3>Troop 690</h3>
 
-<p>
-Founded in 1962
-</p>
+  <p>St. William the Abbot RC Church Charter Organization</p>
+  <p>Scouting America Long Island</p>
 
-<p>
-Chartered by St. William the Abbot Roman Catholic Church
-</p>
+  <br>
 
-<p>
-East Nassau District • Scouting America Long Island Council
-</p>
-
-<hr>
-
-<p>
-
-<strong>Weekly Meetings</strong><br>
-Mondays • 7:30 PM<br>
-Seaford, New York
-
-</p>
-
-<hr>
-
-<p>
-
-© 2026 Troop 690 • All Rights Reserved
-
-</p>
+  <p>© 2026 Troop 690 • All Rights Reserved</p>
 
 </footer>
 
 <script>
-
-const founded = 1962;
-const today = new Date();
-
-let years = today.getFullYear() - founded;
-
-document.getElementById("years").textContent = years;
-
+  const startYear = 1962;
+  const now = new Date().getFullYear();
+  document.getElementById("years").textContent = now - startYear;
 </script>
 
 </body>
