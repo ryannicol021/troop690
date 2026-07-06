@@ -1,371 +1,92 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-
-<title>Troop 690</title>
-
-<style>
-
-/* =========================
-   CORE STYLE
-========================= */
-
-:root{
-  --red:#C72727;
-  --navy:#14365D;
-  --cream:#FFFEE0;
-  --bg:#F6F6F6;
-  --text:#333;
-}
-
-*{
-  margin:0;
-  padding:0;
-  box-sizing:border-box;
-}
-
-body{
-  font-family: "Segoe UI", Arial, sans-serif;
-  background:var(--bg);
-  color:var(--text);
-  line-height:1.6;
-}
-
-/* =========================
-   HEADER
-========================= */
-
-header{
-  background:white;
-  border-bottom:3px solid var(--red);
-  position:sticky;
-  top:0;
-  z-index:1000;
-}
-
-.navbar{
-  max-width:1200px;
-  margin:auto;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  padding:16px 22px;
-}
-
-.brand h1{
-  font-family: Georgia, serif;
-  color:var(--red);
-  font-size:1.8rem;
-}
-
-.brand span{
-  font-size:0.85rem;
-  color:#666;
-}
-
-nav a{
-  margin-left:18px;
-  text-decoration:none;
-  color:#444;
-  font-weight:600;
-}
-
-nav a:hover{
-  color:var(--red);
-}
-
-/* =========================
-   HERO
-========================= */
-
-.hero{
-  height:520px;
-  background:
-    linear-gradient(rgba(0,0,0,0.45),rgba(0,0,0,0.45)),
-    url("images/hero.jpg") center/cover no-repeat;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  text-align:center;
-  color:white;
-  padding:20px;
-}
-
-.hero h2{
-  font-family: Georgia, serif;
-  font-size:3.2rem;
-  margin-bottom:10px;
-}
-
-.hero p{
-  font-size:1.2rem;
-  max-width:800px;
-  margin:auto;
-}
-
-.hero-buttons{
-  margin-top:25px;
-}
-
-.btn{
-  display:inline-block;
-  padding:12px 26px;
-  margin:6px;
-  border-radius:8px;
-  text-decoration:none;
-  font-weight:600;
-  transition:0.25s;
-}
-
-.btn-primary{
-  background:var(--red);
-  color:white;
-}
-
-.btn-primary:hover{
-  background:#9f1f1f;
-}
-
-.btn-outline{
-  border:2px solid white;
-  color:white;
-}
-
-.btn-outline:hover{
-  background:white;
-  color:#111;
-}
-
-/* =========================
-   SECTIONS
-========================= */
-
-section{
-  max-width:1100px;
-  margin:auto;
-  padding:65px 22px;
-}
-
-.section-title{
-  text-align:center;
-  font-family:Georgia, serif;
-  color:var(--red);
-  font-size:2.2rem;
-  margin-bottom:25px;
-}
-
-/* =========================
-   INTRO
-========================= */
-
-.intro p{
-  margin-bottom:18px;
-  text-align:justify;
-}
-
-.callout{
-  background:var(--cream);
-  border-left:5px solid var(--red);
-  padding:20px;
-  margin-top:25px;
-  border-radius:6px;
-}
-
-.callout h3{
-  color:var(--red);
-  margin-bottom:10px;
-}
-
-/* =========================
-   STATS
-========================= */
-
-.stats{
-  background:var(--red);
-  color:white;
-  text-align:center;
-}
-
-.stats-grid{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:30px;
-}
-
-.stat{
-  padding:10px;
-}
-
-.stat h2{
-  font-size:3.5rem;
-  font-family:Georgia, serif;
-}
-
-.stat p{
-  font-size:1.1rem;
-}
-
-/* =========================
-   FOOTER
-========================= */
-
-footer{
-  background:#1f1f1f;
-  color:#ddd;
-  text-align:center;
-  padding:50px 20px;
-}
-
-footer h3{
-  color:white;
-  margin-bottom:10px;
-  font-family:Georgia, serif;
-}
-
-footer a{
-  color:#ddd;
-}
-
-/* =========================
-   MOBILE
-========================= */
-
-@media(max-width:768px){
-
-.hero h2{
-  font-size:2.2rem;
-}
-
-.stats-grid{
-  grid-template-columns:1fr;
-}
-
-nav{
-  display:flex;
-  flex-wrap:wrap;
-  justify-content:center;
-  margin-top:10px;
-}
-
-.navbar{
-  flex-direction:column;
-}
-
-}
-
-</style>
-
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Troop 690 | Home</title>
+<link rel="stylesheet" href="css/styles.css">
+<script defer src="js/site.js"></script>
+<meta name="description" content="Official website of Troop 690.">
 </head>
-
 <body>
-
 <header>
-  <div class="navbar">
-
-    <div class="brand">
-      <h1>Troop 690</h1>
-      <span>Seaford, New York</span>
-    </div>
-
+  <div class="nav">
+    <h1 class="brand">Troop <span>690</span></h1>
     <nav>
-      <a href="#">Home</a>
-      <a href="#">About</a>
-      <a href="#">Eagle Scouts</a>
-      <a href="#">Summer Camp</a>
-      <a href="#">Resources</a>
-      <a href="#">Contact</a>
+      <a class="active" href="index.html">Home</a>
+      <a href="eagle-scouts.html">Eagle Scouts</a>
+      <a href="calendar.html">Calendar</a>
+      <a href="leadership.html">Leadership</a>
+      <a href="resources.html">Resources</a>
+      <a href="join.html">Join</a>
+      <a href="contact.html">Contact</a>
     </nav>
-
   </div>
 </header>
 
-<!-- HERO -->
 <section class="hero">
-
-  <div>
-    <h2>Adventure. Leadership. Service.</h2>
-
+  <div class="container">
+    <h1>Adventure Starts Here</h1>
+    <p>Welcome to Troop 690. We develop character, citizenship, leadership, and outdoor skills through Scouting.</p>
     <p>
-      Troop 690 is based in Seaford, New York and proudly serves Scouts and families from Seaford, Massapequa, Wantagh, and surrounding communities.
-      Chartered by St. William the Abbot RC Church and part of Scouting America Long Island, our troop has been building leaders since 1962.
+      <a class="button" href="join.html">Join Troop 690</a>
+      &nbsp;
+      <a class="button" href="calendar.html">Upcoming Events</a>
     </p>
-
-    <div class="hero-buttons">
-      <a class="btn btn-primary" href="#">Join Troop 690</a>
-      <a class="btn btn-outline" href="#">Learn More</a>
-    </div>
   </div>
-
 </section>
 
-<!-- INTRO -->
-<section class="intro">
-
-  <h2 class="section-title">Welcome to Troop 690</h2>
-
-  <p>
-    Founded in 1962, Troop 690 has served the Seaford community for over six decades.
-    Through outdoor adventure, leadership development, and community service, Scouts grow in character and responsibility while building lifelong friendships.
-  </p>
-
-  <p>
-    Our troop is youth-led, with Scouts planning meetings, leading patrols, and organizing campouts. Adult leaders serve as mentors, ensuring safety and guiding Scouts through the program.
-  </p>
-
-  <p>
-    Scouting is also a family experience, and parents are encouraged to stay involved in their Scout’s journey from joining through Eagle Scout.
-  </p>
-
-  <div class="callout">
-    <h3>Things to Know</h3>
-    <p>• Meetings: Mondays at 7:30 PM in Seaford</p>
-    <p>• Monthly campouts throughout the year</p>
-    <p>• Summer camp in Upstate New York</p>
-    <p>• New Scouts are always welcome</p>
-  </div>
-
-</section>
-
-<!-- STATS -->
+<main class="container">
 <section class="stats">
-
-  <div class="stats-grid">
-
-    <div class="stat">
-      <h2>148</h2>
-      <p>Eagle Scouts</p>
-    </div>
-
-    <div class="stat">
-      <h2 id="years"></h2>
-      <p>Years in Seaford</p>
-    </div>
-
-  </div>
-
+<div class="stat"><div class="value" data-count="148">0</div><div>Eagle Scouts</div></div>
+<div class="stat"><div class="value" data-count="1967">0</div><div>Founded</div></div>
+<div class="stat"><div class="value" data-count="59">0</div><div>Years of Excellence</div></div>
+<div class="stat"><div class="value">Be Prepared</div></div>
 </section>
 
-<!-- FOOTER -->
+<section class="grid" style="margin-top:2rem;">
+<div class="card">
+<h3>About Our Troop</h3>
+<p>Troop 690 offers year-round camping, hiking, high adventure, service projects, leadership opportunities, and lifelong friendships.</p>
+<a class="button" href="about.html">Learn More</a>
+</div>
+
+<div class="card">
+<h3>Upcoming Adventures</h3>
+<p>View campouts, hikes, Courts of Honor, service projects, and summer camp on our calendar.</p>
+<a class="button" href="calendar.html">View Calendar</a>
+</div>
+
+<div class="card">
+<h3>Eagle Scout Legacy</h3>
+<p>Since 1962, Troop 690 has produced 148 Eagle Scouts. Explore our complete history.</p>
+<a class="button" href="eagle-scouts.html">View Eagle Scouts</a>
+</div>
+
+<div class="card">
+<h3>Join Us</h3>
+<p>Interested in Scouting? Visitors are always welcome at troop meetings and outdoor activities.</p>
+<a class="button" href="join.html">Get Started</a>
+</div>
+</section>
+
+<section class="card" style="margin-top:2rem;">
+<h3>Scout Oath</h3>
+<p>On my honor I will do my best to do my duty to God and my country and to obey the Scout Law; to help other people at all times; to keep myself physically strong, mentally awake, and morally straight.</p>
+</section>
+
+<section class="card" style="margin-top:2rem;">
+<h3>Scout Law</h3>
+<p>Trustworthy • Loyal • Helpful • Friendly • Courteous • Kind • Obedient • Cheerful • Thrifty • Brave • Clean • Reverent</p>
+</section>
+</main>
+
 <footer>
-
-  <h3>Troop 690</h3>
-
-  <p>St. William the Abbot RC Church</p>
-  <p>Scouting America Long Island</p>
-
-  <br>
-
-  <p>© 2026 Troop 690 • All Rights Reserved</p>
-
+<h3>Troop 690</h3>
+<p>St. William the Abbot RC Church</p>
+<p>Seaford, New York</p>
+<p>Scouting America • Long Island Council</p>
+<p>&copy; 2026 Troop 690</p>
 </footer>
-
-<script>
-  const startYear = 1962;
-  const now = new Date().getFullYear();
-  document.getElementById("years").textContent = now - startYear;
-</script>
-
 </body>
 </html>
