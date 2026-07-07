@@ -22,6 +22,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     initGallery();
 
+ initLeadership();
+
 });
 
 /*=========================================================
@@ -851,5 +853,257 @@ const events=rows.map(row=>{
             container.appendChild(item);
 
         });
+
+}
+
+/*=========================================================
+LEADERSHIP DATABASE
+=========================================================*/
+
+initLeadership();
+
+async function initLeadership(){
+
+    const splAspl=document.getElementById("spl-aspl-container");
+
+    if(!splAspl) return;
+
+    const plApl=document.getElementById("pl-apl-container");
+
+    const troop=document.getElementById("troop-position-container");
+
+    const splHistory=document.getElementById("spl-history-container");
+
+    const smAsm=document.getElementById("sm-asm-container");
+
+    const committee=document.getElementById("committee-container");
+
+    const smHistory=document.getElementById("sm-history-container");
+
+    const files={
+
+        splAspl:"data/spl-aspl-current.csv",
+
+        plApl:"data/pl-apl-current.csv",
+
+        troop:"data/troop-position-current.csv",
+
+        splHistory:"data/spl-history.csv",
+
+        smAsm:"data/sm-asm-current.csv",
+
+        committee:"data/committee-current.csv",
+
+        smHistory:"data/sm-history.csv"
+
+    };
+
+    async function loadCSV(file){
+
+        const text=await fetch(file).then(r=>r.text());
+
+        return text.trim().split("\n").slice(1).map(row=>
+
+            row.match(/(".*?"|[^",]+)(?=\s*,|\s*$)/g)
+
+               .map(col=>col.replace(/^"|"$/g,""))
+
+        );
+
+    }
+
+    const currentYouth=await loadCSV(files.splAspl);
+
+    const patrols=await loadCSV(files.plApl);
+
+    const troopPositions=await loadCSV(files.troop);
+
+    const youthHistory=await loadCSV(files.splHistory);
+
+    const currentAdults=await loadCSV(files.smAsm);
+
+    const committeeRows=await loadCSV(files.committee);
+
+    const adultHistory=await loadCSV(files.smHistory);
+
+    function buildCurrent(container,title,data){
+
+        container.innerHTML=`<h2>${title}</h2>`;
+
+        data.forEach(row=>{
+
+            const div=document.createElement("div");
+
+            div.className="leader-row";
+
+            div.innerHTML=`
+
+                <div class="leader-position">
+
+                    ${row[0]}
+
+                </div>
+
+                <div class="leader-name">
+
+                    ${row[1]}
+
+                    ${
+                        row[2]
+                        ? `<span class="leader-note">${row[2]}</span>`
+                        : ""
+                    }
+
+                </div>
+
+            `;
+
+            container.appendChild(div);
+
+        });
+
+    }
+
+    function buildHistory(container,title,data,left,right){
+
+        container.innerHTML=`<h2>${title}</h2>`;
+
+        const table=document.createElement("table");
+
+        table.className="history-table";
+
+        table.innerHTML=`
+
+            <thead>
+
+                <tr>
+
+                    <th>Years</th>
+
+                    <th>${left}</th>
+
+                    <th>${right}</th>
+
+                </tr>
+
+            </thead>
+
+            <tbody></tbody>
+
+        `;
+
+        const body=table.querySelector("tbody");
+
+        data.forEach(row=>{
+
+            body.innerHTML+=`
+
+                <tr>
+
+                    <td>
+
+                        ${row[0]}–${row[1]}
+
+                    </td>
+
+                    <td>
+
+                        ${row[2]}
+
+                    </td>
+
+                    <td>
+
+                        ${row[3]}
+
+                    </td>
+
+                </tr>
+
+            `;
+
+        });
+
+        container.appendChild(table);
+
+    }
+
+    buildCurrent(
+
+        splAspl,
+
+        "Senior Patrol Leadership",
+
+        currentYouth
+
+    );
+
+    buildCurrent(
+
+        plApl,
+
+        "Patrol Leadership",
+
+        patrols
+
+    );
+
+    buildCurrent(
+
+        troop,
+
+        "Troop Positions",
+
+        troopPositions
+
+    );
+
+    buildCurrent(
+
+        smAsm,
+
+        "Scoutmaster Corps",
+
+        currentAdults
+
+    );
+
+    buildCurrent(
+
+        committee,
+
+        "Troop Committee",
+
+        committeeRows
+
+    );
+
+    buildHistory(
+
+        splHistory,
+
+        "Senior Patrol Leader History",
+
+        youthHistory,
+
+        "SPL",
+
+        "ASPL"
+
+    );
+
+    buildHistory(
+
+        smHistory,
+
+        "Scoutmaster History",
+
+        adultHistory,
+
+        "Scoutmaster",
+
+        ""
+
+    );
 
 }
