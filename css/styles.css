@@ -471,8 +471,6 @@ PAGE HERO
 
 .hero{
 
-    min-height:72vh;
-
     display:flex;
 
     align-items:center;
