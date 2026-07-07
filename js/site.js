@@ -862,246 +862,252 @@ LEADERSHIP DATABASE
 
 async function initLeadership(){
 
-    const splAspl=document.getElementById("spl-aspl-container");
+    const loadCSV = async (file)=>{
 
-    if(!splAspl) return;
-
-    const plApl=document.getElementById("pl-apl-container");
-
-    const troop=document.getElementById("troop-position-container");
-
-    const splHistory=document.getElementById("spl-history-container");
-
-    const smAsm=document.getElementById("sm-asm-container");
-
-    const committee=document.getElementById("committee-container");
-
-    const smHistory=document.getElementById("sm-history-container");
-
-    const files={
-
-        splAspl:"data/spl-aspl-current.csv",
-
-        plApl:"data/pl-apl-current.csv",
-
-        troop:"data/troop-position-current.csv",
-
-        splHistory:"data/spl-history.csv",
-
-        smAsm:"data/sm-asm-current.csv",
-
-        committee:"data/committee-current.csv",
-
-        smHistory:"data/sm-history.csv"
-
-    };
-
-    async function loadCSV(file){
-
-        const text=await fetch(file).then(r=>r.text());
+        const text = await fetch(file).then(r=>r.text());
 
         return text.trim().split("\n").slice(1).map(row=>
 
             row.match(/(".*?"|[^",]+)(?=\s*,|\s*$)/g)
-
                .map(col=>col.replace(/^"|"$/g,""))
 
         );
 
-    }
+    };
 
-    const currentYouth=await loadCSV(files.splAspl);
+    function button(icon,label){
 
-    const patrols=await loadCSV(files.plApl);
+        return `
 
-    const troopPositions=await loadCSV(files.troop);
+            <button class="position-button">
 
-    const youthHistory=await loadCSV(files.splHistory);
+                <span>${icon}</span>
 
-    const currentAdults=await loadCSV(files.smAsm);
+                <span>${label}</span>
 
-    const committeeRows=await loadCSV(files.committee);
+                <span class="position-arrow">›</span>
 
-    const adultHistory=await loadCSV(files.smHistory);
-
-    function buildCurrent(container,title,data){
-
-        container.innerHTML=`<h2>${title}</h2>`;
-
-        data.forEach(row=>{
-
-            const div=document.createElement("div");
-
-            div.className="leader-row";
-
-            div.innerHTML=`
-
-                <div class="leader-position">
-
-                    ${row[0]}
-
-                </div>
-
-                <div class="leader-name">
-
-                    ${row[1]}
-
-                    ${
-                        row[2]
-                        ? `<span class="leader-note">${row[2]}</span>`
-                        : ""
-                    }
-
-                </div>
-
-            `;
-
-            container.appendChild(div);
-
-        });
-
-    }
-
-    function buildHistory(container,title,data,left,right){
-
-        container.innerHTML=`<h2>${title}</h2>`;
-
-        const table=document.createElement("table");
-
-        table.className="history-table";
-
-        table.innerHTML=`
-
-            <thead>
-
-                <tr>
-
-                    <th>Years</th>
-
-                    <th>${left}</th>
-
-                    <th>${right}</th>
-
-                </tr>
-
-            </thead>
-
-            <tbody></tbody>
+            </button>
 
         `;
 
-        const body=table.querySelector("tbody");
+    }
 
-        data.forEach(row=>{
+    function historyCard(years,lines){
 
-            body.innerHTML+=`
+        return `
 
-                <tr>
+            <div class="history-card">
 
-                    <td>
+                <div class="history-years">
 
-                        ${row[0]}–${row[1]}
+                    ${years}
 
-                    </td>
+                </div>
 
-                    <td>
+                ${lines.join("")}
 
-                        ${row[2]}
+            </div>
 
-                    </td>
-
-                    <td>
-
-                        ${row[3]}
-
-                    </td>
-
-                </tr>
-
-            `;
-
-        });
-
-        container.appendChild(table);
+        `;
 
     }
 
-    buildCurrent(
+    /* ---------- Current Youth ---------- */
 
-        splAspl,
+    const spl=document.getElementById("spl-aspl-buttons");
 
-        "Senior Patrol Leadership",
+    if(spl){
 
-        currentYouth
+        const rows=await loadCSV("data/spl-aspl-current.csv");
 
-    );
+        spl.innerHTML="";
 
-    buildCurrent(
+        rows.forEach(r=>{
 
-        plApl,
+            spl.innerHTML+=button(
 
-        "Patrol Leadership",
+                r[0]=="Senior Patrol Leader" ? "⚜️" : "⭐",
 
-        patrols
+                r[0]
 
-    );
+            );
 
-    buildCurrent(
+        });
 
-        troop,
+    }
 
-        "Troop Positions",
+    const patrol=document.getElementById("pl-apl-buttons");
 
-        troopPositions
+    if(patrol){
 
-    );
+        const rows=await loadCSV("data/pl-apl-current.csv");
 
-    buildCurrent(
+        patrol.innerHTML="";
 
-        smAsm,
+        [...new Set(rows.map(r=>r[0]))].forEach(pos=>{
 
-        "Scoutmaster Corps",
+            patrol.innerHTML+=button(
 
-        currentAdults
+                pos=="Patrol Leader" ? "🧭" : "🥾",
 
-    );
+                pos
 
-    buildCurrent(
+            );
 
-        committee,
+        });
 
-        "Troop Committee",
+    }
 
-        committeeRows
+    const troop=document.getElementById("troop-position-buttons");
 
-    );
+    if(troop){
 
-    buildHistory(
+        const rows=await loadCSV("data/troop-position-current.csv");
 
-        splHistory,
+        troop.innerHTML="";
 
-        "Senior Patrol Leader History",
+        const icons={
 
-        youthHistory,
+            "Junior Assistant Scoutmaster":"🦅",
+            "Troop Guide":"🥾",
+            "Order of the Arrow Representative":"🏹",
+            "Chaplain Aide":"🙏",
+            "Outdoor Ethics Guide":"🌲",
+            "Webmaster":"💻",
+            "Historian":"📷",
+            "Librarian":"📚",
+            "Quartermaster":"📦",
+            "Scribe":"✏️",
+            "Bugler":"🎺"
 
-        "SPL",
+        };
 
-        "ASPL"
+        [...new Set(rows.map(r=>r[0]))].forEach(pos=>{
 
-    );
+            troop.innerHTML+=button(
 
-    buildHistory(
+                icons[pos] || "⚜️",
 
-        smHistory,
+                pos
 
-        "Scoutmaster History",
+            );
 
-        adultHistory,
+        });
 
-        "Scoutmaster",
+    }
 
-        ""
+    /* ---------- Adults ---------- */
 
-    );
+    const sm=document.getElementById("sm-asm-buttons");
+
+    if(sm){
+
+        const rows=await loadCSV("data/sm-asm-current.csv");
+
+        sm.innerHTML="";
+
+        [...new Set(rows.map(r=>r[0]))].forEach(pos=>{
+
+            sm.innerHTML+=button(
+
+                pos=="Scoutmaster" ? "👨‍🏫" : "🧑‍🏫",
+
+                pos
+
+            );
+
+        });
+
+    }
+
+    const committee=document.getElementById("committee-buttons");
+
+    if(committee){
+
+        const rows=await loadCSV("data/committee-current.csv");
+
+        committee.innerHTML="";
+
+        const icons={
+
+            "Executive Officer":"⛪",
+            "Chartered Organization Representative":"🤝",
+            "Committee Chair":"📋",
+            "Committee Member":"👥"
+
+        };
+
+        [...new Set(rows.map(r=>r[0]))].forEach(pos=>{
+
+            committee.innerHTML+=button(
+
+                icons[pos] || "📌",
+
+                pos
+
+            );
+
+        });
+
+    }
+
+    /* ---------- SPL History ---------- */
+
+    const splHistory=document.getElementById("spl-history-container");
+
+    if(splHistory){
+
+        const rows=await loadCSV("data/spl-history.csv");
+
+        splHistory.innerHTML="";
+
+        rows.reverse().forEach(r=>{
+
+            splHistory.innerHTML+=historyCard(
+
+                `${r[0]}–${r[1]}`,
+
+                [
+
+                    `<div class="history-role"><strong>SPL</strong>${r[2]}</div>`,
+
+                    `<div class="history-role"><strong>ASPL</strong>${r[3]}</div>`
+
+                ]
+
+            );
+
+        });
+
+    }
+
+    /* ---------- Scoutmaster History ---------- */
+
+    const smHistory=document.getElementById("sm-history-container");
+
+    if(smHistory){
+
+        const rows=await loadCSV("data/sm-history.csv");
+
+        smHistory.innerHTML="";
+
+        rows.reverse().forEach(r=>{
+
+            smHistory.innerHTML+=historyCard(
+
+                `${r[0]}–${r[1]}`,
+
+                [
+
+                    `<div class="history-role">${r[2]}</div>`
+
+                ]
+
+            );
+
+        });
+
+    }
 
 }
