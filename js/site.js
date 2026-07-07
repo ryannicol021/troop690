@@ -704,7 +704,7 @@ const matches=eagles.filter(eagle=>{
 
                     <h2>No Results</h2>
 
-                    <p>
+                    <p style="text-align:center;">
 
                         No Eagle Scouts matched your search.
 
