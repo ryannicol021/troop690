@@ -480,6 +480,15 @@ EAGLE SCOUT DATABASE
 
 initEagleScouts();
 
+function normalize(text){
+
+    return text
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g,"")
+        .toLowerCase();
+
+}
+
 async function initEagleScouts(){
 
     const container=document.getElementById("eagle-years-container");
@@ -638,13 +647,7 @@ animateCounter(years);
 
     search.addEventListener("input",()=>{
 
-        const query=
-
-            search.value
-
-            .trim()
-
-            .toLowerCase();
+        const query=normalize(search.value.trim());
 
 if(query===""){
 
@@ -675,17 +678,19 @@ const matches=eagles.filter(eagle=>{
 
     }
 
-    const full=(
+    const full=normalize(
 
-        eagle.first+" "+
+    eagle.number+" "+
 
-        eagle.middle+" "+
+    eagle.first+" "+
 
-        eagle.last+" "+
+    eagle.middle+" "+
 
-        eagle.suffix
+    eagle.last+" "+
 
-    ).toLowerCase();
+    eagle.suffix
+
+);
 
     return full.includes(query);
 
