@@ -229,7 +229,7 @@ function initModals(){
 
         obedient:{
             title:"A Scout is Obedient.",
-            body:"A Scout follows the rules of his family, school, and troop, and obeys the laws of the community and country. If these rules are deemed unfair, the Scout attempts to change them in an orderly manner rather than disobey them."
+            body:"A Scout follows the rules of the family, school, and troop, and obeys the laws of the community and country. If these rules are deemed unfair, the Scout attempts to change them in an orderly manner rather than disobey them."
         },
 
         cheerful:{
