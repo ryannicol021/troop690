@@ -1978,27 +1978,29 @@ RESPONSIVE
 
 }
 
-    .timeline-year{
+.timeline-year{
 
-        grid-column:2;
+    grid-area:year;
 
-        text-align:left;
+    text-align:left;
 
-        margin-bottom:8px;
+    margin-bottom:8px;
 
-    }
+}
 
-    .timeline-marker{
+.timeline-marker{
 
-        grid-row:1 / span 2;
+    grid-area:marker;
 
-    }
+    grid-row:auto;
 
-    .timeline-content{
+}
 
-        grid-column:2;
+.timeline-content{
 
-    }
+    grid-area:content;
+
+}
 
     .rank-grid{
 
