@@ -765,3 +765,89 @@ const matches=eagles.filter(eagle=>{
     });
 
 }
+
+/*=========================================================
+TIMELINE DATABASE
+=========================================================*/
+
+initTimeline();
+
+async function initTimeline(){
+
+    const container=document.getElementById("timeline-container");
+
+    if(!container) return;
+
+    const response=await fetch("data/timeline.csv");
+
+    const text=await response.text();
+
+    const rows=text.trim().split("\n").slice(1);
+
+    const events=rows.map(row=>{
+
+        const cols=row.split(",");
+
+        return{
+
+            year:cols[0],
+
+            event:cols[1]
+
+        };
+
+    });
+
+    const grouped={};
+
+    events.forEach(event=>{
+
+        if(!grouped[event.year]){
+
+            grouped[event.year]=[];
+
+        }
+
+        grouped[event.year].push(event.event);
+
+    });
+
+    Object.keys(grouped)
+
+        .sort((a,b)=>b-a)
+
+        .forEach(year=>{
+
+            const item=document.createElement("div");
+
+            item.className="timeline-item";
+
+            const paragraphs=grouped[year]
+
+                .map(text=>`<p>${text}</p>`)
+
+                .join("");
+
+            item.innerHTML=`
+
+                <div class="timeline-year">
+
+                    ${year}
+
+                </div>
+
+                <div class="timeline-marker"></div>
+
+                <div class="timeline-content">
+
+                    ${paragraphs}
+
+                </div>
+
+            `;
+
+            container.appendChild(item);
+
+        });
+
+}
