@@ -646,19 +646,24 @@ animateCounter(years);
 
             .toLowerCase();
 
-        if(query===""){
+if(query===""){
 
-            results.innerHTML="";
+    results.innerHTML="";
 
-            container.style.display="block";
+    container.style.display="grid";
 
-            return;
+container.style.gridTemplateColumns=
+    "repeat(auto-fit,minmax(340px,1fr))";
 
-        }
+    return;
 
-        container.style.display="none";
+}
 
-        results.innerHTML="";
+container.style.display="none";
+
+results.innerHTML="";
+
+container.style.gridTemplateColumns="1fr";
 
         const matches=eagles.filter(eagle=>{
 
