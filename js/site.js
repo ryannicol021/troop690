@@ -784,19 +784,21 @@ async function initTimeline(){
 
     const rows=text.trim().split("\n").slice(1);
 
-    const events=rows.map(row=>{
+const events=rows.map(row=>{
 
-        const cols=row.split(",");
+    const firstComma=row.indexOf(",");
 
-        return{
+    return{
 
-            year:cols[0],
+        year:row.substring(0,firstComma),
 
-            event:cols[1]
+        event:row
+            .substring(firstComma+1)
+            .replace(/^"|"$/g,"")
 
-        };
+    };
 
-    });
+});
 
     const grouped={};
 
