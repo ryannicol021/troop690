@@ -22,7 +22,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
     initGallery();
 
- initLeadership();
+ initLeadership().then(()=>{
+
+    initLeadershipModals();
+
+});
 
 });
 
@@ -862,18 +866,23 @@ LEADERSHIP DATABASE
 
 async function initLeadership(){
 
-    const loadCSV = async (file)=>{
+    const loadCSV = async(file)=>{
 
-        const text = await fetch(file).then(r=>r.text());
+        const text = await fetch(file)
+            .then(r=>r.text());
 
-        return text.trim().split("\n").slice(1).map(row=>
+        return text.trim()
+            .split("\n")
+            .slice(1)
+            .map(row=>
 
-            row.match(/(".*?"|[^",]+)(?=\s*,|\s*$)/g)
-               .map(col=>col.replace(/^"|"$/g,""))
+                row.match(/(".*?"|[^",]+)(?=\s*,|\s*$)/g)
+                .map(col=>col.replace(/^"|"$/g,""))
 
-        );
+            );
 
     };
+
 
     function button(icon,label){
 
@@ -881,9 +890,9 @@ async function initLeadership(){
 
             <button class="position-button">
 
-                <span>${icon}</span>
+                <span class="position-icon">${icon}</span>
 
-                <span>${label}</span>
+                <span class="position-label">${label}</span>
 
                 <span class="position-arrow">›</span>
 
@@ -893,19 +902,18 @@ async function initLeadership(){
 
     }
 
-    function historyCard(years,lines){
+
+    function historyCard(years,content){
 
         return `
 
             <div class="history-card">
 
                 <div class="history-years">
-
                     ${years}
-
                 </div>
 
-                ${lines.join("")}
+                ${content.join("")}
 
             </div>
 
@@ -913,166 +921,186 @@ async function initLeadership(){
 
     }
 
-    /* ---------- Current Youth ---------- */
 
-    const spl=document.getElementById("spl-aspl-buttons");
 
-    if(spl){
+    const buildButtons=(id,file,icons)=>{
 
-        const rows=await loadCSV("data/spl-aspl-current.csv");
+        const container=document.getElementById(id);
 
-        spl.innerHTML="";
+        if(!container) return;
 
-        rows.forEach(r=>{
+        loadCSV(file).then(rows=>{
 
-            spl.innerHTML+=button(
+            container.innerHTML="";
 
-                r[0]=="Senior Patrol Leader" ? "⚜️" : "⭐",
+            [...new Set(rows.map(r=>r[0]))]
 
-                r[0]
+            .forEach(position=>{
 
-            );
+                container.innerHTML += button(
 
-        });
+                    icons[position] || "⚜️",
 
-    }
+                    position
 
-    const patrol=document.getElementById("pl-apl-buttons");
+                );
 
-    if(patrol){
-
-        const rows=await loadCSV("data/pl-apl-current.csv");
-
-        patrol.innerHTML="";
-
-        [...new Set(rows.map(r=>r[0]))].forEach(pos=>{
-
-            patrol.innerHTML+=button(
-
-                pos=="Patrol Leader" ? "🧭" : "🥾",
-
-                pos
-
-            );
+            });
 
         });
 
-    }
+    };
 
-    const troop=document.getElementById("troop-position-buttons");
 
-    if(troop){
 
-        const rows=await loadCSV("data/troop-position-current.csv");
+    buildButtons(
 
-        troop.innerHTML="";
+        "spl-aspl-buttons",
 
-        const icons={
+        "data/spl-aspl-current.csv",
+
+        {
+
+            "Senior Patrol Leader":"⚜️",
+
+            "Assistant Senior Patrol Leader":"⭐"
+
+        }
+
+    );
+
+
+
+    buildButtons(
+
+        "pl-apl-buttons",
+
+        "data/pl-apl-current.csv",
+
+        {
+
+            "Patrol Leader":"🧭",
+
+            "Assistant Patrol Leader":"🥾"
+
+        }
+
+    );
+
+
+
+    buildButtons(
+
+        "troop-position-buttons",
+
+        "data/troop-position-current.csv",
+
+        {
 
             "Junior Assistant Scoutmaster":"🦅",
+
             "Troop Guide":"🥾",
+
             "Order of the Arrow Representative":"🏹",
+
             "Chaplain Aide":"🙏",
+
             "Outdoor Ethics Guide":"🌲",
+
             "Webmaster":"💻",
+
             "Historian":"📷",
+
             "Librarian":"📚",
+
             "Quartermaster":"📦",
+
             "Scribe":"✏️",
+
             "Bugler":"🎺"
 
-        };
+        }
 
-        [...new Set(rows.map(r=>r[0]))].forEach(pos=>{
+    );
 
-            troop.innerHTML+=button(
 
-                icons[pos] || "⚜️",
 
-                pos
+    buildButtons(
 
-            );
+        "sm-asm-buttons",
 
-        });
+        "data/sm-asm-current.csv",
 
-    }
+        {
 
-    /* ---------- Adults ---------- */
+            "Scoutmaster":"👨‍🏫",
 
-    const sm=document.getElementById("sm-asm-buttons");
+            "Assistant Scoutmaster":"🧑‍🏫"
 
-    if(sm){
+        }
 
-        const rows=await loadCSV("data/sm-asm-current.csv");
+    );
 
-        sm.innerHTML="";
 
-        [...new Set(rows.map(r=>r[0]))].forEach(pos=>{
 
-            sm.innerHTML+=button(
+    buildButtons(
 
-                pos=="Scoutmaster" ? "👨‍🏫" : "🧑‍🏫",
+        "committee-buttons",
 
-                pos
+        "data/committee-current.csv",
 
-            );
-
-        });
-
-    }
-
-    const committee=document.getElementById("committee-buttons");
-
-    if(committee){
-
-        const rows=await loadCSV("data/committee-current.csv");
-
-        committee.innerHTML="";
-
-        const icons={
+        {
 
             "Executive Officer":"⛪",
+
             "Chartered Organization Representative":"🤝",
+
             "Committee Chair":"📋",
+
             "Committee Member":"👥"
 
-        };
+        }
 
-        [...new Set(rows.map(r=>r[0]))].forEach(pos=>{
+    );
 
-            committee.innerHTML+=button(
 
-                icons[pos] || "📌",
 
-                pos
+    const splHistory=document.getElementById(
+        "spl-history-container"
+    );
 
-            );
-
-        });
-
-    }
-
-    /* ---------- SPL History ---------- */
-
-    const splHistory=document.getElementById("spl-history-container");
 
     if(splHistory){
 
-        const rows=await loadCSV("data/spl-history.csv");
+        const rows=await loadCSV(
+            "data/spl-history.csv"
+        );
+
 
         splHistory.innerHTML="";
 
-        rows.reverse().forEach(r=>{
 
-            splHistory.innerHTML+=historyCard(
+        rows.forEach(r=>{
+
+            splHistory.innerHTML += historyCard(
 
                 `${r[0]}–${r[1]}`,
 
                 [
 
-                    `<div class="history-role"><strong>SPL</strong>${r[2]}</div>`,
+                    `
+                    <div class="history-role">
+                        <strong>SPL</strong>
+                        ${r[2]}
+                    </div>
+                    `,
 
-                    `<div class="history-role"><strong>ASPL</strong>${r[3]}</div>`
+                    `
+                    <div class="history-role smaller">
+                        <strong>ASPL</strong>
+                        ${r[3]}
+                    </div>
+                    `
 
                 ]
 
@@ -1082,25 +1110,36 @@ async function initLeadership(){
 
     }
 
-    /* ---------- Scoutmaster History ---------- */
 
-    const smHistory=document.getElementById("sm-history-container");
+
+    const smHistory=document.getElementById(
+        "sm-history-container"
+    );
+
 
     if(smHistory){
 
-        const rows=await loadCSV("data/sm-history.csv");
+        const rows=await loadCSV(
+            "data/sm-history.csv"
+        );
+
 
         smHistory.innerHTML="";
 
-        rows.reverse().forEach(r=>{
 
-            smHistory.innerHTML+=historyCard(
+        rows.forEach(r=>{
+
+            smHistory.innerHTML += historyCard(
 
                 `${r[0]}–${r[1]}`,
 
                 [
 
-                    `<div class="history-role">${r[2]}</div>`
+                    `
+                    <div class="history-role">
+                        ${r[2]}
+                    </div>
+                    `
 
                 ]
 
@@ -1109,5 +1148,249 @@ async function initLeadership(){
         });
 
     }
+
+}
+
+
+
+
+
+async function initLeadershipModals(){
+
+
+    const modal=document.querySelector(".modal");
+
+    const modalBody=document.querySelector(".modal-body");
+
+    const close=document.querySelector(".modal-close");
+
+
+    if(!modal || !modalBody) return;
+
+
+
+    const descriptions={
+
+
+        "Senior Patrol Leader":
+        "The senior patrol leader is the primary link between a troop's Scouts and its adult leaders, leading troop meetings, patrol leaders' council meetings, and helping plan troop activities.",
+
+
+        "Assistant Senior Patrol Leader":
+        "The assistant senior patrol leader acts as senior patrol leader when needed and provides leadership to other youth leaders.",
+
+
+        "Patrol Leader":
+        "Patrol leaders keep their patrols organized and help Scouts work together.",
+
+
+        "Assistant Patrol Leader":
+        "The assistant patrol leader supports the patrol leader and acts in their absence.",
+
+
+        "Troop Guide":
+        "Troop guides mentor new Scouts, teach basic skills, and help them become familiar with troop operations.",
+
+
+        "Quartermaster":
+        "The quartermaster maintains troop equipment and keeps gear organized and ready.",
+
+
+        "Chaplain Aide":
+        "Chaplain aides support the troop chaplain and help meet the religious needs of the troop.",
+
+
+        "Webmaster":
+        "The webmaster maintains the troop website and ensures information remains accurate and up to date.",
+
+
+        "Outdoor Ethics Guide":
+        "Outdoor ethics guides promote Leave No Trace, the Outdoor Code, and responsible outdoor practices.",
+
+
+        "Scoutmaster":
+        "The Scoutmaster provides direction, coaching, and support while working directly with Scouts.",
+
+
+        "Assistant Scoutmaster":
+        "Assistant Scoutmasters support the Scoutmaster in delivering the Scouting program.",
+
+
+        "Executive Officer":
+        "The executive officer leads the chartered organization and supports the continuation of Scouting.",
+
+
+        "Chartered Organization Representative":
+        "The chartered organization representative connects the troop, chartered organization, district, and council.",
+
+
+        "Committee Chair":
+        "The committee chair organizes and supervises the troop committee.",
+
+
+        "Committee Member":
+        "Committee members support troop administration and provide resources that allow Scout leaders to focus on working with Scouts."
+
+    };
+
+
+
+    const holders={};
+
+
+
+    async function loadHolders(file){
+
+        const rows=await fetch(file)
+        .then(r=>r.text())
+        .then(text=>
+
+            text.trim()
+            .split("\n")
+            .slice(1)
+            .map(row=>
+
+                row.match(/(".*?"|[^",]+)(?=\s*,|\s*$)/g)
+                .map(col=>col.replace(/^"|"$/g,""))
+
+            )
+
+        );
+
+
+        rows.forEach(row=>{
+
+            if(!holders[row[0]])
+
+                holders[row[0]]=[];
+
+
+            holders[row[0]].push({
+
+                name:row[1],
+
+                note:row[2]
+
+            });
+
+        });
+
+    }
+
+
+
+    await loadHolders("data/spl-aspl-current.csv");
+    await loadHolders("data/pl-apl-current.csv");
+    await loadHolders("data/troop-position-current.csv");
+    await loadHolders("data/sm-asm-current.csv");
+    await loadHolders("data/committee-current.csv");
+
+
+
+    document.querySelectorAll(".position-button")
+
+    .forEach(button=>{
+
+
+        button.addEventListener("click",()=>{
+
+
+            const position =
+                button.querySelector(
+                    ".position-label"
+                ).textContent.trim();
+
+
+
+            const people=holders[position] || [];
+
+
+
+            modalBody.innerHTML=`
+
+                <h2>${position}</h2>
+
+
+                <h3>
+                    Current Holder${people.length!==1?"s":""}
+                </h3>
+
+
+                ${
+
+                    people.map(person=>`
+
+                        <p class="modal-person">
+
+                            ${person.name}
+
+                            ${
+                                person.note
+                                ?
+                                `<span>${person.note}</span>`
+                                :
+                                ""
+                            }
+
+                        </p>
+
+                    `).join("")
+
+                }
+
+
+                <h3>
+                    Responsibilities
+                </h3>
+
+
+                <p>
+                    ${descriptions[position] || ""}
+                </p>
+
+            `;
+
+
+            modal.classList.add("open");
+
+            document.body.style.overflow="hidden";
+
+
+        });
+
+
+    });
+
+
+
+    function closeModal(){
+
+        modal.classList.remove("open");
+
+        document.body.style.overflow="";
+
+    }
+
+
+
+    close.addEventListener(
+        "click",
+        closeModal
+    );
+
+
+    modal.addEventListener(
+        "click",
+        e=>{
+
+            if(e.target===modal){
+
+                closeModal();
+
+            }
+
+        }
+    );
+
 
 }
