@@ -665,25 +665,31 @@ results.innerHTML="";
 
 container.style.gridTemplateColumns="1fr";
 
-        const matches=eagles.filter(eagle=>{
+const numberSearch=/^\d+$/.test(query);
 
-            const full=(
+const matches=eagles.filter(eagle=>{
 
-                eagle.number+" "+
+    if(numberSearch){
 
-                eagle.first+" "+
+        return eagle.number===query;
 
-                eagle.middle+" "+
+    }
 
-                eagle.last+" "+
+    const full=(
 
-                eagle.suffix
+        eagle.first+" "+
 
-            ).toLowerCase();
+        eagle.middle+" "+
 
-            return full.includes(query);
+        eagle.last+" "+
 
-        });
+        eagle.suffix
+
+    ).toLowerCase();
+
+    return full.includes(query);
+
+});
 
         if(matches.length===0){
 
