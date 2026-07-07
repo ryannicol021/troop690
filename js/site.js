@@ -100,7 +100,7 @@ function initScrollAnimations(){
 
     },{
 
-        threshold:.15
+        threshold:.5
 
     });
 
