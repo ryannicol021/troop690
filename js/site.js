@@ -1,195 +1,390 @@
+/*
+=========================================================
+ Troop 690 Website
+ site.js
+ Version 3.0
+=========================================================
+*/
+
 document.addEventListener("DOMContentLoaded", () => {
 
-    ///////////////////////////////////////////////////////////
-    // Fade In Animation
-    ///////////////////////////////////////////////////////////
+    initMobileMenu();
 
-    const fadeObserver = new IntersectionObserver((entries) => {
+    initDropdowns();
 
-        entries.forEach(entry => {
+    initScrollAnimations();
 
-            if (entry.isIntersecting) {
+    initCounters();
+
+    initModals();
+
+    initAccordion();
+
+    initGallery();
+
+});
+
+/*=========================================================
+MOBILE MENU
+=========================================================*/
+
+function initMobileMenu(){
+
+    const button=document.querySelector(".mobile-menu-button");
+
+    const menu=document.querySelector(".desktop-nav");
+
+    if(!button || !menu) return;
+
+    button.addEventListener("click",()=>{
+
+        menu.classList.toggle("mobile-open");
+
+        button.classList.toggle("open");
+
+    });
+
+}
+
+/*=========================================================
+DESKTOP DROPDOWNS
+=========================================================*/
+
+function initDropdowns(){
+
+    document.querySelectorAll(".nav-dropdown").forEach(dropdown=>{
+
+        dropdown.addEventListener("mouseenter",()=>{
+
+            dropdown.classList.add("open");
+
+        });
+
+        dropdown.addEventListener("mouseleave",()=>{
+
+            dropdown.classList.remove("open");
+
+        });
+
+    });
+
+}
+
+/*=========================================================
+SCROLL REVEAL
+=========================================================*/
+
+function initScrollAnimations(){
+
+    const items=document.querySelectorAll(
+
+        ".fade-up,.fade-left,.fade-right"
+
+    );
+
+    if(items.length===0) return;
+
+    const observer=new IntersectionObserver(entries=>{
+
+        entries.forEach(entry=>{
+
+            if(entry.isIntersecting){
 
                 entry.target.classList.add("visible");
 
-                fadeObserver.unobserve(entry.target);
+                observer.unobserve(entry.target);
 
             }
 
         });
 
-    }, {
+    },{
 
-        threshold: 0.15
-
-    });
-
-    document.querySelectorAll(".fade-in, .card, .stat").forEach(element => {
-
-        element.classList.add("fade-in");
-
-        fadeObserver.observe(element);
+        threshold:.15
 
     });
 
-    ///////////////////////////////////////////////////////////
-    // Animated Counters
-    ///////////////////////////////////////////////////////////
+    items.forEach(item=>observer.observe(item));
 
-    document.querySelectorAll("[data-count]").forEach(counter => {
+}
 
-        const target = parseInt(counter.dataset.count);
+/*=========================================================
+NUMBER COUNTERS
+=========================================================*/
 
-        if (isNaN(target)) return;
+function initCounters(){
 
-        let current = 0;
+    const counters=document.querySelectorAll("[data-counter]");
 
-        const duration = 1200;
+    if(counters.length===0) return;
 
-        const frameRate = 60;
+    const observer=new IntersectionObserver(entries=>{
 
-        const totalFrames = duration / (1000 / frameRate);
+        entries.forEach(entry=>{
 
-        const increment = Math.max(1, Math.ceil(target / totalFrames));
+            if(!entry.isIntersecting) return;
 
-        function updateCounter() {
+            animateCounter(entry.target);
 
-            current += increment;
+            observer.unobserve(entry.target);
 
-            if (current >= target) {
+        });
 
-                counter.textContent = target;
+    },{
 
-            } else {
+        threshold:.5
 
-                counter.textContent = current;
+    });
 
-                requestAnimationFrame(updateCounter);
+    counters.forEach(counter=>observer.observe(counter));
 
-            }
+}
+
+function animateCounter(element){
+
+    const target=parseInt(
+
+        element.dataset.counter,
+
+        10
+
+    );
+
+    const duration=1800;
+
+    const startTime=performance.now();
+
+    function update(now){
+
+        const progress=Math.min(
+
+            (now-startTime)/duration,
+
+            1
+
+        );
+
+        const value=Math.floor(
+
+            progress*target
+
+        );
+
+        element.textContent=value;
+
+        if(progress<1){
+
+            requestAnimationFrame(update);
 
         }
 
-        const counterObserver = new IntersectionObserver((entries) => {
+    }
 
-            if (entries[0].isIntersecting) {
+    requestAnimationFrame(update);
 
-                updateCounter();
+}
+/*=========================================================
+MODALS
+=========================================================*/
 
-                counterObserver.disconnect();
+function initModals(){
 
-            }
+    const modal=document.querySelector(".modal");
+
+    if(!modal) return;
+
+    document.querySelectorAll("[data-modal]").forEach(button=>{
+
+        button.addEventListener("click",()=>{
+
+            const id=button.dataset.modal;
+
+            const content=document.getElementById(id);
+
+            if(!content) return;
+
+            const body=modal.querySelector(".modal-body");
+
+            body.innerHTML=content.innerHTML;
+
+            modal.classList.add("open");
+
+            document.body.style.overflow="hidden";
 
         });
-
-        counterObserver.observe(counter);
 
     });
 
-    ///////////////////////////////////////////////////////////
-    // Live Search (Eagle Scout Page)
-    ///////////////////////////////////////////////////////////
+    modal.addEventListener("click",(event)=>{
 
-    const searchBox = document.getElementById("search");
+        if(
 
-    if (searchBox) {
+            event.target===modal ||
 
-        const cards = document.querySelectorAll(".year-block, .card");
+            event.target.classList.contains("modal-close")
 
-        searchBox.addEventListener("input", function () {
+        ){
 
-            const query = this.value.toLowerCase().trim();
-
-            cards.forEach(card => {
-
-                const text = card.textContent.toLowerCase();
-
-                card.style.display = text.includes(query)
-                    ? ""
-                    : "none";
-
-            });
-
-        });
-
-    }
-
-    ///////////////////////////////////////////////////////////
-    // Highlight Current Navigation Link
-    ///////////////////////////////////////////////////////////
-
-    const currentPage = window.location.pathname.split("/").pop() || "index.html";
-
-    document.querySelectorAll("nav a").forEach(link => {
-
-        const href = link.getAttribute("href");
-
-        if (href === currentPage) {
-
-            link.classList.add("active");
+            closeModal();
 
         }
 
     });
 
-    ///////////////////////////////////////////////////////////
-    // Smooth Scrolling
-    ///////////////////////////////////////////////////////////
+    document.addEventListener("keydown",(event)=>{
 
-    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        if(event.key==="Escape"){
 
-        anchor.addEventListener("click", function (e) {
+            closeModal();
 
-            const target = document.querySelector(this.getAttribute("href"));
+        }
 
-            if (!target) return;
+    });
 
-            e.preventDefault();
+    function closeModal(){
 
-            target.scrollIntoView({
+        modal.classList.remove("open");
 
-                behavior: "smooth"
+        document.body.style.overflow="";
 
-            });
+    }
+
+}
+
+/*=========================================================
+ACCORDIONS
+=========================================================*/
+
+function initAccordion(){
+
+    document.querySelectorAll(".accordion-header")
+
+    .forEach(button=>{
+
+        button.addEventListener("click",()=>{
+
+            button.parentElement.classList.toggle("open");
 
         });
 
     });
 
-    ///////////////////////////////////////////////////////////
-    // Scroll To Top Button (Optional)
-    ///////////////////////////////////////////////////////////
+}
 
-    const topButton = document.getElementById("backToTop");
+/*=========================================================
+LIGHTBOX GALLERY
+=========================================================*/
 
-    if (topButton) {
+function initGallery(){
 
-        window.addEventListener("scroll", () => {
+    const images=document.querySelectorAll(".gallery img");
 
-            if (window.scrollY > 500) {
+    if(images.length===0) return;
 
-                topButton.classList.add("show");
+    const overlay=document.createElement("div");
 
-            } else {
+    overlay.className="modal";
 
-                topButton.classList.remove("show");
+    overlay.innerHTML=`
+        <div class="modal-window">
+            <button class="modal-close">&times;</button>
+            <img class="lightbox-image" alt="">
+        </div>
+    `;
 
-            }
+    document.body.appendChild(overlay);
+
+    const image=overlay.querySelector(".lightbox-image");
+
+    images.forEach(img=>{
+
+        img.addEventListener("click",()=>{
+
+            image.src=img.src;
+            image.alt=img.alt;
+
+            overlay.classList.add("open");
+
+            document.body.style.overflow="hidden";
 
         });
 
-        topButton.addEventListener("click", () => {
+    });
 
-            window.scrollTo({
+    overlay.addEventListener("click",(e)=>{
 
-                top: 0,
+        if(
 
-                behavior: "smooth"
+            e.target===overlay ||
 
-            });
+            e.target.classList.contains("modal-close")
+
+        ){
+
+            overlay.classList.remove("open");
+
+            document.body.style.overflow="";
+
+        }
+
+    });
+
+}
+
+/*=========================================================
+AUTO YEAR
+=========================================================*/
+
+const year=document.getElementById("copyright-year");
+
+if(year){
+
+    year.textContent=new Date().getFullYear();
+
+}
+
+/*=========================================================
+YEARS OF SCOUTING
+=========================================================*/
+
+const founded=document.querySelector("[data-founded]");
+
+if(founded){
+
+    founded.dataset.counter=
+
+        new Date().getFullYear()-1962;
+
+}
+
+/*=========================================================
+SMOOTH SCROLL LINKS
+=========================================================*/
+
+document.querySelectorAll('a[href^="#"]')
+
+.forEach(link=>{
+
+    link.addEventListener("click",event=>{
+
+        const target=document.querySelector(
+
+            link.getAttribute("href")
+
+        );
+
+        if(!target) return;
+
+        event.preventDefault();
+
+        target.scrollIntoView({
+
+            behavior:"smooth",
+
+            block:"start"
 
         });
 
-    }
+    });
 
 });
