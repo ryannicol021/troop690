@@ -1079,6 +1079,8 @@ TIMELINE
 
     z-index:2;
 
+    transform:translate(-3px, 2px);
+
 }
 
 .timeline-content{
