@@ -2058,3 +2058,175 @@ RESPONSIVE
     }
 
 }
+
+/*=========================================================
+EAGLE SCOUTS
+=========================================================*/
+
+.search-input{
+
+    display:block;
+
+    width:100%;
+
+    max-width:620px;
+
+    margin:32px auto 28px;
+
+    padding:16px 22px;
+
+    border-radius:999px;
+
+    border:1px solid var(--border);
+
+    background:var(--card);
+
+    color:var(--text);
+
+    font:inherit;
+
+    font-size:1.05rem;
+
+    transition:var(--transition);
+
+}
+
+.search-input:focus{
+
+    outline:none;
+
+    border-color:var(--red);
+
+    box-shadow:0 0 0 3px rgba(198,40,40,.18);
+
+}
+
+.year-jump{
+
+    display:flex;
+
+    flex-wrap:wrap;
+
+    justify-content:center;
+
+    gap:10px;
+
+    margin-top:8px;
+
+}
+
+.year-pill{
+
+    padding:8px 16px;
+
+    border:none;
+
+    border-radius:999px;
+
+    background:rgba(198,40,40,.12);
+
+    border:1px solid rgba(198,40,40,.30);
+
+    color:var(--text);
+
+    font:inherit;
+
+    font-size:.9rem;
+
+    font-weight:700;
+
+    cursor:pointer;
+
+    transition:var(--transition);
+
+}
+
+.year-pill:hover{
+
+    background:var(--red);
+
+    color:#fff;
+
+    transform:translateY(-2px);
+
+}
+
+#search-results{
+
+    display:grid;
+
+    gap:24px;
+
+}
+
+.year-card{
+
+    margin-bottom:36px;
+
+}
+
+.year-card h2{
+
+    margin-bottom:28px;
+
+}
+
+.eagle-entry{
+
+    margin:10px 0;
+
+    padding-bottom:10px;
+
+    border-bottom:1px solid rgba(255,255,255,.08);
+
+    font-size:1.05rem;
+
+}
+
+.eagle-entry:last-child{
+
+    border-bottom:none;
+
+    padding-bottom:0;
+
+}
+
+.eagle-entry strong{
+
+    display:inline-block;
+
+    width:3.5rem;
+
+    color:var(--red);
+
+}
+
+#search-results .content-card h3{
+
+    margin-bottom:8px;
+
+}
+
+@media (max-width:700px){
+
+    .search-input{
+
+        margin-top:24px;
+
+    }
+
+    .year-pill{
+
+        font-size:.82rem;
+
+        padding:7px 14px;
+
+    }
+
+    .eagle-entry strong{
+
+        width:3rem;
+
+    }
+
+}
