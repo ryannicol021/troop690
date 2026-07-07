@@ -473,3 +473,277 @@ document.querySelectorAll('a[href^="#"]')
     });
 
 });
+
+/*=========================================================
+EAGLE SCOUT DATABASE
+=========================================================*/
+
+initEagleScouts();
+
+async function initEagleScouts(){
+
+    const container=document.getElementById("eagle-years-container");
+
+    if(!container) return;
+
+    const search=document.getElementById("eagle-search");
+
+    const jump=document.getElementById("year-jump");
+
+    const results=document.getElementById("search-results");
+
+    const total=document.getElementById("eagle-total");
+
+    const years=document.getElementById("eagle-years");
+
+    const response=await fetch("data/eagles.csv");
+
+    const text=await response.text();
+
+    const rows=text.trim().split("\n").slice(1);
+
+    const eagles=rows.map(row=>{
+
+        const cols=row.split(",");
+
+        return{
+
+            year:cols[0],
+
+            number:cols[1],
+
+            first:cols[2],
+
+            middle:cols[3],
+
+            last:cols[4],
+
+            suffix:cols[5]||""
+
+        };
+
+    });
+
+    total.textContent=eagles.length;
+
+    years.textContent=
+
+        new Date().getFullYear()-1967+1;
+
+    const grouped={};
+
+    eagles
+
+        .sort((a,b)=>b.number-a.number)
+
+        .forEach(eagle=>{
+
+            if(!grouped[eagle.year]){
+
+                grouped[eagle.year]=[];
+
+            }
+
+            grouped[eagle.year].push(eagle);
+
+        });
+
+    Object.keys(grouped)
+
+        .sort((a,b)=>b-a)
+
+        .forEach(year=>{
+
+            const button=document.createElement("button");
+
+            button.className="year-pill";
+
+            button.textContent=year;
+
+            button.onclick=()=>{
+
+                document.getElementById(
+
+                    "year-"+year
+
+                ).scrollIntoView({
+
+                    behavior:"smooth",
+
+                    block:"start"
+
+                });
+
+            };
+
+            jump.appendChild(button);
+
+            const card=document.createElement("div");
+
+            card.className="content-card year-card fade-up";
+
+            card.id="year-"+year;
+
+            const heading=document.createElement("h2");
+
+            heading.textContent=year;
+
+            heading.style.textAlign="center";
+
+            card.appendChild(heading);
+
+            grouped[year].forEach(eagle=>{
+
+                const p=document.createElement("p");
+
+                p.className="eagle-entry";
+
+                let name=eagle.first;
+
+                if(eagle.middle){
+
+                    name+=" "+eagle.middle;
+
+                }
+
+                name+=" "+eagle.last;
+
+                if(eagle.suffix){
+
+                    name+=" "+eagle.suffix;
+
+                }
+
+                p.innerHTML=
+
+                    "<strong>"+
+
+                    eagle.number+
+
+                    ".</strong> "+
+
+                    name;
+
+                card.appendChild(p);
+
+            });
+
+            container.appendChild(card);
+
+        });
+
+    search.addEventListener("input",()=>{
+
+        const query=
+
+            search.value
+
+            .trim()
+
+            .toLowerCase();
+
+        if(query===""){
+
+            results.innerHTML="";
+
+            container.style.display="block";
+
+            return;
+
+        }
+
+        container.style.display="none";
+
+        results.innerHTML="";
+
+        const matches=eagles.filter(eagle=>{
+
+            const full=(
+
+                eagle.number+" "+
+
+                eagle.first+" "+
+
+                eagle.middle+" "+
+
+                eagle.last+" "+
+
+                eagle.suffix
+
+            ).toLowerCase();
+
+            return full.includes(query);
+
+        });
+
+        if(matches.length===0){
+
+            results.innerHTML=`
+
+                <div class="content-card">
+
+                    <h2>No Results</h2>
+
+                    <p>
+
+                        No Eagle Scouts matched your search.
+
+                    </p>
+
+                </div>
+
+            `;
+
+            return;
+
+        }
+
+        matches
+
+            .sort((a,b)=>b.number-a.number)
+
+            .forEach(eagle=>{
+
+                const card=document.createElement("div");
+
+                card.className="content-card";
+
+                let name=eagle.first;
+
+                if(eagle.middle){
+
+                    name+=" "+eagle.middle;
+
+                }
+
+                name+=" "+eagle.last;
+
+                if(eagle.suffix){
+
+                    name+=" "+eagle.suffix;
+
+                }
+
+                card.innerHTML=`
+
+                    <h3>
+
+                        ${eagle.number}. ${name}
+
+                    </h3>
+
+                    <p>
+
+                        Eagle Scout Class of ${eagle.year}
+
+                    </p>
+
+                `;
+
+                results.appendChild(card);
+
+            });
+
+    });
+
+}
