@@ -385,19 +385,27 @@ DROPDOWN
 
     position:absolute;
 
-    top:calc(100% + 16px);
+    top:calc(100% + 12px);
 
     right:0;
-
-    min-width:230px;
 
     background:var(--card);
 
     border:1px solid var(--border);
 
-    border-radius:18px;
+    border-radius:22px;
 
-    overflow:hidden;
+    padding:10px;
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:4px;
+
+    width:max-content;
+
+    min-width:220px;
 
     box-shadow:var(--shadow);
 
@@ -405,7 +413,7 @@ DROPDOWN
 
     visibility:hidden;
 
-    transform:translateY(12px);
+    transform:translateY(10px);
 
     transition:var(--transition);
 
@@ -425,13 +433,23 @@ DROPDOWN
 
     display:block;
 
-    padding:16px 22px;
+    padding:14px 18px;
+
+    border-radius:14px;
+
+    font-weight:600;
+
+    white-space:nowrap;
+
+    transition:var(--transition);
 
 }
 
 .dropdown-menu a:hover{
 
-    background:rgba(255,255,255,.05);
+    background:rgba(255,255,255,.06);
+
+    color:var(--red);
 
 }
 
