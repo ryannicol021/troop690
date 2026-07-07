@@ -535,13 +535,11 @@ async function initEagleScouts(){
 
 total.dataset.counter=eagles.length;
 
-animateCounter(total);
-
 years.dataset.counter=
 
     new Date().getFullYear()-1967+1;
 
-animateCounter(years);
+ initCounters();
 
     const grouped={};
 
