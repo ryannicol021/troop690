@@ -2207,6 +2207,17 @@ EAGLE SCOUTS
 
 }
 
+#eagle-search + .year-jump,
+.search-input{
+
+}
+
+.content-card h3{
+
+    text-align:center;
+
+}
+
 @media (max-width:700px){
 
     .search-input{
