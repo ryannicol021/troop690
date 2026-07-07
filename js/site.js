@@ -524,11 +524,15 @@ async function initEagleScouts(){
 
     });
 
-    total.textContent=eagles.length;
+total.dataset.counter=eagles.length;
 
-    years.textContent=
+animateCounter(total);
 
-        new Date().getFullYear()-1967+1;
+years.dataset.counter=
+
+    new Date().getFullYear()-1967+1;
+
+animateCounter(years);
 
     const grouped={};
 
