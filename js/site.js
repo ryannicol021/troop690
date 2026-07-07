@@ -1157,7 +1157,6 @@ async function initLeadership(){
 
 async function initLeadershipModals(){
 
-
     const modal=document.querySelector(".modal");
 
     const modalBody=document.querySelector(".modal-body");
@@ -1171,62 +1170,47 @@ async function initLeadershipModals(){
 
     const descriptions={
 
-
         "Senior Patrol Leader":
         "The senior patrol leader is the primary link between a troop's Scouts and its adult leaders, leading troop meetings, patrol leaders' council meetings, and helping plan troop activities.",
-
 
         "Assistant Senior Patrol Leader":
         "The assistant senior patrol leader acts as senior patrol leader when needed and provides leadership to other youth leaders.",
 
-
         "Patrol Leader":
         "Patrol leaders keep their patrols organized and help Scouts work together.",
-
 
         "Assistant Patrol Leader":
         "The assistant patrol leader supports the patrol leader and acts in their absence.",
 
-
         "Troop Guide":
         "Troop guides mentor new Scouts, teach basic skills, and help them become familiar with troop operations.",
-
 
         "Quartermaster":
         "The quartermaster maintains troop equipment and keeps gear organized and ready.",
 
-
         "Chaplain Aide":
         "Chaplain aides support the troop chaplain and help meet the religious needs of the troop.",
-
 
         "Webmaster":
         "The webmaster maintains the troop website and ensures information remains accurate and up to date.",
 
-
         "Outdoor Ethics Guide":
         "Outdoor ethics guides promote Leave No Trace, the Outdoor Code, and responsible outdoor practices.",
-
 
         "Scoutmaster":
         "The Scoutmaster provides direction, coaching, and support while working directly with Scouts.",
 
-
         "Assistant Scoutmaster":
         "Assistant Scoutmasters support the Scoutmaster in delivering the Scouting program.",
-
 
         "Executive Officer":
         "The executive officer leads the chartered organization and supports the continuation of Scouting.",
 
-
         "Chartered Organization Representative":
         "The chartered organization representative connects the troop, chartered organization, district, and council.",
 
-
         "Committee Chair":
         "The committee chair organizes and supervises the troop committee.",
-
 
         "Committee Member":
         "Committee members support troop administration and provide resources that allow Scout leaders to focus on working with Scouts."
@@ -1296,56 +1280,59 @@ async function initLeadershipModals(){
 
 
             const position =
-                button.querySelector(
-                    ".position-label"
-                ).textContent.trim();
+                button.querySelector(".position-label")
+                .textContent
+                .trim();
 
 
 
-            const people=holders[position] || [];
+            const people = holders[position] || [];
 
 
 
             modalBody.innerHTML=`
 
-                <h2>${position}</h2>
-
-
-                <h3>
-                    Current Holder${people.length!==1?"s":""}
-                </h3>
+                <h2>
+                    ${position}
+                </h2>
 
 
                 ${
-
                     people.map(person=>`
 
-                        <p class="modal-person">
+                        <div class="modal-leader">
 
-                            ${person.name}
+                            <div class="modal-name">
+
+                                ${person.name}
+
+                            </div>
+
 
                             ${
                                 person.note
                                 ?
-                                `<span>${person.note}</span>`
+                                `
+                                <div class="modal-note">
+
+                                    ${person.note}
+
+                                </div>
+                                `
                                 :
                                 ""
                             }
 
-                        </p>
+                        </div>
 
                     `).join("")
-
                 }
 
 
-                <h3>
-                    Responsibilities
-                </h3>
+                <p class="modal-description">
 
-
-                <p>
                     ${descriptions[position] || ""}
+
                 </p>
 
             `;
@@ -1390,6 +1377,7 @@ async function initLeadershipModals(){
             }
 
         }
+
     );
 
 
