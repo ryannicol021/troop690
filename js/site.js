@@ -580,7 +580,7 @@ async function initEagleScouts(){
 
             const card=document.createElement("div");
 
-            card.className="content-card year-card fade-up";
+            card.className="content-card year-card";
 
             card.id="year-"+year;
 
