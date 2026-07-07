@@ -874,6 +874,16 @@ SCOUT OATH & LAW
 
     transition:var(--transition);
 
+    cursor:pointer;
+
+    font:inherit;
+
+    color:inherit;
+
+    appearance:none;
+
+    -webkit-appearance:none;
+
 }
 
 .law-pill:hover{
