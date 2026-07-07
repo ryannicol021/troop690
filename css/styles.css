@@ -281,13 +281,13 @@ HEADER
 
 .logo-main{
 
-    font-family:var(--heading);
+    font-family:var(--red);
 
     color:white;
 
     font-size:2rem;
 
- margin-bottom:-4px;
+ margin-bottom:-2px;
 
 }
 
