@@ -846,23 +846,23 @@ SCOUT OATH & LAW
 
 .law-grid{
 
-    display:flex;
+    display:grid;
 
-    flex-wrap:wrap;
-
-    justify-content:center;
+    grid-template-columns:repeat(2,minmax(0,1fr));
 
     gap:18px;
+
+    justify-items:center;
 
 }
 
 .law-pill{
 
-    flex:0 1 calc(50% - 18px);
+    width:100%;
 
-    max-width:240px;
+    max-width:220px;
 
-    min-width:170px;
+    min-width:0;
 
     padding:16px 22px;
 
@@ -892,9 +892,9 @@ SCOUT OATH & LAW
 
 @media (min-width:1000px){
 
-    .law-pill{
+    .law-grid{
 
-        flex:0 1 calc(25% - 18px);
+        grid-template-columns:repeat(4,minmax(0,1fr));
 
     }
 
