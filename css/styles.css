@@ -280,13 +280,11 @@ HEADER
 
 .logo-main{
 
-    font-family:var(--red);
+    font-family:var(--heading);
 
-    color:white;
+    color:var(--red);
 
     font-size:1.8rem;
-
- margin-bottom:-2px;
 
 }
 
