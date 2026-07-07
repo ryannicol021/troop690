@@ -8,128 +8,123 @@
 
     <title>Troop 690 | Leadership. Service. Adventure.</title>
 
-    <meta name="description" content="Troop 690 has been developing character, citizenship, leadership, and outdoor skills through Scouting since 1962.">
+    <meta name="description" content="Troop 690 has proudly served the Seaford community since 1962 by developing character, citizenship, leadership, and outdoor skills through Scouting America.">
 
-    <link rel="icon" href="images/favicon.ico">
-
-    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
     <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;500;600;700&family=Merriweather:wght@700&display=swap" rel="stylesheet">
 
-    <!-- Styles -->
     <link rel="stylesheet" href="css/styles.css">
 
-    <!-- Icons -->
     <script defer src="https://unpkg.com/lucide@latest"></script>
-
-    <!-- Scripts -->
     <script defer src="js/site.js"></script>
 
 </head>
 
 <body>
 
-<a class="skip-link" href="#main-content">
-    Skip to content
-</a>
-
 <header class="site-header">
 
     <div class="container nav-container">
 
-        <a class="logo" href="index.html">
+        <a href="index.html" class="logo">
 
-            <span class="logo-title">
+            <span class="logo-main">
                 Troop 690
             </span>
 
-            <span class="logo-subtitle">
-                Since 1962
+            <span class="logo-sub">
+                Seaford, New York • Since 1962
             </span>
 
         </a>
 
-        <button
-            id="menuToggle"
-            class="menu-toggle"
-            aria-label="Toggle navigation"
-            aria-expanded="false">
-
-            ☰
-
-        </button>
-
-        <nav id="mainNav">
+        <nav class="desktop-nav">
 
             <a class="active" href="index.html">Home</a>
-
             <a href="leadership.html">Leadership</a>
-
             <a href="advancement.html">Advancement</a>
-
             <a href="eagle-scouts.html">Eagle Scouts</a>
-
             <a href="summer-camp.html">Summer Camp</a>
-
             <a href="uniform.html">Scout Uniform</a>
 
-            <a href="calendar.html">Calendar</a>
+            <div class="nav-dropdown">
 
-            <a href="contact.html">Contact</a>
+                <button>
+
+                    Resources
+
+                    <i data-lucide="chevron-down"></i>
+
+                </button>
+
+                <div class="dropdown-menu">
+
+                    <a href="calendar.html">Calendar</a>
+                    <a href="contact.html">Contact</a>
+
+                </div>
+
+            </div>
 
         </nav>
+
+        <button class="mobile-menu-button">
+
+            <i data-lucide="menu"></i>
+
+        </button>
 
     </div>
 
 </header>
 
-<main id="main-content">
+<main>
 
-<!-- ===================================================== -->
+<!-- ================================================= -->
 <!-- HERO -->
-<!-- ===================================================== -->
+<!-- ================================================= -->
 
 <section class="hero">
 
-    <div class="hero-image">
-
-        <!-- Replace with troop photo -->
-
-    </div>
-
     <div class="hero-overlay">
 
-        <div class="container hero-content">
+        <div class="container">
 
-            <h1>
+            <div class="hero-card fade-up">
 
-                Troop 690
+                <h1>
 
-            </h1>
+                    Troop 690
 
-            <p class="hero-motto">
+                </h1>
 
-                Leadership.<br>
-                Service.<br>
-                Adventure.
+                <p class="hero-slogan">
 
-            </p>
+                    Leadership.<br>
+                    Service.<br>
+                    Adventure.
 
-            <p class="hero-description">
+                </p>
 
-                Developing character, citizenship,
-                leadership, and outdoor skills
-                through Scouting since 1962.
+                <p class="hero-text">
 
-            </p>
+                    Developing character,
+                    citizenship,
+                    leadership,
+                    and outdoor skills through
+                    Scouting America since 1962.
 
-            <a class="button-primary" href="contact.html">
+                </p>
 
-                Join Troop 690
+                <a href="contact.html" class="btn btn-primary">
 
-            </a>
+                    Join Troop 690
+
+                </a>
+
+            </div>
 
         </div>
 
@@ -137,17 +132,17 @@
 
 </section>
 
-<!-- ===================================================== -->
-<!-- STATISTICS -->
-<!-- ===================================================== -->
+<!-- ================================================= -->
+<!-- QUICK FACTS -->
+<!-- ================================================= -->
 
-<section class="stats-section">
+<section class="section">
 
     <div class="container">
 
         <div class="stats-grid">
 
-            <article class="stat-card">
+            <div class="stat-card fade-up">
 
                 <div class="stat-number">
 
@@ -155,15 +150,15 @@
 
                 </div>
 
-                <div class="stat-label">
+                <div class="stat-title">
 
                     Eagle Scouts
 
                 </div>
 
-            </article>
+            </div>
 
-            <article class="stat-card">
+            <div class="stat-card fade-up">
 
                 <div class="stat-number">
 
@@ -171,31 +166,31 @@
 
                 </div>
 
-                <div class="stat-label">
+                <div class="stat-title">
 
                     Founded
 
                 </div>
 
-            </article>
+            </div>
 
-            <article class="stat-card">
+            <div class="stat-card fade-up">
 
                 <div
-                    class="stat-number"
-                    id="yearsScouting">
+                    id="yearsScouting"
+                    class="stat-number">
 
                     64
 
                 </div>
 
-                <div class="stat-label">
+                <div class="stat-title">
 
                     Years of Scouting
 
                 </div>
 
-            </article>
+            </div>
 
         </div>
 
@@ -203,68 +198,55 @@
 
 </section>
 
-<!-- ===================================================== -->
+<!-- ================================================= -->
 <!-- WHO WE ARE -->
-<!-- ===================================================== -->
+<!-- ================================================= -->
 
 <section class="section">
 
-    <div class="container narrow">
+    <div class="container">
 
-        <h2>
+        <div class="content-card fade-up">
 
-            Who We Are
+            <h2>
 
-        </h2>
+                Who We Are
 
-        <p class="lead">
+            </h2>
 
-            For more than six decades, Troop 690 has helped
-            young people develop leadership,
-            character, citizenship,
-            and outdoor skills through the
-            Scouting program.
+            <p class="lead">
 
-        </p>
+                Troop 690 is a youth-led Scouting America troop
+                chartered by St. William the Abbot Roman Catholic Church
+                in Seaford, New York.
 
-        <p>
+            </p>
 
-            Chartered by
-            <strong>St. William the Abbot Roman Catholic Church</strong>
-            in Seaford, New York,
-            Troop 690 is a youth-led troop where Scouts
-            grow through camping,
-            service,
-            advancement,
-            and leadership.
+            <p>
 
-        </p>
+                For more than six decades, our troop has provided young
+                people with opportunities to grow through outdoor adventure,
+                servant leadership, community service, and personal achievement.
+                Guided by the Scout Oath and Scout Law, Scouts develop skills
+                and friendships that last a lifetime.
 
-        <p>
+            </p>
 
-            Whether hiking a trail,
-            serving the community,
-            earning merit badges,
-            or mentoring younger Scouts,
-            our members challenge themselves
-            to live by the ideals of the Scout Oath
-            and Scout Law every day.
-
-        </p>
+        </div>
 
     </div>
 
 </section>
 
-<!-- ===================================================== -->
+<!-- ================================================= -->
 <!-- WHAT WE DO -->
-<!-- ===================================================== -->
+<!-- ================================================= -->
 
-<section class="section section-alt">
+<section class="section">
 
     <div class="container">
 
-        <h2>
+        <h2 class="section-title fade-up">
 
             What We Do
 
@@ -272,9 +254,13 @@
 
         <div class="feature-grid">
 
-            <article class="feature-card">
+            <div class="feature-card fade-up">
 
-                <i data-lucide="mountain"></i>
+                <div class="feature-icon">
+
+                    <i data-lucide="trees"></i>
+
+                </div>
 
                 <h3>
 
@@ -284,20 +270,22 @@
 
                 <p>
 
-                    Camp year-round,
-                    hike,
-                    backpack,
-                    canoe,
-                    and develop confidence
-                    through outdoor experiences.
+                    Camp year-round, hike,
+                    backpack, canoe,
+                    cook outdoors,
+                    and challenge yourself.
 
                 </p>
 
-            </article>
+            </div>
 
-            <article class="feature-card">
+            <div class="feature-card fade-up">
 
-                <i data-lucide="users"></i>
+                <div class="feature-icon">
+
+                    <i data-lucide="users"></i>
+
+                </div>
 
                 <h3>
 
@@ -307,17 +295,22 @@
 
                 <p>
 
-                    Youth leaders plan meetings,
-                    organize campouts,
-                    and guide the troop
-                    through servant leadership.
+                    Learn by leading.
+                    Scouts plan meetings,
+                    campouts,
+                    and troop activities.
 
                 </p>
 
-            </article>
-                        <article class="feature-card">
+            </div>
 
-                <i data-lucide="heart-handshake"></i>
+            <div class="feature-card fade-up">
+
+                <div class="feature-icon">
+
+                    <i data-lucide="heart-handshake"></i>
+
+                </div>
 
                 <h3>
 
@@ -327,18 +320,21 @@
 
                 <p>
 
-                    Give back to our church,
+                    Give back through church,
                     community,
-                    and nation through meaningful
-                    service projects throughout the year.
+                    and conservation service projects.
 
                 </p>
 
-            </article>
+            </div>
 
-            <article class="feature-card">
+            <div class="feature-card fade-up">
 
-                <i data-lucide="award"></i>
+                <div class="feature-icon">
+
+                    <i data-lucide="award"></i>
+
+                </div>
 
                 <h3>
 
@@ -348,30 +344,28 @@
 
                 <p>
 
-                    Progress from Scout to Eagle while
-                    building lifelong skills,
-                    confidence,
-                    and friendships along the way.
+                    Progress from Scout
+                    to Eagle while building
+                    confidence and lifelong skills.
 
                 </p>
 
-            </article>
+            </div>
 
         </div>
 
     </div>
 
 </section>
-
-<!-- ===================================================== -->
+<!-- ================================================= -->
 <!-- SCOUT OATH -->
-<!-- ===================================================== -->
+<!-- ================================================= -->
 
 <section class="section">
 
-    <div class="container narrow">
+    <div class="container">
 
-        <div class="quote-card">
+        <div class="content-card fade-up">
 
             <h2>
 
@@ -381,12 +375,18 @@
 
             <p class="oath">
 
-                On my honor I will do my best<br><br>
+                On my honor I will do my best
+
+                <br><br>
 
                 To do my duty to God and my country
-                and to obey the Scout Law;<br><br>
+                and to obey the Scout Law;
 
-                To help other people at all times;<br><br>
+                <br><br>
+
+                To help other people at all times;
+
+                <br><br>
 
                 To keep myself physically strong,
                 mentally awake,
@@ -400,15 +400,15 @@
 
 </section>
 
-<!-- ===================================================== -->
+<!-- ================================================= -->
 <!-- SCOUT LAW -->
-<!-- ===================================================== -->
+<!-- ================================================= -->
 
-<section class="section section-alt">
+<section class="section">
 
-    <div class="container narrow">
+    <div class="container">
 
-        <div class="quote-card">
+        <div class="content-card fade-up">
 
             <h2>
 
@@ -416,30 +416,28 @@
 
             </h2>
 
-            <p class="law">
+            <p class="law-intro">
 
-                <strong>
-                    A Scout is
-                </strong>
+                <strong>A Scout is</strong>
 
             </p>
 
             <div class="law-grid">
 
-                <span>Trustworthy</span>
-                <span>Loyal</span>
-                <span>Helpful</span>
-                <span>Friendly</span>
+                <span class="law-pill">Trustworthy</span>
+                <span class="law-pill">Loyal</span>
+                <span class="law-pill">Helpful</span>
+                <span class="law-pill">Friendly</span>
 
-                <span>Courteous</span>
-                <span>Kind</span>
-                <span>Obedient</span>
-                <span>Cheerful</span>
+                <span class="law-pill">Courteous</span>
+                <span class="law-pill">Kind</span>
+                <span class="law-pill">Obedient</span>
+                <span class="law-pill">Cheerful</span>
 
-                <span>Thrifty</span>
-                <span>Brave</span>
-                <span>Clean</span>
-                <span>Reverent</span>
+                <span class="law-pill">Thrifty</span>
+                <span class="law-pill">Brave</span>
+                <span class="law-pill">Clean</span>
+                <span class="law-pill">Reverent</span>
 
             </div>
 
@@ -449,73 +447,68 @@
 
 </section>
 
-<!-- ===================================================== -->
+<!-- ================================================= -->
 <!-- JOIN -->
-<!-- ===================================================== -->
-
-<section class="join-section">
-
-    <div class="container narrow">
-
-        <h2>
-
-            Interested in Joining?
-
-        </h2>
-
-        <p>
-
-            Troop 690 welcomes youth who are ready
-            to challenge themselves,
-            explore the outdoors,
-            serve their community,
-            and become leaders.
-
-        </p>
-
-        <p>
-
-            Visitors are always welcome at a troop meeting.
-            We'd love to meet you and answer any questions
-            you may have about Scouting or our troop.
-
-        </p>
-
-        <a class="button-secondary" href="contact.html">
-
-            Contact Us
-
-        </a>
-
-    </div>
-
-</section>
-
-<!-- ===================================================== -->
-<!-- HISTORY -->
-<!-- ===================================================== -->
+<!-- ================================================= -->
 
 <section class="section">
 
     <div class="container">
 
-        <h2>
+        <div class="join-card fade-up">
+
+            <h2>
+
+                Interested in Joining?
+
+            </h2>
+
+            <p>
+
+                Visitors are always welcome.
+
+                If you're interested in learning more about Troop 690,
+                we'd love to have you visit one of our troop meetings,
+                meet our Scouts,
+                and experience the adventure for yourself.
+
+            </p>
+
+            <div class="button-group">
+
+                <a
+                    href="contact.html"
+                    class="btn btn-primary">
+
+                    Contact Us
+
+                </a>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+<!-- ================================================= -->
+<!-- HISTORY -->
+<!-- ================================================= -->
+
+<section class="section">
+
+    <div class="container">
+
+        <h2 class="section-title fade-up">
 
             Our History
 
         </h2>
 
-        <p class="section-intro">
-
-            Since its founding in 1962, Troop 690 has grown into one
-            of Long Island's proud Scouting traditions while remaining
-            committed to the ideals of leadership, service, and adventure.
-
-        </p>
-
         <div class="timeline">
 
-            <div class="timeline-item troop">
+            <div class="timeline-item troop fade-up">
 
                 <div class="timeline-year">
 
@@ -525,24 +518,14 @@
 
                 <div class="timeline-content">
 
-                    <h3>
-
-                        Council Merger
-
-                    </h3>
-
-                    <p>
-
-                        Theodore Roosevelt Council and Suffolk County Council merge to become
-                        <strong>Scouting America Long Island.</strong>
-
-                    </p>
+                    Theodore Roosevelt Council and Suffolk County Council merge
+                    to become Scouting America Long Island.
 
                 </div>
 
             </div>
 
-            <div class="timeline-item troop">
+            <div class="timeline-item troop fade-up">
 
                 <div class="timeline-year">
 
@@ -552,26 +535,14 @@
 
                 <div class="timeline-content">
 
-                    <h3>
-
-                        New Name • New Scoutmaster
-
-                    </h3>
-
-                    <p>
-
-                        Boy Scouts of America becomes
-                        <strong>Scouting America.</strong>
-
-                        Joseph Caniano is named Scoutmaster.
-
-                    </p>
+                    Boy Scouts of America becomes Scouting America.
+                    Joseph Caniano is named Scoutmaster.
 
                 </div>
 
             </div>
 
-            <div class="timeline-item troop">
+            <div class="timeline-item troop fade-up">
 
                 <div class="timeline-year">
 
@@ -581,25 +552,15 @@
 
                 <div class="timeline-content">
 
-                    <h3>
-
-                        Troop Expansion
-
-                    </h3>
-
-                    <p>
-
-                        Troop 239,
-                        originally chartered by the Seaford American Legion,
-                        merges with Troop 690.
-
-                    </p>
+                    Troop 239,
+                    originally chartered by the Seaford American Legion,
+                    merges with Troop 690.
 
                 </div>
 
             </div>
 
-            <div class="timeline-item troop">
+            <div class="timeline-item troop fade-up">
 
                 <div class="timeline-year">
 
@@ -609,23 +570,13 @@
 
                 <div class="timeline-content">
 
-                    <h3>
-
-                        Scoutmaster
-
-                    </h3>
-
-                    <p>
-
-                        Ryan Kreuder is named Scoutmaster.
-
-                    </p>
+                    Ryan Kreuder is named Scoutmaster.
 
                 </div>
 
             </div>
 
-            <div class="timeline-item troop">
+            <div class="timeline-item troop fade-up">
 
                 <div class="timeline-year">
 
@@ -635,23 +586,14 @@
 
                 <div class="timeline-content">
 
-                    <h3>
-
-                        Executive Officer
-
-                    </h3>
-
-                    <p>
-
-                        Rev. Joseph Fitzgerald is named the fifth Executive Officer.
-
-                    </p>
+                    Rev. Joseph Fitzgerald is named the
+                    fifth Executive Officer.
 
                 </div>
 
             </div>
 
-            <div class="timeline-item troop">
+            <div class="timeline-item troop fade-up">
 
                 <div class="timeline-year">
 
@@ -661,25 +603,16 @@
 
                 <div class="timeline-content">
 
-                    <h3>
-
-                        A Historic Year
-
-                    </h3>
-
-                    <p>
-
-                        Theodore Roosevelt Council celebrates its centennial.
-                        Eric Quinn becomes Troop 690's
-                        <strong>100th Eagle Scout</strong>,
-                        and James Harinski is named Scoutmaster.
-
-                    </p>
+                    Theodore Roosevelt Council celebrates its centennial.
+                    Eric Quinn becomes the 100th Eagle Scout
+                    in Troop 690 history.
+                    James Harinski is named Scoutmaster.
 
                 </div>
 
             </div>
-                        <div class="timeline-item troop">
+
+            <div class="timeline-item troop fade-up">
 
                 <div class="timeline-year">
 
@@ -689,24 +622,14 @@
 
                 <div class="timeline-content">
 
-                    <h3>
-
-                        Fifty Years Strong
-
-                    </h3>
-
-                    <p>
-
-                        Troop 690 proudly celebrates its
-                        <strong>50th Anniversary</strong>.
-
-                    </p>
+                    Troop 690 celebrates its
+                    50th Anniversary.
 
                 </div>
 
             </div>
 
-            <div class="timeline-item scouting">
+            <div class="timeline-item scouting fade-up">
 
                 <div class="timeline-year">
 
@@ -716,24 +639,14 @@
 
                 <div class="timeline-content">
 
-                    <h3>
-
-                        Scouting Centennial
-
-                    </h3>
-
-                    <p>
-
-                        Boy Scouts of America celebrates its
-                        100th anniversary.
-
-                    </p>
+                    Boy Scouts of America celebrates
+                    its centennial.
 
                 </div>
 
             </div>
 
-            <div class="timeline-item troop">
+            <div class="timeline-item troop fade-up">
 
                 <div class="timeline-year">
 
@@ -743,25 +656,14 @@
 
                 <div class="timeline-content">
 
-                    <h3>
-
-                        Scoutmaster & Executive Officer
-
-                    </h3>
-
-                    <p>
-
-                        Edward Lettieri is named Scoutmaster.
-                        Rev. Robert Hayden becomes the
-                        fourth Executive Officer.
-
-                    </p>
+                    Edward Lettieri is named Scoutmaster.
+                    Rev. Robert Hayden is named the
+                    fourth Executive Officer.
 
                 </div>
 
             </div>
-
-            <div class="timeline-item troop">
+                        <div class="timeline-item troop fade-up">
 
                 <div class="timeline-year">
 
@@ -771,25 +673,14 @@
 
                 <div class="timeline-content">
 
-                    <h3>
-
-                        Milestone Eagle Scout
-
-                    </h3>
-
-                    <p>
-
-                        Ryan Woodward becomes the
-                        <strong>50th Eagle Scout</strong>
-                        in Troop 690 history.
-
-                    </p>
+                    Ryan Woodward becomes the
+                    50th Eagle Scout in Troop 690 history.
 
                 </div>
 
             </div>
 
-            <div class="timeline-item troop">
+            <div class="timeline-item troop fade-up">
 
                 <div class="timeline-year">
 
@@ -799,24 +690,14 @@
 
                 <div class="timeline-content">
 
-                    <h3>
-
-                        Executive Officer
-
-                    </h3>
-
-                    <p>
-
-                        Rev. William Koenig is named the
-                        third Executive Officer.
-
-                    </p>
+                    Rev. William Koenig is named the
+                    third Executive Officer.
 
                 </div>
 
             </div>
 
-            <div class="timeline-item scouting">
+            <div class="timeline-item scouting fade-up">
 
                 <div class="timeline-year">
 
@@ -826,24 +707,14 @@
 
                 <div class="timeline-content">
 
-                    <h3>
-
-                        Council Renamed
-
-                    </h3>
-
-                    <p>
-
-                        Nassau County Council becomes
-                        Theodore Roosevelt Council.
-
-                    </p>
+                    Nassau County Council becomes
+                    Theodore Roosevelt Council.
 
                 </div>
 
             </div>
 
-            <div class="timeline-item scouting">
+            <div class="timeline-item scouting fade-up">
 
                 <div class="timeline-year">
 
@@ -853,24 +724,14 @@
 
                 <div class="timeline-content">
 
-                    <h3>
-
-                        Council Anniversary
-
-                    </h3>
-
-                    <p>
-
-                        Nassau County Council celebrates
-                        its 75th anniversary.
-
-                    </p>
+                    Nassau County Council celebrates
+                    its 75th anniversary.
 
                 </div>
 
             </div>
 
-            <div class="timeline-item troop">
+            <div class="timeline-item troop fade-up">
 
                 <div class="timeline-year">
 
@@ -880,24 +741,14 @@
 
                 <div class="timeline-content">
 
-                    <h3>
-
-                        Twenty-Five Years
-
-                    </h3>
-
-                    <p>
-
-                        Troop 690 celebrates its
-                        <strong>25th Anniversary</strong>.
-
-                    </p>
+                    Troop 690 celebrates
+                    its 25th Anniversary.
 
                 </div>
 
             </div>
 
-            <div class="timeline-item scouting">
+            <div class="timeline-item scouting fade-up">
 
                 <div class="timeline-year">
 
@@ -907,24 +758,14 @@
 
                 <div class="timeline-content">
 
-                    <h3>
-
-                        National Anniversary
-
-                    </h3>
-
-                    <p>
-
-                        Boy Scouts of America marks its
-                        75th anniversary.
-
-                    </p>
+                    Boy Scouts of America celebrates
+                    its 75th anniversary.
 
                 </div>
 
             </div>
 
-            <div class="timeline-item troop">
+            <div class="timeline-item troop fade-up">
 
                 <div class="timeline-year">
 
@@ -934,24 +775,14 @@
 
                 <div class="timeline-content">
 
-                    <h3>
-
-                        Executive Officer
-
-                    </h3>
-
-                    <p>
-
-                        Rev. Thomas Leavey becomes the
-                        second Executive Officer.
-
-                    </p>
+                    Rev. Thomas Leavey is named the
+                    second Executive Officer.
 
                 </div>
 
             </div>
 
-            <div class="timeline-item scouting">
+            <div class="timeline-item scouting fade-up">
 
                 <div class="timeline-year">
 
@@ -961,27 +792,16 @@
 
                 <div class="timeline-content">
 
-                    <h3>
-
-                        First Eagle Scout
-
-                    </h3>
-
-                    <p>
-
-                        Nassau County Council celebrates
-                        its 50th anniversary.
-                        Michael O'Moore becomes
-                        Troop 690's
-                        <strong>first Eagle Scout</strong>.
-
-                    </p>
+                    Nassau County Council celebrates
+                    its 50th anniversary.
+                    Michael O'Moore becomes
+                    Troop 690's first Eagle Scout.
 
                 </div>
 
             </div>
 
-            <div class="timeline-item troop">
+            <div class="timeline-item troop fade-up">
 
                 <div class="timeline-year">
 
@@ -991,28 +811,18 @@
 
                 <div class="timeline-content">
 
-                    <h3>
+                    Troop 690 is chartered by
+                    St. William the Abbot Roman Catholic Church
+                    in Seaford, New York.
 
-                        Troop Founded
-
-                    </h3>
-
-                    <p>
-
-                        Troop 690 is chartered by
-                        St. William the Abbot Roman Catholic Church
-                        in Seaford, New York.
-
-                        Rev. Msgr. Dermod Flinn becomes
-                        the troop's first Executive Officer.
-
-                    </p>
+                    Rev. Msgr. Dermod Flinn is named
+                    the troop's first Executive Officer.
 
                 </div>
 
             </div>
 
-            <div class="timeline-item scouting">
+            <div class="timeline-item scouting fade-up">
 
                 <div class="timeline-year">
 
@@ -1022,24 +832,14 @@
 
                 <div class="timeline-content">
 
-                    <h3>
-
-                        National Milestone
-
-                    </h3>
-
-                    <p>
-
-                        Boy Scouts of America celebrates
-                        its 50th anniversary.
-
-                    </p>
+                    Boy Scouts of America celebrates
+                    its 50th anniversary.
 
                 </div>
 
             </div>
 
-            <div class="timeline-item scouting">
+            <div class="timeline-item scouting fade-up">
 
                 <div class="timeline-year">
 
@@ -1049,24 +849,14 @@
 
                 <div class="timeline-content">
 
-                    <h3>
-
-                        Council Anniversary
-
-                    </h3>
-
-                    <p>
-
-                        Nassau County Council celebrates
-                        its 25th anniversary.
-
-                    </p>
+                    Nassau County Council celebrates
+                    its 25th anniversary.
 
                 </div>
 
             </div>
 
-            <div class="timeline-item scouting">
+            <div class="timeline-item scouting fade-up">
 
                 <div class="timeline-year">
 
@@ -1076,23 +866,14 @@
 
                 <div class="timeline-content">
 
-                    <h3>
-
-                        National Anniversary
-
-                    </h3>
-
-                    <p>
-
-                        Boy Scouts of America celebrates
-                        its 25th anniversary.
-
-                    </p>
+                    Boy Scouts of America celebrates
+                    its 25th anniversary.
 
                 </div>
 
             </div>
-                        <div class="timeline-item troop">
+
+            <div class="timeline-item troop fade-up">
 
                 <div class="timeline-year">
 
@@ -1102,25 +883,15 @@
 
                 <div class="timeline-content">
 
-                    <h3>
-
-                        St. William the Abbot Established
-
-                    </h3>
-
-                    <p>
-
-                        St. William the Abbot Roman Catholic Church,
-                        the future chartered organization of Troop 690,
-                        is officially established.
-
-                    </p>
+                    St. William the Abbot Roman Catholic Church,
+                    the future chartered organization of Troop 690,
+                    is officially established.
 
                 </div>
 
             </div>
 
-            <div class="timeline-item scouting">
+            <div class="timeline-item scouting fade-up">
 
                 <div class="timeline-year">
 
@@ -1130,24 +901,14 @@
 
                 <div class="timeline-content">
 
-                    <h3>
-
-                        Council Founded
-
-                    </h3>
-
-                    <p>
-
-                        Theodore Roosevelt Council is founded as
-                        Nassau County Council.
-
-                    </p>
+                    Theodore Roosevelt Council is founded
+                    as Nassau County Council.
 
                 </div>
 
             </div>
 
-            <div class="timeline-item scouting">
+            <div class="timeline-item scouting fade-up">
 
                 <div class="timeline-year">
 
@@ -1157,25 +918,15 @@
 
                 <div class="timeline-content">
 
-                    <h3>
-
-                        First Eagle Scout
-
-                    </h3>
-
-                    <p>
-
-                        Rockville Centre Troop 1 Scout
-                        Arthur Eldred becomes
-                        America's first Eagle Scout.
-
-                    </p>
+                    Rockville Centre Troop 1 Scout
+                    Arthur Eldred becomes
+                    America's first Eagle Scout.
 
                 </div>
 
             </div>
 
-            <div class="timeline-item scouting">
+            <div class="timeline-item scouting fade-up">
 
                 <div class="timeline-year">
 
@@ -1185,18 +936,8 @@
 
                 <div class="timeline-content">
 
-                    <h3>
-
-                        The Beginning of Scouting in America
-
-                    </h3>
-
-                    <p>
-
-                        Scouting America is founded as the
-                        Boy Scouts of America.
-
-                    </p>
+                    Scouting America is founded
+                    as the Boy Scouts of America.
 
                 </div>
 
@@ -1212,15 +953,15 @@
 
 <footer class="site-footer">
 
-    <div class="container footer-content">
+    <div class="container footer-grid">
 
-        <div class="footer-brand">
+        <div>
 
-            <h2>
+            <h3>
 
                 Troop 690
 
-            </h2>
+            </h3>
 
             <p>
 
@@ -1235,7 +976,7 @@
             <a
                 href="https://stwilliam.org"
                 target="_blank"
-                rel="noopener noreferrer">
+                rel="noopener">
 
                 St. William the Abbot Roman Catholic Church
 
@@ -1244,7 +985,7 @@
             <a
                 href="https://scoutingli.org"
                 target="_blank"
-                rel="noopener noreferrer">
+                rel="noopener">
 
                 Scouting America Long Island
 
@@ -1254,11 +995,7 @@
 
         <div class="footer-copy">
 
-            <p>
-
-                &copy; 1962–2026 Troop 690
-
-            </p>
+            &copy; 1962–2026 Troop 690
 
         </div>
 
