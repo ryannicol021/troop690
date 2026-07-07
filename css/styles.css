@@ -1948,8 +1948,6 @@ RESPONSIVE
 
     width:max-content;
 
-    min-width:0;
-
     background:var(--card);
 
     border:1px solid var(--border);
@@ -1964,8 +1962,6 @@ RESPONSIVE
 
     box-shadow:var(--shadow);
 
-    z-index:3000;
-
 }
 
 .desktop-nav.mobile-open{
@@ -1974,19 +1970,19 @@ RESPONSIVE
 
 }
 
-.desktop-nav>a{
+.desktop-nav > a{
 
     display:block;
 
-    width:auto;
-
-    white-space:nowrap;
+    align-self:stretch;
 
     padding:14px 18px;
 
-    border-radius:14px;
-
     text-align:left;
+
+    white-space:nowrap;
+
+    border-radius:14px;
 
     font-weight:600;
 
