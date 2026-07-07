@@ -781,9 +781,7 @@ PAGE HERO
 
 .page-hero-card p:last-child{
 
-    margin-bottom:0;
-
-    line-height:1.6;
+    margin-bottom:-8px;
 
 }
 
