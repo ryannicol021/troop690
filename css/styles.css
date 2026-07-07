@@ -933,7 +933,7 @@ TIMELINE
 
     box-shadow:var(--shadow);
 
-    padding:52px 44px;
+    padding:32px 24px;
 
 }
 
@@ -943,11 +943,11 @@ TIMELINE
 
     position:absolute;
 
-    left:120px;
+    left:34px;
 
-    top:60px;
+    top:32px;
 
-    bottom:60px;
+    bottom:32px;
 
     width:4px;
 
@@ -961,9 +961,9 @@ TIMELINE
 
     display:grid;
 
-    grid-template-columns:100px 40px 1fr;
+    grid-template-columns:28px 1fr;
 
-    gap:26px;
+    gap:18px;
 
     align-items:flex-start;
 
@@ -973,19 +973,25 @@ TIMELINE
 
 .timeline-year{
 
+    grid-column:2;
+
     font-family:var(--heading);
 
     font-size:1.9rem;
 
     color:var(--red);
 
-    text-align:right;
+    text-align:left;
 
     white-space:nowrap;
+
+    margin-bottom:8px;
 
 }
 
 .timeline-marker{
+
+    grid-row:1 / span 2;
 
     position:relative;
 
@@ -1016,6 +1022,8 @@ TIMELINE
 }
 
 .timeline-content{
+
+    grid-column:2;
 
     color:var(--muted);
 
@@ -1952,55 +1960,7 @@ RESPONSIVE
 
 }
 
-@media (max-width:1024px){
-
-    .timeline{
-
-        padding:32px 24px;
-
-    }
-
-    .timeline::before{
-
-        left:34px;
-
-    }
-
-.timeline-item{
-
-    grid-template-columns:28px 1fr;
-
-    grid-template-areas:
-        "marker year"
-        "marker content";
-
-    gap:18px;
-
-}
-
-.timeline-year{
-
-    grid-area:year;
-
-    text-align:left;
-
-    margin-bottom:8px;
-
-}
-
-.timeline-marker{
-
-    grid-area:marker;
-
-    grid-row:auto;
-
-}
-
-.timeline-content{
-
-    grid-area:content;
-
-}
+@media (max-width:700px){
 
     .rank-grid{
 
