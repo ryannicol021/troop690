@@ -1928,7 +1928,9 @@ RESPONSIVE
 
     right:0;
 
-    width:300px;
+    width:max-content;
+
+    min-width:0;
 
     background:var(--card);
 
@@ -1958,6 +1960,10 @@ RESPONSIVE
 
     display:block;
 
+    width:auto;
+
+    white-space:nowrap;
+
     padding:14px 18px;
 
     border-radius:14px;
@@ -1965,8 +1971,6 @@ RESPONSIVE
     text-align:left;
 
     font-weight:600;
-
-    transition:var(--transition);
 
 }
 
