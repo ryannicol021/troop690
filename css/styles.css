@@ -146,6 +146,10 @@ LAYOUT
 
     margin-inline:auto;
 
+    padding-inline:0;
+
+    box-sizing:border-box;
+
 }
 
 .section{
@@ -235,11 +239,13 @@ HEADER
 
     z-index:1000;
 
-    background:rgba(11,31,58,.92);
+    background:rgba(8,24,48,.92);
 
     backdrop-filter:blur(18px);
 
     border-bottom:1px solid var(--border);
+
+    width:100%;
 
 }
 
@@ -264,6 +270,10 @@ HEADER
     display:flex;
 
     flex-direction:column;
+
+    flex-shrink:0;
+
+    text-decoration:none;
 
 }
 
