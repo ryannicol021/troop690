@@ -435,6 +435,18 @@ DROPDOWN
 
 }
 
+.desktop-only{
+
+    display:block;
+
+}
+
+.mobile-only{
+
+    display:none;
+
+}
+
 /*=========================================================
 PAGE HERO
 =========================================================*/
@@ -1982,6 +1994,18 @@ RESPONSIVE
         font-size:2rem;
 
     }
+
+ .desktop-only{
+
+    display:none;
+
+}
+
+.mobile-only{
+
+    display:block;
+
+}
 
 }
 
