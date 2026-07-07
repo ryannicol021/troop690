@@ -200,62 +200,62 @@ function initModals(){
     const scoutLaw={
 
         trustworthy:{
-            title:"A Scout is Trustworthy.",
+            title:"A Scout is trustworthy.",
             body:"A Scout tells the truth and keeps promises. Honesty is a part of the Scout's code of conduct."
         },
 
         loyal:{
-            title:"A Scout is Loyal.",
+            title:"A Scout is loyal.",
             body:"A Scout is true to family, friends, Scout leaders, and school, as well as nation and world communities."
         },
 
         helpful:{
-            title:"A Scout is Helpful.",
+            title:"A Scout is helpful.",
             body:"A Scout is concerned about other people, willingly volunteering to help others without expecting payment or reward."
         },
 
         friendly:{
-            title:"A Scout is Friendly.",
+            title:"A Scout is friendly.",
             body:"A Scout is a friend to all, seeking to understand others. The Scout respects those with ideas and customs that are different from the Scout's own."
         },
 
         courteous:{
-            title:"A Scout is Courteous.",
+            title:"A Scout is courteous.",
             body:"A Scout is polite to everyone regardless of age or position, knowing that good manners make it easier for people to get along together."
         },
 
         kind:{
-            title:"A Scout is Kind.",
+            title:"A Scout is kind.",
             body:"A Scout understands that there is strength in being gentle, treats others with the same respect the Scout wants in return, and does not harm or kill anything without reason."
         },
 
         obedient:{
-            title:"A Scout is Obedient.",
+            title:"A Scout is obedient.",
             body:"A Scout follows the rules of the family, school, and troop, and obeys the laws of the community and country. If these rules are deemed unfair, the Scout attempts to change them in an orderly manner rather than disobey them."
         },
 
         cheerful:{
-            title:"A Scout is Cheerful.",
+            title:"A Scout is cheerful.",
             body:"A Scout looks for the bright side of life, cheerfully doing tasks and trying to make others happy."
         },
 
         thrifty:{
-            title:"A Scout is Thrifty.",
+            title:"A Scout is thrifty.",
             body:"A Scout saves for the future, protects and conserves natural resources, and uses time and property carefully."
         },
 
         brave:{
-            title:"A Scout is Brave.",
+            title:"A Scout is brave.",
             body:"A Scout can face danger even while being afraid, yet has the courage to stand for what is right even if others ridicule or threaten."
         },
 
         clean:{
-            title:"A Scout is Clean.",
+            title:"A Scout is clean.",
             body:"A Scout keeps the body, mind, and spirit clean, and associates with those who believe in living by these same ideals."
         },
 
         reverent:{
-            title:"A Scout is Reverent.",
+            title:"A Scout is reverent.",
             body:"A Scout is faithful, demonstrates that faith in both word and action, and respects the beliefs of others."
         }
 
@@ -859,8 +859,6 @@ const events=rows.map(row=>{
 /*=========================================================
 LEADERSHIP DATABASE
 =========================================================*/
-
-initLeadership();
 
 async function initLeadership(){
 
