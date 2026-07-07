@@ -1966,13 +1966,17 @@ RESPONSIVE
 
     }
 
-    .timeline-item{
+.timeline-item{
 
-        grid-template-columns:28px 1fr;
+    grid-template-columns:28px 1fr;
 
-        gap:18px;
+    grid-template-areas:
+        "marker year"
+        "marker content";
 
-    }
+    gap:18px;
+
+}
 
     .timeline-year{
 
