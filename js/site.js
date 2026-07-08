@@ -1296,7 +1296,7 @@ async function initLeadershipModals(){
 
     ${people.map(person=>`
 
-        <div class="modal-person">
+        <div class="modal-person ${position==="Assistant Scoutmaster" ? "modal-many" : ""} ${position==="Committee Member" ? "modal-committee" : ""}">
 
             ${person.name}
 
