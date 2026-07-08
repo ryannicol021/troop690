@@ -884,13 +884,13 @@ async function initLeadership(){
     };
 
 
-function button(label){
+function button(position){
 
     return `
 
         <button class="position-button">
 
-            <span class="position-label">${label}</span>
+            <span class="position-label">${position}</span>
 
             <span class="position-arrow">›</span>
 
@@ -935,13 +935,7 @@ function button(label){
 
             .forEach(position=>{
 
-                container.innerHTML += button(
-
-                    icons[position] || "⚜️",
-
-                    position
-
-                );
+                container.innerHTML += button(position);
 
             });
 
