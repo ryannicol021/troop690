@@ -1215,10 +1215,10 @@ async function initLeadershipModals(){
         "The assistant senior patrol leader acts as senior patrol leader when needed and provides leadership to other youth leaders.",
 
         "Patrol Leader":
-        "Patrol leaders keep their patrols organized and help Scouts work together.",
+        "Patrol leaders keep the patrols organized and help Scouts work together.",
 
         "Assistant Patrol Leader":
-        "The assistant patrol leader supports the patrol leader and acts in their absence.",
+        "The assistant patrol leader supports the patrol leader and acts in the patrol leader's absence.",
 
         "Troop Guide":
         "Troop guides mentor new Scouts, teach basic skills, and help them become familiar with troop operations.",
