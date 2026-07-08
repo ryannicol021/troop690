@@ -2688,80 +2688,67 @@ LEADERSHIP MODALS
 
 }
 
-.leadership-panel h2{
+/*=========================================================
+LEADERSHIP SPACING
+=========================================================*/
 
-    margin-bottom:34px;
-
+.leadership-grid{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:32px;
 }
 
-.leadership-panel h3{
+.leadership-group{
+    margin-top:34px;
+}
 
+.leadership-group:first-of-type{
+    margin-top:26px;
+}
+
+.leadership-group h3{
     margin-bottom:18px;
-    margin-top:30px;
     text-align:center;
-
 }
 
-.leadership-panel h3:first-of-type{
-
-    margin-top:0;
-
+.content-card > h2{
+    margin-bottom:10px;
 }
 
-.position-buttons{
-
-    display:flex;
-    flex-direction:column;
-    gap:16px;
-    margin-top:18px;
-
+#spl-aspl-buttons,
+#pl-apl-buttons,
+#troop-position-buttons,
+#sm-asm-buttons,
+#committee-buttons{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+    gap:14px;
+    margin-top:16px;
 }
 
 .position-button{
-
     width:100%;
-    min-height:64px;
-
+    min-height:62px;
     display:flex;
     align-items:center;
     justify-content:space-between;
-
-    padding:0 22px;
-
-    border-radius:999px;
-
+    padding:0 18px;
 }
 
-.position-button span:nth-child(2){
+@media (max-width:700px){
 
-    flex:1;
-    text-align:center;
+    .leadership-grid{
+        grid-template-columns:repeat(2,minmax(0,1fr));
+        gap:18px;
+    }
 
-}
-
-.position-button span:first-child{
-
-    width:28px;
-    text-align:center;
-
-}
-
-.position-arrow{
-
-    width:18px;
-    text-align:right;
-
-}
-
-.position-buttons{
-
-    margin-bottom:28px;
-
-}
-
-.leadership-panel{
-
-    padding:38px;
+    #spl-aspl-buttons,
+    #pl-apl-buttons,
+    #troop-position-buttons,
+    #sm-asm-buttons,
+    #committee-buttons{
+        grid-template-columns:1fr;
+    }
 
 }
 
