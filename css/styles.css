@@ -2551,3 +2551,28 @@ MODAL
     }
 
 }
+
+/*=========================================================
+LEADERSHIP SUBHEADERS
+=========================================================*/
+
+.leadership-group h3{
+
+    color:var(--red);
+    text-align:center;
+    font-family:var(--heading);
+    font-weight:700;
+
+    cursor:default;
+
+    pointer-events:none;
+
+}
+
+.leadership-group h3::after{
+
+    display:none !important;
+
+    content:none !important;
+
+}
