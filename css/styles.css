@@ -2480,12 +2480,12 @@ MODAL
 .modal-person{
 
     font-family:var(--heading);
-
     color:var(--red);
-
     font-size:1.55rem;
 
-    margin-bottom:18px;
+    margin-bottom:8px;
+
+    line-height:1.3;
 
 }
 
@@ -2501,19 +2501,25 @@ MODAL
 
 }
 
+.modal-person:last-of-type{
+
+    margin-bottom:0;
+
+}
+
 .modal-person span{
 
     display:block;
 
-    margin-top:5px;
+    margin-top:2px;
 
     color:var(--text);
-
     opacity:.75;
 
     font-family:var(--body);
-
     font-size:.95rem;
+
+    line-height:1.25;
 
 }
 
