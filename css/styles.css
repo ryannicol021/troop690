@@ -2514,7 +2514,11 @@ MODAL
 
     margin-bottom:18px;
 
- font-size:1.55rem;
+    padding-right:72px;
+
+font-size:1.55rem;
+ 
+    line-height:1.2;
 
 }
 
