@@ -2430,11 +2430,19 @@ HISTORY
 }
 
 .history-card{
+
     background:rgba(255,255,255,.04);
+
     border:1px solid var(--border);
+
     border-radius:20px;
+
     padding:24px;
+
+    text-align:center;
+
     transition:var(--transition);
+
 }
 
 .history-card:hover{
@@ -2443,22 +2451,39 @@ HISTORY
 }
 
 .history-years{
+
     display:inline-block;
-    padding:7px 16px;
+
+    margin:0 auto 18px;
+
+    padding:8px 18px;
+
     border-radius:999px;
-    background:rgba(198,40,40,.18);
+
+    background:rgba(198,40,40,.16);
+
     font-weight:700;
-    margin-bottom:16px;
+
 }
 
 .history-role{
-    margin:8px 0;
+
+    margin:10px auto;
+
     color:white;
+
+    text-align:center;
+
 }
 
 .history-role.smaller{
+
     color:var(--muted);
-    font-size:.95rem;
+
+    font-size:.85rem;
+
+    text-align:center;
+
 }
 
 /*=========================================================
