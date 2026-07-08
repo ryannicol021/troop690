@@ -2514,13 +2514,15 @@ MODAL
 
     margin-bottom:18px;
 
+ font-size:1.55rem;
+
 }
 
 .modal-person{
 
     font-family:var(--heading);
     color:var(--red);
-    font-size:1.55rem;
+    font-size:1.25rem;
 
     margin-bottom:8px;
 
