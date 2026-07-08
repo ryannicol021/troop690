@@ -12,7 +12,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
     initDropdowns();
 
+if(!document.getElementById("spl-aspl-buttons")){
+
     initScrollAnimations();
+
+}
 
     initCounters();
 
@@ -25,6 +29,8 @@ document.addEventListener("DOMContentLoaded", () => {
  initLeadership().then(()=>{
 
     initLeadershipModals();
+
+  initScrollAnimations();
 
 });
 
