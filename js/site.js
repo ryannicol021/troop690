@@ -776,7 +776,7 @@ const matches=eagles.filter(eagle=>{
 
                     <h3>
 
-                        ${eagle.number}. ${name}
+                        <span style="color:var(--red);">${eagle.number}.</span> ${name}
 
                     </h3>
 
