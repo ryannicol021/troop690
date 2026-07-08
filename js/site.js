@@ -884,23 +884,21 @@ async function initLeadership(){
     };
 
 
-    function button(icon,label){
+function button(label){
 
-        return `
+    return `
 
-            <button class="position-button">
+        <button class="position-button">
 
-                <span class="position-icon">${icon}</span>
+            <span class="position-label">${label}</span>
 
-                <span class="position-label">${label}</span>
+            <span class="position-arrow">›</span>
 
-                <span class="position-arrow">›</span>
+        </button>
 
-            </button>
+    `;
 
-        `;
-
-    }
+}
 
 
     function historyCard(years,content){
