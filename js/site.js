@@ -515,6 +515,9 @@ function normalize(text){
     return text
         .normalize("NFD")
         .replace(/[\u0300-\u036f]/g,"")
+        .replace(/[.'’,\-]/g,"")
+        .replace(/\s+/g," ")
+        .trim()
         .toLowerCase();
 
 }
@@ -706,21 +709,23 @@ const matches=eagles.filter(eagle=>{
 
     }
 
-    const full=normalize(
-
-    eagle.number+" "+
-
-    eagle.first+" "+
-
-    eagle.middle+" "+
-
-    eagle.last+" "+
-
-    eagle.suffix
-
+const full = normalize(
+    `${eagle.number} ${eagle.first} ${eagle.middle} ${eagle.last} ${eagle.suffix}`
 );
 
-    return full.includes(query);
+const firstLast = normalize(
+    `${eagle.first} ${eagle.last}`
+);
+
+const firstMiddleLast = normalize(
+    `${eagle.first} ${eagle.middle} ${eagle.last}`
+);
+
+return (
+    full.includes(query) ||
+    firstLast.includes(query) ||
+    firstMiddleLast.includes(query)
+);
 
 });
 
