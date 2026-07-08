@@ -1292,50 +1292,33 @@ async function initLeadershipModals(){
 
             modalBody.innerHTML=`
 
-                <h2>
-                    ${position}
-                </h2>
+    <h2>${position}</h2>
 
+    ${people.map(person=>`
 
-                ${
-                    people.map(person=>`
+        <div class="modal-person">
 
-                        <div class="modal-leader">
+            ${person.name}
 
-                            <div class="modal-name">
+            ${
+                person.note
+                ?
+                `<span>${person.note}</span>`
+                :
+                ""
+            }
 
-                                ${person.name}
+        </div>
 
-                            </div>
+    `).join("")}
 
+    <p class="modal-description">
 
-                            ${
-                                person.note
-                                ?
-                                `
-                                <div class="modal-note">
+        ${descriptions[position] || ""}
 
-                                    ${person.note}
+    </p>
 
-                                </div>
-                                `
-                                :
-                                ""
-                            }
-
-                        </div>
-
-                    `).join("")
-                }
-
-
-                <p class="modal-description">
-
-                    ${descriptions[position] || ""}
-
-                </p>
-
-            `;
+`;
 
 
             modal.classList.add("open");
