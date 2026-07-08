@@ -2707,3 +2707,61 @@ LEADERSHIP MODALS
     margin-top:0;
 
 }
+
+.position-buttons{
+
+    display:flex;
+    flex-direction:column;
+    gap:16px;
+    margin-top:18px;
+
+}
+
+.position-button{
+
+    width:100%;
+    min-height:64px;
+
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+
+    padding:0 22px;
+
+    border-radius:999px;
+
+}
+
+.position-button span:nth-child(2){
+
+    flex:1;
+    text-align:center;
+
+}
+
+.position-button span:first-child{
+
+    width:28px;
+    text-align:center;
+
+}
+
+.position-arrow{
+
+    width:18px;
+    text-align:right;
+
+}
+
+.position-buttons{
+
+    margin-bottom:28px;
+
+}
+
+.leadership-panel{
+
+    padding:38px;
+
+}
+
