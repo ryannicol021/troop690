@@ -1205,7 +1205,7 @@ async function initLeadershipModals(){
 "The scribe keeps troop records, attendance, meeting notes, and other important information for the troop.",
 
 "Bugler":
-"The bugler plays bugle calls during troop meetings, ceremonies, campouts, and other Scouting events."
+"The bugler plays bugle calls during troop meetings, ceremonies, campouts, and other Scouting events.",
 
         "Scoutmaster":
         "The Scoutmaster provides direction, coaching, and support while working directly with Scouts.",
