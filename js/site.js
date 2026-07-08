@@ -1189,6 +1189,24 @@ async function initLeadershipModals(){
         "Outdoor Ethics Guide":
         "Outdoor ethics guides promote Leave No Trace, the Outdoor Code, and responsible outdoor practices.",
 
+     "Historian":
+"The historian preserves the troop's history by collecting photographs, records, and memorabilia while documenting important events and activities.",
+
+"Librarian":
+"The librarian maintains the troop's library of merit badge pamphlets, handbooks, and other resources, helping Scouts locate the materials they need.",
+
+"Junior Assistant Scoutmaster":
+"The junior assistant Scoutmaster is an experienced older Scout who serves as a leader and mentor, helping the Scoutmaster and assistant Scoutmasters with troop operations.",
+
+"Order of the Arrow Representative":
+"The Order of the Arrow representative serves as the link between the troop and the Order of the Arrow, encouraging participation in OA events and promoting its principles.",
+
+"Scribe":
+"The scribe keeps troop records, attendance, meeting notes, and other important information for the troop.",
+
+"Bugler":
+"The bugler plays bugle calls during troop meetings, ceremonies, campouts, and other Scouting events."
+
         "Scoutmaster":
         "The Scoutmaster provides direction, coaching, and support while working directly with Scouts.",
 
