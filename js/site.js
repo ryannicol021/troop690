@@ -945,8 +945,8 @@ const positionOrder = {
 
     "troop-position-buttons": [
         "Junior Assistant Scoutmaster",
-        "Troop Guide",
         "Order of the Arrow Representative",
+        "Troop Guide",
         "Chaplain Aide",
         "Outdoor Ethics Guide",
         "Webmaster",
