@@ -2308,80 +2308,93 @@ EAGLE SCOUTS
 }
 
 /*=========================================================
-LEADERSHIP BUTTON SYSTEM
+LEADERSHIP
 =========================================================*/
 
-.leadership-layout{
-
+.leadership-grid{
     display:grid;
-
     grid-template-columns:repeat(2,minmax(0,1fr));
-
-    gap:28px;
-
-    align-items:start;
-
+    gap:32px;
 }
 
+@media (max-width:700px){
+    .leadership-grid{
+        gap:18px;
+    }
+}
+
+.leadership-group{
+    margin-top:34px;
+}
+
+.leadership-group:first-of-type{
+    margin-top:22px;
+}
+
+.leadership-group h3{
+    text-align:center;
+    margin-bottom:18px;
+}
+
+/* Panels */
 
 .leadership-panel{
-
     background:var(--card);
-
     border:1px solid var(--border);
-
     border-radius:var(--radius);
-
-    padding:32px;
-
+    padding:34px;
     box-shadow:var(--shadow);
-
+    transition:
+        transform .35s ease,
+        background .35s ease,
+        border-color .35s ease,
+        box-shadow .35s ease;
 }
 
+.leadership-panel:hover{
+    transform:translateY(-6px);
+    background:var(--card-hover);
+    border-color:rgba(198,40,40,.4);
+    box-shadow:var(--shadow-hover);
+}
 
-.leadership-panel h2{
-
+.leadership-panel>h2{
     text-align:center;
-
-    margin-bottom:26px;
-
-    color:white;
-
+    margin-bottom:8px;
 }
 
+/*=========================================================
+POSITION LISTS
+=========================================================*/
 
-/* Position buttons */
-
-.position-buttons{
+#spl-aspl-buttons,
+#pl-apl-buttons,
+#troop-position-buttons,
+#sm-asm-buttons,
+#committee-buttons{
 
     display:flex;
-
     flex-direction:column;
-
     gap:14px;
+    margin-top:16px;
 
 }
-
 
 .position-button{
 
     width:100%;
 
     display:flex;
-
     align-items:center;
-
     justify-content:space-between;
 
-    gap:12px;
+    padding:18px 22px;
 
-    padding:16px 20px;
+    border-radius:18px;
 
-    border-radius:999px;
+    background:rgba(198,40,40,.10);
 
-    background:rgba(198,40,40,.12);
-
-    border:1px solid rgba(198,40,40,.35);
+    border:1px solid rgba(198,40,40,.28);
 
     color:white;
 
@@ -2391,47 +2404,53 @@ LEADERSHIP BUTTON SYSTEM
 
 }
 
-
 .position-button:hover{
 
     background:var(--red);
 
     transform:translateY(-3px);
 
-    box-shadow:0 10px 25px rgba(198,40,40,.25);
+    box-shadow:0 10px 24px rgba(198,40,40,.25);
 
 }
 
+.position-label{
 
-.position-button span:first-child{
+    flex:1;
 
-    font-size:1.3rem;
+    text-align:left;
 
 }
-
 
 .position-arrow{
 
-    font-size:1.5rem;
+    font-size:1.35rem;
 
-    opacity:.7;
+    opacity:.65;
+
+    transition:var(--transition);
 
 }
 
+.position-button:hover .position-arrow{
 
+    transform:translateX(4px);
 
-/* History bubbles */
+    opacity:1;
+
+}
+
+/*=========================================================
+HISTORY
+=========================================================*/
 
 .history-container{
 
     display:flex;
-
     flex-direction:column;
-
     gap:18px;
 
 }
-
 
 .history-card{
 
@@ -2439,171 +2458,56 @@ LEADERSHIP BUTTON SYSTEM
 
     border:1px solid var(--border);
 
-    border-radius:24px;
+    border-radius:20px;
 
     padding:24px;
 
-    text-align:center;
+    transition:var(--transition);
 
 }
 
+.history-card:hover{
+
+    background:rgba(255,255,255,.06);
+
+    border-color:rgba(198,40,40,.28);
+
+}
 
 .history-years{
 
-    display:inline-flex;
-
-    padding:8px 20px;
-
-    border-radius:999px;
-
-    background:rgba(198,40,40,.18);
-
-    color:white;
-
-    font-weight:700;
+    display:inline-block;
 
     margin-bottom:18px;
 
-}
+    padding:8px 18px;
 
+    border-radius:999px;
 
-.history-role{
-
-    margin:8px 0;
-
-    color:white;
-
-    font-size:1.05rem;
-
-}
-
-
-.history-role strong{
-
-    color:white;
-
-    margin-right:8px;
-
-}
-
-
-.history-role:nth-child(3){
-
-    font-size:.95rem;
-
-    color:var(--muted);
-
-}
-
-
-
-/* Modal leadership style */
-
-.modal-body h2{
-
-    text-align:center;
-
-    color:white;
-
-    margin-bottom:10px;
-
-}
-
-
-.modal-person{
-
-    text-align:center;
-
-    color:var(--red);
-
-    font-size:1.4rem;
+    background:rgba(198,40,40,.16);
 
     font-weight:700;
 
-    margin:8px 0;
-
 }
 
+.history-role{
 
-.modal-person span{
-
-    display:block;
+    margin:10px 0;
 
     color:white;
 
-    font-size:.95rem;
-
-    font-weight:400;
-
-    margin-top:4px;
-
 }
 
-
-.modal-body p{
+.history-role.smaller{
 
     color:var(--muted);
 
-}
-
-
-.modal-body h3{
-
-    color:white;
-
-    margin-top:20px;
-
-    margin-bottom:10px;
-
-}
-
-
-/* Phone still stays two columns */
-
-@media(max-width:700px){
-
-    .leadership-layout{
-
-        grid-template-columns:repeat(2,minmax(0,1fr));
-
-        gap:12px;
-
-    }
-
-
-    .leadership-panel{
-
-        padding:16px;
-
-    }
-
-
-    .position-button{
-
-        padding:12px 10px;
-
-        font-size:.85rem;
-
-    }
-
-
-    .position-button span:first-child{
-
-        font-size:1rem;
-
-    }
-
-
-    .position-arrow{
-
-        display:none;
-
-    }
+    font-size:.95rem;
 
 }
 
 /*=========================================================
-LEADERSHIP MODALS
+MODAL
 =========================================================*/
 
 .modal-body{
@@ -2614,25 +2518,31 @@ LEADERSHIP MODALS
 
 .modal-body h2{
 
-    margin-bottom:10px;
-
-    color:white;
+    margin-bottom:18px;
 
 }
 
 .modal-person{
 
-    color:var(--red);
-
     font-family:var(--heading);
 
-    font-size:1.65rem;
+    color:var(--red);
 
-    font-weight:700;
+    font-size:1.55rem;
 
     margin-bottom:18px;
 
-    line-height:1.25;
+}
+
+.modal-person.modal-many{
+
+    font-size:1.08rem;
+
+}
+
+.modal-person.modal-committee{
+
+    font-size:1.25rem;
 
 }
 
@@ -2640,115 +2550,48 @@ LEADERSHIP MODALS
 
     display:block;
 
-    margin-top:6px;
+    margin-top:5px;
 
     color:var(--text);
 
     opacity:.75;
 
-    font-size:.95rem;
-
     font-family:var(--body);
 
-    font-weight:500;
-
-    letter-spacing:.02em;
+    font-size:.95rem;
 
 }
 
 .modal-description{
 
-    margin-top:18px;
+    margin-top:22px;
 
-    padding-top:18px;
+    padding-top:22px;
 
     border-top:1px solid var(--border);
-
-    color:var(--muted);
-
-    font-size:1rem;
-
-    line-height:1.8;
 
     text-align:left;
 
 }
 
-/* Assistant Scoutmasters */
-.modal-person.modal-many{
-
-    font-size:1.05rem;
-
-}
-
-/* Committee Members */
-.modal-person.modal-committee{
-
-    font-size:1.3rem;
-
-}
-
-/*=========================================================
-LEADERSHIP SPACING
-=========================================================*/
-
-.leadership-grid{
-    display:grid;
-    grid-template-columns:repeat(2,minmax(0,1fr));
-    gap:32px;
-}
-
-.leadership-group{
-    margin-top:34px;
-}
-
-.leadership-group:first-of-type{
-    margin-top:26px;
-}
-
-.leadership-group h3{
-    margin-bottom:18px;
-    text-align:center;
-}
-
-.content-card > h2{
-    margin-bottom:10px;
-}
-
-#spl-aspl-buttons,
-#pl-apl-buttons,
-#troop-position-buttons,
-#sm-asm-buttons,
-#committee-buttons{
-    display:grid;
-    grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
-    gap:14px;
-    margin-top:16px;
-}
-
-.position-button{
-    width:100%;
-    min-height:62px;
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    padding:0 18px;
-}
-
 @media (max-width:700px){
 
     .leadership-grid{
+
         grid-template-columns:repeat(2,minmax(0,1fr));
-        gap:18px;
+
     }
 
-    #spl-aspl-buttons,
-    #pl-apl-buttons,
-    #troop-position-buttons,
-    #sm-asm-buttons,
-    #committee-buttons{
-        grid-template-columns:1fr;
+    .leadership-panel{
+
+        padding:18px;
+
+    }
+
+    .position-button{
+
+        padding:14px 16px;
+
     }
 
 }
-
