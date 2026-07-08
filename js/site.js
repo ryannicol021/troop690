@@ -931,13 +931,55 @@ function button(position){
 
             container.innerHTML="";
 
-            [...new Set(rows.map(r=>r[0]))]
+const positionOrder = {
 
-            .forEach(position=>{
+    "spl-aspl-buttons": [
+        "Senior Patrol Leader",
+        "Assistant Senior Patrol Leader"
+    ],
 
-                container.innerHTML += button(position);
+    "pl-apl-buttons": [
+        "Patrol Leader",
+        "Assistant Patrol Leader"
+    ],
 
-            });
+    "troop-position-buttons": [
+        "Junior Assistant Scoutmaster",
+        "Troop Guide",
+        "Order of the Arrow Representative",
+        "Chaplain Aide",
+        "Outdoor Ethics Guide",
+        "Webmaster",
+        "Historian",
+        "Librarian",
+        "Quartermaster",
+        "Scribe",
+        "Bugler"
+    ],
+
+    "sm-asm-buttons": [
+        "Scoutmaster",
+        "Assistant Scoutmaster"
+    ],
+
+    "committee-buttons": [
+        "Executive Officer",
+        "Chartered Organization Representative",
+        "Committee Chair",
+        "Committee Member"
+    ]
+
+};
+
+const positions = [...new Set(rows.map(r => r[0]))];
+
+(positionOrder[id] || positions)
+    .filter(position => positions.includes(position))
+    .forEach(position => {
+
+        container.innerHTML += button(position);
+
+    });
 
         });
 
