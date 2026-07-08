@@ -565,10 +565,6 @@ PAGE HERO
         grid-template-columns:1fr;
     }
 
-    .hero-photo{
-        order:-1;
-    }
-
 }
 
 /*=========================================================
