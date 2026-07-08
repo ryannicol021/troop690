@@ -2673,3 +2673,17 @@ LEADERSHIP MODALS
     text-align:left;
 
 }
+
+/* Assistant Scoutmasters */
+.modal-person.modal-many{
+
+    font-size:1.05rem;
+
+}
+
+/* Committee Members */
+.modal-person.modal-committee{
+
+    font-size:1.3rem;
+
+}
