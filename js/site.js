@@ -14,7 +14,25 @@ document.addEventListener("DOMContentLoaded", () => {
 
 if(!document.getElementById("spl-aspl-buttons")){
 
-    initScrollAnimations();
+    const heroImage = document.querySelector(".hero-image img");
+
+    if(heroImage){
+
+        if(heroImage.complete){
+
+            initScrollAnimations();
+
+        }else{
+
+            heroImage.addEventListener("load", initScrollAnimations);
+
+        }
+
+    }else{
+
+        initScrollAnimations();
+
+    }
 
 }
 
