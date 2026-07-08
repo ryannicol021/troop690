@@ -2687,3 +2687,23 @@ LEADERSHIP MODALS
     font-size:1.3rem;
 
 }
+
+.leadership-panel h2{
+
+    margin-bottom:34px;
+
+}
+
+.leadership-panel h3{
+
+    margin-bottom:18px;
+    margin-top:30px;
+    text-align:center;
+
+}
+
+.leadership-panel h3:first-of-type{
+
+    margin-top:0;
+
+}
