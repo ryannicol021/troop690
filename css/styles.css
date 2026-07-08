@@ -2315,6 +2315,11 @@ LEADERSHIP
     display:grid;
     grid-template-columns:repeat(2,minmax(0,1fr));
     gap:32px;
+    align-items:start;
+}
+
+.leadership-grid > .content-card{
+    height:100%;
 }
 
 @media (max-width:700px){
@@ -2334,33 +2339,6 @@ LEADERSHIP
 .leadership-group h3{
     text-align:center;
     margin-bottom:18px;
-}
-
-/* Panels */
-
-.leadership-panel{
-    background:var(--card);
-    border:1px solid var(--border);
-    border-radius:var(--radius);
-    padding:34px;
-    box-shadow:var(--shadow);
-    transition:
-        transform .35s ease,
-        background .35s ease,
-        border-color .35s ease,
-        box-shadow .35s ease;
-}
-
-.leadership-panel:hover{
-    transform:translateY(-6px);
-    background:var(--card-hover);
-    border-color:rgba(198,40,40,.4);
-    box-shadow:var(--shadow-hover);
-}
-
-.leadership-panel>h2{
-    text-align:center;
-    margin-bottom:8px;
 }
 
 /*=========================================================
@@ -2444,66 +2422,43 @@ POSITION LISTS
 HISTORY
 =========================================================*/
 
-.history-container{
-
+.history-stack{
     display:flex;
     flex-direction:column;
     gap:18px;
-
+    margin-top:22px;
 }
 
 .history-card{
-
     background:rgba(255,255,255,.04);
-
     border:1px solid var(--border);
-
     border-radius:20px;
-
     padding:24px;
-
     transition:var(--transition);
-
 }
 
 .history-card:hover{
-
     background:rgba(255,255,255,.06);
-
-    border-color:rgba(198,40,40,.28);
-
+    border-color:rgba(198,40,40,.30);
 }
 
 .history-years{
-
     display:inline-block;
-
-    margin-bottom:18px;
-
-    padding:8px 18px;
-
+    padding:7px 16px;
     border-radius:999px;
-
-    background:rgba(198,40,40,.16);
-
+    background:rgba(198,40,40,.18);
     font-weight:700;
-
+    margin-bottom:16px;
 }
 
 .history-role{
-
-    margin:10px 0;
-
+    margin:8px 0;
     color:white;
-
 }
 
 .history-role.smaller{
-
     color:var(--muted);
-
     font-size:.95rem;
-
 }
 
 /*=========================================================
@@ -2577,21 +2532,16 @@ MODAL
 @media (max-width:700px){
 
     .leadership-grid{
-
-        grid-template-columns:repeat(2,minmax(0,1fr));
-
+        grid-template-columns:1fr;
+        gap:22px;
     }
 
-    .leadership-panel{
-
-        padding:18px;
-
+    .content-card{
+        padding:26px 20px;
     }
 
     .position-button{
-
         padding:14px 16px;
-
     }
 
 }
