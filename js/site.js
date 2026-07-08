@@ -1076,27 +1076,29 @@ function button(position){
 
     splHistory.innerHTML += historyCard(
 
-        `${r[0]}–${r[1]}`,
+    r[0] === r[1]
+        ? r[0]
+        : `${r[0]}–${r[1]}`,
 
-        [
+    [
 
-            `
-            <div class="history-role">
-                <strong>SPL</strong>
-                ${r[2]}
-            </div>
-            `,
+        `
+        <div class="history-role">
+            <strong>SPL</strong>
+            ${r[2]}
+        </div>
+        `,
 
-            `
-            <div class="history-role smaller">
-                <strong>ASPL</strong>
-                ${r[3]}
-            </div>
-            `
+        `
+        <div class="history-role smaller">
+            <strong>ASPL</strong>
+            ${r[3]}
+        </div>
+        `
 
-        ]
+    ]
 
-    );
+);
 
 });
 
@@ -1123,19 +1125,21 @@ function button(position){
 
     smHistory.innerHTML += historyCard(
 
-        `${r[0]}–${r[1]}`,
+    r[0] === r[1]
+        ? r[0]
+        : `${r[0]}–${r[1]}`,
 
-        [
+    [
 
-            `
-            <div class="history-role">
-                ${r[2]}
-            </div>
-            `
+        `
+        <div class="history-role">
+            ${r[2]}
+        </div>
+        `
 
-        ]
+    ]
 
-    );
+);
 
 });
 
