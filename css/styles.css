@@ -1534,9 +1534,9 @@ ADVANCEMENT
 
     .requirement-grid{
 
-        grid-template-columns:repeat(4,minmax(0,1fr));
+        grid-template-columns:repeat(4,calc((100% - 30px) / 4));
         gap:10px;
-        justify-items:stretch;
+        justify-content:center;
 
     }
 
