@@ -2718,41 +2718,11 @@ RANK ADVANCEMENT
 
 .rank-divider{
 
-    display:flex;
-    align-items:center;
-
-    margin:24px 0 20px;
-
-}
-
-.rank-divider::before,
-.rank-divider::after{
-
-    content:"";
-
-    flex:1;
-
     height:1px;
 
     background:var(--border);
 
-}
-
-.rank-divider span{
-
-    margin:0 14px;
-
-    padding:4px 12px;
-
-    border-radius:999px;
-
-    background:rgba(198,40,40,.12);
-
-    border:1px solid rgba(198,40,40,.28);
-
-    color:var(--red);
-
-    font-weight:700;
+    margin:28px 0 22px;
 
 }
 
