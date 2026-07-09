@@ -1450,3 +1450,154 @@ async function initLeadershipModals(){
 
 
 }
+
+/*=========================================================
+ADVANCEMENT
+=========================================================*/
+
+initAdvancement();
+
+async function initAdvancement(){
+
+    const grid=document.getElementById("rank-grid");
+
+    const modal=document.querySelector(".modal");
+
+    const body=modal.querySelector(".modal-body");
+
+    if(!grid || !modal || !body) return;
+
+    const text=await fetch("data/rank-requirements.csv")
+        .then(r=>r.text());
+
+    const rows=text.trim()
+        .split("\n")
+        .slice(1)
+        .map(row=>
+
+            row.match(/(".*?"|[^",]+)(?=\s*,|\s*$)/g)
+            .map(col=>col.replace(/^"|"$/g,""))
+
+        );
+
+    const requirements={};
+
+    rows.forEach(r=>{
+
+        const rank=r[0];
+        const requirement=r[1];
+        const link=r[2];
+
+        if(!requirements[rank]){
+
+            requirements[rank]=[];
+
+        }
+
+        requirements[rank].push({
+
+            requirement,
+            link
+
+        });
+
+    });
+
+    grid.querySelectorAll(".rank-card")
+
+    .forEach(card=>{
+
+        card.addEventListener("click",()=>{
+
+            const rank=card.dataset.rank;
+
+            buildRankModal(
+
+                rank,
+                requirements[rank] || []
+
+            );
+
+        });
+
+    });
+
+    function buildRankModal(rank,list){
+
+        body.innerHTML=`<h2>${rank}</h2>`;
+
+        const groups={};
+
+        list.forEach(item=>{
+
+            const group=item.requirement.match(/^\d+/)[0];
+
+            if(!groups[group]){
+
+                groups[group]=[];
+
+            }
+
+            groups[group].push(item);
+
+        });
+
+        Object.keys(groups).forEach(group=>{
+
+            const section=document.createElement("div");
+
+            section.className="rank-group";
+
+            section.innerHTML=`
+
+                <div class="rank-divider">
+
+                    <span>${group}</span>
+
+                </div>
+
+                <div class="requirement-grid">
+
+                </div>
+
+            `;
+
+            const grid=
+
+                section.querySelector(".requirement-grid");
+
+            groups[group].forEach(item=>{
+
+                const button=document.createElement("button");
+
+                button.className="requirement";
+
+                button.textContent=item.requirement;
+
+                button.onclick=()=>{
+
+                    window.open(
+
+                        item.link,
+
+                        "_blank"
+
+                    );
+
+                };
+
+                grid.appendChild(button);
+
+            });
+
+            body.appendChild(section);
+
+        });
+
+        modal.classList.add("open");
+
+        document.body.style.overflow="hidden";
+
+    }
+
+}
