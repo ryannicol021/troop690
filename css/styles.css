@@ -1533,7 +1533,7 @@ grid-template-columns:repeat(7,1fr);
 
 .requirement-grid.single-rank{
 
-    justify-content:center;
+    justify-content:left;
 
 }
 
