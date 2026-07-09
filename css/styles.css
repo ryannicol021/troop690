@@ -1545,29 +1545,43 @@ ADVANCEMENT
 
     display:grid;
 
-    grid-template-columns:repeat(auto-fit,minmax(100px,1fr));
+    grid-template-columns:repeat(auto-fill,minmax(70px,70px));
 
-    gap:18px;
+    gap:14px;
 
-    margin-top:28px;
+    justify-content:flex-start;
+
+    margin-top:20px;
 
 }
 
 .requirement{
 
-    text-align:center;
+    width:70px;
 
-    padding:20px;
+    aspect-ratio:1;
 
-    border-radius:18px;
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    padding:0;
+
+    border-radius:14px;
 
     background:rgba(198,40,40,.12);
 
     border:1px solid rgba(198,40,40,.35);
 
-    cursor:pointer;
+    color:white;
 
     font-weight:700;
+
+    font-size:1.2rem;
+
+    text-decoration:none;
 
     transition:var(--transition);
 
@@ -1577,7 +1591,22 @@ ADVANCEMENT
 
     background:var(--red);
 
+    transform:translateY(-3px);
+
 }
+
+.requirement:visited{
+
+    color:white;
+
+}
+
+.requirement:link{
+
+    color:white;
+
+}
+
 /*=========================================================
 EAGLE SCOUTS
 =========================================================*/
