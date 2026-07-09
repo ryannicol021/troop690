@@ -1534,7 +1534,18 @@ ADVANCEMENT
 
     .requirement-grid{
 
-        grid-template-columns:repeat(4,1fr);
+        grid-template-columns:repeat(4,minmax(0,1fr));
+        gap:10px;
+        justify-items:stretch;
+
+    }
+
+    .requirement{
+
+        width:100%;
+        aspect-ratio:1;
+        min-width:0;
+        font-size:1rem;
 
     }
 
@@ -2761,41 +2772,24 @@ RANK ADVANCEMENT
 
     .rank-grid{
 
-        display:grid !important;
-        grid-template-columns:repeat(4,minmax(0,1fr)) !important;
-        gap:10px;
+        display:grid;
+        grid-template-columns:repeat(3,1fr);
+        gap:16px;
 
     }
 
     .rank-card{
 
         width:100%;
-        min-width:0;
         aspect-ratio:1;
-
-    }
-
-    .rank-card img{
-
-        width:42px;
-        height:42px;
-
-    }
-
-    .rank-card span{
-
-        font-size:.72rem;
-        text-align:center;
-        line-height:1.1;
 
     }
 
     .rank-card:last-child{
 
-        grid-column:1 / -1;
-
-        aspect-ratio:auto;
-        min-height:100px;
+        grid-column:2;
+        aspect-ratio:1;
+        min-height:0;
 
     }
 
