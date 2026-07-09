@@ -1697,3 +1697,51 @@ async function initKnots(){
     });
 
 }
+
+/*=========================================================
+AWARDS
+=========================================================*/
+
+initAwards();
+
+async function initAwards(){
+
+    const grid=document.getElementById("award-grid");
+
+    if(!grid) return;
+
+    const rows=await fetch("data/award-links.csv")
+        .then(r=>r.text())
+        .then(text=>
+
+            text.trim()
+            .split("\n")
+            .slice(1)
+            .map(row=>
+
+                row.match(/(".*?"|[^",]+)(?=\s*,|\s*$)/g)
+                .map(col=>col.replace(/^"|"$/g,""))
+
+            )
+
+        );
+
+    rows.forEach(row=>{
+
+        const button=document.createElement("a");
+
+        button.className="award-button";
+
+        button.textContent=row[0];
+
+        button.href=row[1];
+
+        button.target="_blank";
+
+        button.rel="noopener";
+
+        grid.appendChild(button);
+
+    });
+
+}
