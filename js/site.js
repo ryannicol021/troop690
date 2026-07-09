@@ -1626,3 +1626,74 @@ groups[group].forEach(item=>{
     }
 
 }
+
+/*=========================================================
+KNOW YOUR KNOTS
+=========================================================*/
+
+initKnots();
+
+async function initKnots(){
+
+    const column1=document.getElementById("knot-column-1");
+    const column2=document.getElementById("knot-column-2");
+    const column3=document.getElementById("knot-column-3");
+
+    if(!column1) return;
+
+    const rows=await fetch("data/knot-videos.csv")
+        .then(r=>r.text())
+        .then(text=>
+
+            text.trim()
+            .split("\n")
+            .slice(1)
+            .map(row=>
+
+                row.match(/(".*?"|[^",]+)(?=\s*,|\s*$)/g)
+                .map(col=>col.replace(/^"|"$/g,""))
+
+            )
+
+        );
+
+    const columns={
+
+        "Square Knot":column1,
+        "Two Half-Hitches":column1,
+        "Taut-Line Hitch":column1,
+
+        "Sheet Bend Knot":column2,
+        "Bowline Knot":column2,
+
+        "Clove Hitch":column3,
+        "Timber Hitch":column3
+
+    };
+
+    rows.forEach(row=>{
+
+        const knot=row[0];
+        const link=row[1];
+
+        const button=document.createElement("a");
+
+        button.className="knot-button";
+
+        button.textContent=knot;
+
+        button.href=link;
+
+        button.target="_blank";
+
+        button.rel="noopener";
+
+        if(columns[knot]){
+
+            columns[knot].appendChild(button);
+
+        }
+
+    });
+
+}
