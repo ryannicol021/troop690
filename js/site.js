@@ -1550,11 +1550,7 @@ async function initAdvancement(){
 
             section.innerHTML=`
 
-                <div class="rank-divider">
-
-                    <span>${group}</span>
-
-                </div>
+                <div class="rank-divider"></div>
 
                 <div class="requirement-grid">
 
