@@ -358,11 +358,19 @@ function initModals(){
 
     function closeModal(){
 
-        modal.classList.remove("open");
+    modal.style.pointerEvents="none";
 
-        document.body.style.overflow="";
+    modal.classList.remove("open");
 
-    }
+    document.body.style.overflow="";
+
+    setTimeout(()=>{
+
+        modal.style.pointerEvents="";
+
+    },300);
+
+}
 
 }
 
@@ -1573,6 +1581,8 @@ groups[group].forEach(item=>{
     if(item.link && item.link.trim()!==""){
 
         button.onclick=()=>{
+
+            if(!modal.classList.contains("open")) return;
 
             window.open(item.link,"_blank");
 
