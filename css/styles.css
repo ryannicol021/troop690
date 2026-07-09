@@ -2817,3 +2817,87 @@ RANK ADVANCEMENT
     }
 
 }
+
+/*=========================================================
+KNOW YOUR KNOTS
+=========================================================*/
+
+.knot-grid{
+
+    display:grid;
+
+    grid-template-columns:repeat(3,minmax(0,1fr));
+
+    gap:28px;
+
+    margin-top:36px;
+
+}
+
+.knot-column{
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:14px;
+
+}
+
+.knot-button{
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    width:100%;
+
+    min-height:64px;
+
+    padding:18px 22px;
+
+    border-radius:18px;
+
+    background:rgba(198,40,40,.10);
+
+    border:1px solid rgba(198,40,40,.28);
+
+    color:white;
+
+    font-weight:700;
+
+    text-align:center;
+
+    transition:var(--transition);
+
+}
+
+.knot-button:hover{
+
+    background:var(--red);
+
+    transform:translateY(-3px);
+
+    box-shadow:0 10px 24px rgba(198,40,40,.25);
+
+}
+
+@media (max-width:700px){
+
+    .knot-grid{
+
+        grid-template-columns:1fr;
+
+        gap:14px;
+
+    }
+
+    .knot-column{
+
+        gap:14px;
+
+    }
+
+}
