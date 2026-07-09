@@ -1518,29 +1518,6 @@ ADVANCEMENT
 
 }
 
-@media (max-width:700px){
-
-    .rank-grid{
-
-        display:grid;
-
-        grid-template-columns:repeat(2,1fr);
-
-        gap:18px;
-
-    }
-
-    .rank-card:last-child{
-
-        grid-column:1 / -1;
-
-        aspect-ratio:auto;
-        min-height:170px;
-
-    }
-
-}
-
 .requirement-grid{
 
     display:grid;
@@ -2187,16 +2164,6 @@ RESPONSIVE
 
 }
 
-@media (max-width:700px){
-
-    .rank-grid{
-
-        grid-template-columns:repeat(2,1fr);
-
-    }
-
-}
-
 @media (max-width:500px){
 
     .container{
@@ -2208,12 +2175,6 @@ RESPONSIVE
     .hero-card{
 
         padding:28px 20px;
-
-    }
-
-    .rank-grid{
-
-        grid-template-columns:1fr;
 
     }
 
@@ -2801,17 +2762,31 @@ RANK ADVANCEMENT
     .rank-grid{
 
         display:grid !important;
-
-        grid-template-columns:repeat(3,1fr) !important;
-
-        gap:16px;
+        grid-template-columns:repeat(4,minmax(0,1fr)) !important;
+        gap:10px;
 
     }
 
     .rank-card{
 
         width:100%;
+        min-width:0;
         aspect-ratio:1;
+
+    }
+
+    .rank-card img{
+
+        width:42px;
+        height:42px;
+
+    }
+
+    .rank-card span{
+
+        font-size:.72rem;
+        text-align:center;
+        line-height:1.1;
 
     }
 
@@ -2820,7 +2795,7 @@ RANK ADVANCEMENT
         grid-column:1 / -1;
 
         aspect-ratio:auto;
-        min-height:120px;
+        min-height:100px;
 
     }
 
