@@ -1522,13 +1522,20 @@ ADVANCEMENT
 
     .rank-grid{
 
+        display:grid;
+
         grid-template-columns:repeat(2,1fr);
+
+        gap:18px;
 
     }
 
     .rank-card:last-child{
 
         grid-column:1 / -1;
+
+        aspect-ratio:auto;
+        min-height:170px;
 
     }
 
