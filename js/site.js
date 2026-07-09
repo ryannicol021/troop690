@@ -1562,29 +1562,33 @@ async function initAdvancement(){
 
                 section.querySelector(".requirement-grid");
 
-            groups[group].forEach(item=>{
+groups[group].forEach(item=>{
 
-                const button=document.createElement("button");
+    const button=document.createElement("button");
 
-                button.className="requirement";
+    button.className="requirement";
 
-                button.textContent=item.requirement;
+    button.textContent=item.requirement;
 
-                button.onclick=()=>{
+    if(item.link && item.link.trim()!==""){
 
-                    window.open(
+        button.onclick=()=>{
 
-                        item.link,
+            window.open(item.link,"_blank");
 
-                        "_blank"
+        };
 
-                    );
+    }else{
 
-                };
+        button.classList.add("disabled");
 
-                grid.appendChild(button);
+        button.disabled=true;
 
-            });
+    }
+
+    grid.appendChild(button);
+
+});
 
             body.appendChild(section);
 
