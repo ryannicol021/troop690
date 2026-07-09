@@ -44,6 +44,7 @@ Tenderfoot,8,
 Tenderfoot,9,
 Tenderfoot,10,
 Tenderfoot,11,
+Second Class,1a,
 Second Class,1b,https://youtu.be/-3h0OahUZwc
 Second Class,1c,https://youtu.be/R3yddVMsjwE
 Second Class,2a,https://youtu.be/Ijg7u7cu714
@@ -57,7 +58,7 @@ Second Class,3a,https://youtu.be/fph4wm51BJ8
 Second Class,3b,https://youtu.be/fph4wm51BJ8
 Second Class,3c,https://youtu.be/nBHApmrSbJw
 Second Class,3d,https://youtu.be/X7c4oxDO5Go
-Second Class,4a,https://youtu.be/O0TJ55xaOEU
+Second Class,4,https://youtu.be/O0TJ55xaOEU
 Second Class,5a,https://youtu.be/Wlbqm1fWme4
 Second Class,5b,https://youtu.be/Wlbqm1fWme4
 Second Class,5c,https://youtu.be/N3AY34CAeLM
@@ -67,22 +68,26 @@ Second Class,6b,https://youtu.be/z8H76HM6mqY
 Second Class,6c,https://youtu.be/PF4iGI4akH8
 Second Class,6d,https://youtu.be/Yir2FAiBd9g
 Second Class,6e,https://youtu.be/Yir2FAiBd9g
+Second Class,7a,
+Second Class,7b,
+Second Class,7c,
 Second Class,8a,https://youtu.be/Y9FicN3pf90
 Second Class,8b,https://youtu.be/v6xFH4pccNI
+Second Class,8c,
+Second Class,8d,
+Second Class,8e,
 Second Class,9a,https://youtu.be/gJOPmyG7u-U
 Second Class,9b,https://youtu.be/kGO057M_IxI
+Second Class,10,
+Second Class,11,
+Second Class,12,
 First Class,1a,
 First Class,1b,
-First Class,1c,
-First Class,1d,
-First Class,1e,
 First Class,2a,
 First Class,2b,
 First Class,2c,
 First Class,2d,
 First Class,2e,
-First Class,2f,
-First Class,2g,
 First Class,3a,
 First Class,3b,
 First Class,3c,
@@ -92,11 +97,18 @@ First Class,4b,
 First Class,5a,
 First Class,5b,
 First Class,5c,
+First Class,5d,
 First Class,6a,
 First Class,6b,
 First Class,6c,
+First Class,6d,
+First Class,6e,
 First Class,7a,
 First Class,7b,
+First Class,7c,
+First Class,7d,
+First Class,7e,
+First Class,7f,
 First Class,8a,
 First Class,8b,
 First Class,9a,
@@ -105,6 +117,8 @@ First Class,9c,
 First Class,9d,
 First Class,10,
 First Class,11,
+First Class,12,
+First Class,13,
 Star,1,
 Star,2,
 Star,3,
@@ -112,12 +126,15 @@ Star,4,
 Star,5,
 Star,6,
 Star,7,
+Star,8,
 Life,1,
 Life,2,
 Life,3,
 Life,4,
 Life,5,
 Life,6,
+Life,7,
+Life,8,
 Eagle,1,
 Eagle,2,
 Eagle,3,
