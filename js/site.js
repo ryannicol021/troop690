@@ -1536,35 +1536,45 @@ async function initAdvancement(){
 
         const groups={};
 
-        list.forEach(item=>{
+const simpleRanks = ["Star", "Life", "Eagle"];
 
-            const group=item.requirement.match(/^\d+/)[0];
+if(simpleRanks.includes(rank)){
 
-            if(!groups[group]){
+    groups["all"] = list;
 
-                groups[group]=[];
+}else{
 
-            }
+    list.forEach(item=>{
 
-            groups[group].push(item);
+        const group = item.requirement.match(/^\d+/)[0];
 
-        });
+        if(!groups[group]){
+
+            groups[group] = [];
+
+        }
+
+        groups[group].push(item);
+
+    });
+
+}
 
         Object.keys(groups).forEach(group=>{
 
-            const section=document.createElement("div");
+    const section=document.createElement("div");
 
-            section.className="rank-group";
+    section.className="rank-group";
 
-            section.innerHTML=`
+    section.innerHTML=`
 
-                <div class="rank-divider"></div>
+        ${group==="all" ? "" : '<div class="rank-divider"></div>'}
 
-                <div class="requirement-grid">
+        <div class="requirement-grid">
 
-                </div>
+        </div>
 
-            `;
+    `;
 
             const grid=
 
