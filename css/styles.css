@@ -1553,6 +1553,16 @@ ADVANCEMENT
 
 }
 
+@media (max-width:700px){
+
+    .requirement-grid{
+
+        grid-template-columns:repeat(4,1fr);
+
+    }
+
+}
+
 .requirement{
 
     width:70px;
@@ -1623,6 +1633,18 @@ ADVANCEMENT
 
     background:rgba(255,255,255,.08);
     transform:none;
+
+}
+
+.modal{
+
+    pointer-events:none;
+
+}
+
+.modal.open{
+
+    pointer-events:auto;
 
 }
 
