@@ -1576,10 +1576,15 @@ if(simpleRanks.includes(rank)){
 
     `;
 
-            const grid=
+            const grid =
+    section.querySelector(".requirement-grid");
 
-                section.querySelector(".requirement-grid");
+if(group==="all"){
 
+    grid.classList.add("single-rank");
+
+}
+         
 groups[group].forEach(item=>{
 
     const button=document.createElement("button");
