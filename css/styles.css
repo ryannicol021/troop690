@@ -1609,19 +1609,22 @@ ADVANCEMENT
 
 .requirement.disabled{
 
-    background:rgba(255,255,255,.06);
-
-    border-color:rgba(255,255,255,.12);
-
-    color:rgba(255,255,255,.4);
+    background:rgba(255,255,255,.08);
+    border-color:rgba(255,255,255,.10);
+    color:rgba(255,255,255,.35);
 
     cursor:default;
-
     pointer-events:none;
 
     transform:none;
-
     box-shadow:none;
+
+}
+
+.requirement.disabled:hover{
+
+    background:rgba(255,255,255,.08);
+    transform:none;
 
 }
 
