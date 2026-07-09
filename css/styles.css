@@ -1456,9 +1456,9 @@ ADVANCEMENT
 
     display:grid;
 
-    grid-template-columns:repeat(auto-fit,minmax(170px,1fr));
+    grid-template-columns:repeat(7,1fr);
 
-    gap:26px;
+    gap:22px;
 
 }
 
@@ -1466,47 +1466,71 @@ ADVANCEMENT
 
     aspect-ratio:1;
 
-    border-radius:50%;
-
-    background:var(--card);
-
-    border:2px solid rgba(255,255,255,.08);
-
     display:flex;
 
     flex-direction:column;
 
-    align-items:center;
-
     justify-content:center;
 
-    text-align:center;
+    align-items:center;
 
-    cursor:pointer;
+    gap:14px;
 
-    transition:var(--transition);
+    background:var(--card);
+
+    border:1px solid var(--border);
+
+    border-radius:24px;
 
     box-shadow:var(--shadow);
+
+    transition:var(--transition);
 
 }
 
 .rank-card:hover{
 
-    transform:translateY(-8px) scale(1.03);
+    transform:translateY(-8px);
 
     background:var(--card-hover);
 
-    border-color:var(--red);
+    border-color:rgba(198,40,40,.4);
+
+    box-shadow:var(--shadow-hover);
 
 }
 
 .rank-card img{
 
-    width:80px;
+    width:64px;
 
-    height:80px;
+    height:64px;
 
-    margin-bottom:16px;
+    object-fit:contain;
+
+}
+
+.rank-card span{
+
+    font-weight:700;
+
+    color:white;
+
+}
+
+@media (max-width:700px){
+
+    .rank-grid{
+
+        grid-template-columns:repeat(2,1fr);
+
+    }
+
+    .rank-card:last-child{
+
+        grid-column:1 / -1;
+
+    }
 
 }
 
