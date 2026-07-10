@@ -39,7 +39,7 @@ ROOT
 
     --content-width:1200px;
 
-    --section-space:80px;
+    --section-space:24px;
 
     --heading:
         "Merriweather",
@@ -591,7 +591,7 @@ INTERIOR PAGE HERO
 
 .page-hero + main .section:first-child{
 
-    padding-top:20px;
+    padding-top:24px;
 
 }
 
@@ -691,7 +691,7 @@ STATISTICS
 
     grid-template-columns:repeat(3,1fr);
 
-    gap:32px;
+    gap:24px;
 
 }
 
@@ -837,7 +837,7 @@ FEATURE GRID
 
     grid-template-columns:repeat(2,1fr);
 
-    gap:32px;
+    gap:24px;
 
 }
 
@@ -1154,7 +1154,7 @@ FOOTER
 
 .site-footer{
 
-    margin-top:80px;
+    margin-top:24px;
 
     background:#081528;
 
@@ -1396,7 +1396,7 @@ LEADERSHIP
 
     grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
 
-    gap:28px;
+    gap:24px;
 
 }
 
@@ -1663,7 +1663,7 @@ EAGLE SCOUTS
 
     grid-template-columns:repeat(auto-fit,minmax(340px,1fr));
 
-    gap:28px;
+    gap:24px;
 
 }
 
@@ -1821,7 +1821,7 @@ MERIT BADGES / AWARDS
 
     grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
 
-    gap:26px;
+    gap:24px;
 
 }
 
@@ -1902,7 +1902,7 @@ CONTACT
 
     grid-template-columns:repeat(auto-fit,minmax(320px,1fr));
 
-    gap:28px;
+    gap:24px;
 
 }
 
@@ -2324,7 +2324,7 @@ EAGLE SCOUTS
 
     grid-template-columns:repeat(3,minmax(0,1fr));
 
-    gap:28px;
+    gap:24px;
 
     align-items:start;
 
@@ -2442,7 +2442,7 @@ EAGLE SCOUTS
 
     grid-template-columns:repeat(auto-fit,minmax(340px,1fr));
 
-    gap:28px;
+    gap:24px;
 
     align-items:start;
 
@@ -2455,7 +2455,7 @@ LEADERSHIP
 .leadership-grid{
     display:grid;
     grid-template-columns:repeat(2,minmax(0,1fr));
-    gap:32px;
+    gap:24px;
     align-items:start;
 }
 
@@ -2465,7 +2465,7 @@ LEADERSHIP
 
 @media (max-width:700px){
     .leadership-grid{
-        gap:18px;
+        gap:24px;
     }
 }
 
@@ -2727,7 +2727,7 @@ font-size:1.55rem;
 
     .leadership-grid{
         grid-template-columns:1fr;
-        gap:22px;
+        gap:24px;
     }
 
     .content-card{
