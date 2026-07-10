@@ -717,18 +717,6 @@ STATISTICS
 
 }
 
-.stat-card:hover{
-
-    transform:translateY(-8px);
-
-    background:var(--card-hover);
-
-    border-color:rgba(198,40,40,.40);
-
-    box-shadow:var(--shadow-hover);
-
-}
-
 .stat-number{
 
     font-family:var(--heading);
@@ -845,18 +833,6 @@ FEATURE GRID
         background .35s ease,
         border-color .35s ease,
         box-shadow .35s ease;
-
-}
-
-.feature-card:hover{
-
-    transform:translateY(-8px);
-
-    background:var(--card-hover);
-
-    border-color:rgba(198,40,40,.40);
-
-    box-shadow:var(--shadow-hover);
 
 }
 
@@ -2573,16 +2549,6 @@ HISTORY
         border-color .35s ease;
 
  text-align:center;
-
-}
-
-.history-card:hover{
-
-    transform:translateY(-3px);
-
-    border-color:rgba(198,40,40,.28);
-
-    box-shadow:0 14px 28px rgba(0,0,0,.30);
 
 }
 
