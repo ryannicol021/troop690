@@ -786,21 +786,6 @@ STANDARD CARDS
 
 }
 
-.content-card:hover,
-.join-card:hover,
-.page-hero-card:hover,
-.quote-card:hover{
-
-    transform:translateY(-6px);
-
-    background:var(--card-hover);
-
-    border-color:rgba(198,40,40,.40);
-
-    box-shadow:var(--shadow-hover);
-
-}
-
 /*=========================================================
 PAGE HERO
 =========================================================*/
