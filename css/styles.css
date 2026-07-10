@@ -3119,7 +3119,9 @@ SUMMER CAMP
 
 .summer-timeline .timeline{
 
-    width:min(100%, 760px);
+        width:auto;
+
+    max-width:100%;
 
 }
 
