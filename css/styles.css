@@ -3245,13 +3245,15 @@ UNIFORM
 
 .uniform-buttons{
 
-    display:flex;
+    display:grid;
 
-    flex-wrap:wrap;
+    grid-template-columns:repeat(7,1fr);
 
-    justify-content:center;
+    gap:8px;
 
-    gap:12px;
+    justify-items:center;
+
+    margin-top:18px;
 
 }
 
@@ -3291,9 +3293,8 @@ UNIFORM
 
 .uniform-number{
 
-    width:44px;
-
-    height:44px;
+    width:36px;
+    height:36px;
 
     border:none;
 
@@ -3303,18 +3304,25 @@ UNIFORM
 
     color:#fff;
 
-    font:700 1rem var(--body-font);
+    font:700 .95rem var(--body-font);
 
     cursor:pointer;
 
-    transition:.2s;
+    transition:
+        background .25s,
+        color .25s,
+        transform .25s,
+        box-shadow .25s;
 
 }
 
 .uniform-number:hover{
-
-    transform:translateY(-2px);
-
     background:var(--red-dark);
+    transform:translateY(-2px);
+    box-shadow:0 10px 24px rgba(0,0,0,.18);
+}
 
+.modal-uniform-title{
+    color:var(--red);
+    margin-bottom:16px;
 }
