@@ -3108,3 +3108,27 @@ SUMMER CAMP
     }
 
 }
+
+.summer-timeline{
+
+    display:flex;
+
+    justify-content:center;
+
+}
+
+.summer-timeline .timeline{
+
+    width:min(100%, 760px);
+
+}
+
+@media (max-width:700px){
+
+    .summer-timeline .timeline{
+
+        width:100%;
+
+    }
+
+}
