@@ -2991,31 +2991,31 @@ MERIT BADGES
 }
 
 /*=========================================================
-MODAL SCROLLBAR
+SITE SCROLLBAR
 =========================================================*/
 
-.modal-window{
+html{
 
     scrollbar-width:thin;
-    scrollbar-color:rgba(255,255,255,.25) transparent;
+    scrollbar-color:rgba(255,255,255,.12) transparent;
 
 }
 
-.modal-window::-webkit-scrollbar{
+::-webkit-scrollbar{
 
     width:10px;
 
 }
 
-.modal-window::-webkit-scrollbar-track{
+::-webkit-scrollbar-track{
 
     background:transparent;
 
 }
 
-.modal-window::-webkit-scrollbar-thumb{
+::-webkit-scrollbar-thumb{
 
-    background:rgba(255,255,255,.20);
+    background:rgba(255,255,255,.12);
 
     border-radius:999px;
 
@@ -3025,10 +3025,20 @@ MODAL SCROLLBAR
 
 }
 
-.modal-window::-webkit-scrollbar-thumb:hover{
+::-webkit-scrollbar-thumb:hover{
 
-    background:rgba(255,255,255,.35);
+    background:rgba(255,255,255,.24);
 
     background-clip:padding-box;
+
+}
+
+::-webkit-scrollbar-button{
+
+    display:none;
+
+    width:0;
+
+    height:0;
 
 }
