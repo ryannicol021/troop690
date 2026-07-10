@@ -3035,10 +3035,24 @@ html{
 
 ::-webkit-scrollbar-button{
 
-    display:none;
-
     width:0;
-
     height:0;
 
+    display:none;
+
+ background:transparent;
+    color:transparent;
+
+}
+
+::-webkit-scrollbar-button:single-button{
+
+    width:0;
+    height:0;
+
+    display:none;
+
+background:transparent;
+    color:transparent;
+ 
 }
