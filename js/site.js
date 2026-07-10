@@ -1211,10 +1211,14 @@ const positions = [...new Set(rows.map(r => r[0]))];
     [
 
         `
-        <div class="history-role">
-            ${r[2]}
-        </div>
-        `
+    <div class="history-role smaller">
+        <strong>Scoutmaster</strong>
+    </div>
+    
+    <div class="history-role">
+        ${r[2]}
+    </div>
+    `
 
     ]
 
