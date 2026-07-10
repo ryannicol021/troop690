@@ -1745,3 +1745,190 @@ async function initAwards(){
     });
 
 }
+
+/*=========================================================
+UNIFORM MODALS
+=========================================================*/
+
+initUniform();
+
+function initUniform(){
+
+    const modal=document.querySelector(".modal");
+    const body=modal?.querySelector(".modal-body");
+
+    if(!modal || !body) return;
+
+    const items={
+
+        "right-pocket-1":{
+            title:"Nametag",
+            subtitle:"Adult Identification",
+            text:"Commonly worn by adult volunteers at official Scouting events."
+        },
+
+        "right-pocket-2":{
+            title:"Interpreter Strip",
+            subtitle:"Language Proficiency",
+            text:"Worn by members who are proficient in a language other than English."
+        },
+
+        "right-pocket-3":{
+            title:"Scouting America Strip",
+            subtitle:"Official Identification",
+            text:"Worn by every member of Scouting America as part of the official uniform."
+        },
+
+        "right-pocket-4":{
+            title:"Order of the Arrow Lodge Flap",
+            subtitle:"Honor Society Membership",
+            text:"The only patch worn on a pocket flap, identifying a member's local Order of the Arrow lodge."
+        },
+
+        "right-pocket-5":{
+            title:"Temporary Patch",
+            subtitle:"Special Recognition",
+            text:"Temporary patches are worn here and may include Totin' Chip, Firem'n Chit, Duty to God, special event patches, camp patches, and many others."
+        },
+
+        "right-pocket-6":{
+            title:"Recruiter Strip",
+            subtitle:"Recruiting Recognition",
+            text:"Awarded to Scouts who successfully recruit another youth to join Scouting."
+        },
+
+        "left-pocket-1":{
+            title:"World Crest",
+            subtitle:"Worldwide Scouting",
+            text:"Worn by all members of the worldwide Scouting movement as a symbol of international brotherhood."
+        },
+
+        "left-pocket-2":{
+            title:"Service Stars",
+            subtitle:"Years in the Troop",
+            text:"Optional insignia showing the number of years a member has participated in the troop."
+        },
+
+        "left-pocket-3":{
+            title:"Square Knots",
+            subtitle:"Special Recognition",
+            text:"Recognize awards earned that are represented by square knot insignia rather than medals or patches."
+        },
+
+        "left-pocket-4":{
+            title:"Rank Patch",
+            subtitle:"Current Rank",
+            text:"Displays the highest Scouts BSA rank the Scout has earned."
+        },
+
+        "left-pocket-5":{
+            title:"Arrow of Light",
+            subtitle:"Current Recognition",
+            text:"May be worn by Scouts who earned Cub Scouting's highest rank before joining a troop."
+        },
+
+        "right-sleeve-1":{
+            title:"Shoulder Loops",
+            subtitle:"Program Identification",
+            text:"Green shoulder loops identify participation in the Scouts BSA troop program."
+        },
+
+        "right-sleeve-2":{
+            title:"American Flag",
+            subtitle:"National Identity",
+            text:"Represents a Scout's duty to country and is worn on every official uniform."
+        },
+
+        "right-sleeve-3":{
+            title:"Patrol Emblem",
+            subtitle:"Patrol Membership",
+            text:"Shows the patrol to which the Scout belongs."
+        },
+
+        "right-sleeve-4":{
+            title:"National Honor Patrol Star",
+            subtitle:"Patrol Recognition",
+            text:"May be worn by patrols recognized as National Honor Patrols."
+        },
+
+        "right-sleeve-5":{
+            title:"Journey to Excellence",
+            subtitle:"Unit Achievement",
+            text:"Indicates the troop earned Bronze, Silver, or Gold Journey to Excellence recognition for the current year."
+        },
+
+        "left-sleeve-1":{
+            title:"Shoulder Loops",
+            subtitle:"Program Identification",
+            text:"Green shoulder loops identify participation in the Scouts BSA troop program."
+        },
+
+        "left-sleeve-2":{
+            title:"Council Shoulder Patch",
+            subtitle:"Local Council",
+            text:"Identifies Scouting America Long Island Council."
+        },
+
+        "left-sleeve-3":{
+            title:"Veteran Unit Bar",
+            subtitle:"Troop History",
+            text:"Shows how many years the troop has continuously served its community."
+        },
+
+        "left-sleeve-4":{
+            title:"Troop Numerals",
+            subtitle:"Troop Number",
+            text:"Identifies the troop number worn by every member."
+        },
+
+        "left-sleeve-5":{
+            title:"Founder Strip",
+            subtitle:"Founding Member",
+            text:"May be worn only by founding members of a troop."
+        },
+
+        "left-sleeve-6":{
+            title:"Position Patch",
+            subtitle:"Leadership Position",
+            text:"Identifies the leadership position currently held by the Scout or adult volunteer."
+        },
+
+        "left-sleeve-7":{
+            title:"Trained Strip",
+            subtitle:"Position Training",
+            text:"Worn by members who have completed official training for their registered position."
+        }
+
+    };
+
+    document.querySelectorAll(".uniform-number").forEach(button=>{
+
+        button.addEventListener("click",()=>{
+
+            const item=items[button.dataset.part];
+
+            if(!item) return;
+
+            body.innerHTML=`
+
+                <h2>${item.title}</h2>
+
+                <h3 class="modal-subtitle">
+                    ${item.subtitle}
+                </h3>
+
+                <p>
+                    ${item.text}
+                </p>
+
+            `;
+
+            modal.classList.add("open");
+
+            document.body.style.overflow="hidden";
+
+        });
+
+    });
+
+}
