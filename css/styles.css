@@ -3326,3 +3326,13 @@ UNIFORM
     color:var(--red);
     margin-bottom:16px;
 }
+
+.uniform-side-title{
+
+    color:var(--red);
+
+    text-align:center;
+
+    margin-bottom:18px;
+
+}
