@@ -3339,24 +3339,20 @@ UNIFORM
 
 .calendar-wrapper{
 
+    display:block;
+
     width:100%;
+
+    aspect-ratio:4 / 3;
+
+    border:0;
 
     border-radius:var(--radius);
 
     overflow:hidden;
 
-}
+    background:var(--surface);
 
-.calendar-wrapper iframe{
-
-    display:block;
-
-    width:100%;
-
-    height:800px;
-
-    border:0;
-
-    border-radius:var(--radius);
+    box-shadow:var(--shadow);
 
 }
