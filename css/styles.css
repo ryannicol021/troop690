@@ -2533,14 +2533,16 @@ HISTORY
 
 .history-card{
 
-    display:flex;
- 
     height:150px;
- 
+
+    display:flex;
+    flex-direction:column;
+
+    justify-content:center;
+    align-items:center;
+
     background:var(--card);
-
     border:1px solid var(--border);
-
     border-radius:20px;
 
     padding:22px;
@@ -2552,9 +2554,9 @@ HISTORY
         box-shadow .35s ease,
         border-color .35s ease;
 
- text-align:center;
+    text-align:center;
 
-    gap:18px;
+    gap:10px;
 
 }
 
@@ -2562,7 +2564,7 @@ HISTORY
 
     display:inline-block;
 
-    margin-bottom:0px;
+    margin-bottom:0;
 
     padding:8px 18px;
 
@@ -2580,13 +2582,13 @@ HISTORY
 
 .history-role{
 
-    margin:2px auto;
+    margin:0;
 
     color:white;
 
     text-align:center;
 
- line-height:1.35;
+ line-height:1.25;
 
 }
 
@@ -2597,6 +2599,8 @@ HISTORY
     font-size:.85rem;
 
     text-align:center;
+
+ margin-top:-4px;
 
 }
 
