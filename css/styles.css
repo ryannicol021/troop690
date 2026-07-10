@@ -3056,3 +3056,55 @@ background:transparent;
     color:transparent;
  
 }
+
+/*=========================================================
+SUMMER CAMP
+=========================================================*/
+
+.summer-image-section{
+
+    padding:0 0 40px;
+
+}
+
+.summer-image{
+
+    display:block;
+
+    width:100%;
+
+    border-radius:var(--radius);
+
+    box-shadow:var(--shadow);
+
+}
+
+.summer-features-section{
+
+    padding-top:0;
+
+}
+
+.summer-onteora-section{
+
+    padding-top:0;
+
+}
+
+.summer-onteora-section .content-card p{
+
+    max-width:850px;
+
+    margin:0 auto;
+
+}
+
+@media (max-width:900px){
+
+    .summer-image-section{
+
+        padding-bottom:32px;
+
+    }
+
+}
