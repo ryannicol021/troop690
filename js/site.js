@@ -739,21 +739,17 @@ return (
 
         if(matches.length===0){
 
-            results.innerHTML=`
+            results.innerHTML = `
 
-                <div class="content-card">
+    <div class="search-empty">
 
-                    <h2>No Results</h2>
+        <h2>No Results</h2>
 
-                    <p style="text-align:center;">
+        <p>No Eagle Scouts matched your search.</p>
 
-                        No Eagle Scouts matched your search.
+    </div>
 
-                    </p>
-
-                </div>
-
-            `;
+`;
 
             return;
 
