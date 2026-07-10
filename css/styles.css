@@ -2533,13 +2533,15 @@ HISTORY
 
 .history-card{
 
+    height:200px;
+ 
     background:var(--card);
 
     border:1px solid var(--border);
 
     border-radius:20px;
 
-    padding:24px;
+    padding:22px;
 
     box-shadow:0 8px 20px rgba(0,0,0,.22);
 
@@ -2556,7 +2558,7 @@ HISTORY
 
     display:inline-block;
 
-    margin-bottom:18px;
+    margin-bottom:14px;
 
     padding:8px 18px;
 
@@ -2574,11 +2576,13 @@ HISTORY
 
 .history-role{
 
-    margin:10px auto;
+    margin:2px auto;
 
     color:white;
 
     text-align:center;
+
+ line-height:1.35;
 
 }
 
