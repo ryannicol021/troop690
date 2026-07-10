@@ -3146,3 +3146,175 @@ SUMMER CAMP
     }
 
 }
+
+/*=========================================================
+UNIFORM
+=========================================================*/
+
+.uniform-list{
+
+    margin:24px 0 0;
+
+    padding-left:24px;
+
+    display:grid;
+
+    gap:12px;
+
+}
+
+.uniform-list li{
+
+    color:var(--muted);
+
+    line-height:1.7;
+
+}
+
+.uniform-classb{
+
+    display:grid;
+
+    grid-template-columns:320px 1fr;
+
+    gap:32px;
+
+    align-items:center;
+
+    margin-top:24px;
+
+}
+
+.uniform-classb img{
+
+    width:100%;
+
+    border-radius:var(--radius);
+
+    display:block;
+
+    box-shadow:var(--shadow);
+
+}
+
+.uniform-classb p+p{
+
+    margin-top:20px;
+
+}
+
+.uniform-grid{
+
+    display:grid;
+
+    grid-template-columns:repeat(auto-fit,minmax(320px,1fr));
+
+    gap:24px;
+
+    margin-top:24px;
+
+}
+
+.uniform-card{
+
+    background:var(--surface);
+
+    border-radius:var(--radius);
+
+    padding:24px;
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:20px;
+
+    box-shadow:var(--shadow);
+
+}
+
+.uniform-card img{
+
+    width:100%;
+
+    display:block;
+
+    border-radius:18px;
+
+}
+
+.uniform-buttons{
+
+    display:flex;
+
+    flex-wrap:wrap;
+
+    justify-content:center;
+
+    gap:12px;
+
+}
+
+.uniform-buttons .award-button{
+
+    width:44px;
+
+    height:44px;
+
+    padding:0;
+
+    border-radius:50%;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    font-weight:700;
+
+    font-size:1rem;
+
+    flex:0 0 44px;
+
+}
+
+@media(max-width:900px){
+
+    .uniform-classb{
+
+        grid-template-columns:1fr;
+
+    }
+
+}
+
+.uniform-number{
+
+    width:44px;
+
+    height:44px;
+
+    border:none;
+
+    border-radius:50%;
+
+    background:var(--red);
+
+    color:#fff;
+
+    font:700 1rem var(--body-font);
+
+    cursor:pointer;
+
+    transition:.2s;
+
+}
+
+.uniform-number:hover{
+
+    transform:translateY(-2px);
+
+    background:var(--red-dark);
+
+}
