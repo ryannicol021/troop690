@@ -1717,6 +1717,32 @@ EAGLE SCOUTS
 
 }
 
+.search-empty{
+
+    width:100%;
+
+    grid-column:1 / -1;
+
+    text-align:center;
+
+    margin:24px 0;
+
+}
+
+.search-empty h2{
+
+    margin-bottom:12px;
+
+}
+
+.search-empty p{
+
+    max-width:600px;
+
+    margin:0 auto;
+
+}
+
 /*=========================================================
 UNIFORM
 =========================================================*/
