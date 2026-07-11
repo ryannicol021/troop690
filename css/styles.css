@@ -2635,6 +2635,17 @@ HISTORY
 
 }
 
+.history-role.even-smaller{
+    color:var(--muted);
+
+    font-size:.425rem;
+
+    text-align:center;
+
+ margin-top:-4px;
+
+}
+
 .history-title{
     margin-bottom:2px;
 }
