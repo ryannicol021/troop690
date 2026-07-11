@@ -3349,10 +3349,12 @@ UNIFORM
 
     border-radius:var(--radius);
 
-    overflow:hidden;
-
-    background:var(--surface);
+    background:#EEF1F7;
 
     box-shadow:var(--shadow);
+
+    overflow:hidden;
+
+    box-sizing:border-box;
 
 }
