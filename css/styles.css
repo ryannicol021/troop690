@@ -3396,9 +3396,9 @@ CONTACT
 
     display:grid;
 
-    grid-template-columns:1fr;
-
     gap:24px;
+
+    justify-items:center;
 
 }
 
@@ -3408,6 +3408,13 @@ CONTACT
     display:flex;
 
     flex-direction:column;
+
+}
+
+.contact-grid .content-card{
+
+    width:100%;
+    max-width:700px;
 
 }
 
@@ -3427,6 +3434,7 @@ CONTACT
 
 .contact-webmaster{
 
+    width:100%;
     max-width:700px;
 
     margin:0 auto;
