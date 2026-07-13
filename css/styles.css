@@ -3256,13 +3256,15 @@ UNIFORM
 
 .uniform-buttons{
 
-    display:grid;
+    display:flex;
 
-    grid-template-columns:repeat(7,1fr);
+    justify-content:center;
+
+    align-items:center;
+
+    flex-wrap:wrap;
 
     gap:8px;
-
-    justify-items:center;
 
     margin-top:18px;
 
