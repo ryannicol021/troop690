@@ -3218,7 +3218,7 @@ UNIFORM
 
     display:grid;
 
-    grid-template-columns:repeat(auto-fit,minmax(320px,1fr));
+    grid-template-columns:repeat(2,minmax(0,1fr));
 
     gap:24px;
 
@@ -3300,6 +3300,12 @@ UNIFORM
 
     }
 
+    .uniform-grid{
+
+        grid-template-columns:1fr;
+
+    }
+
 }
 
 .uniform-number{
@@ -3347,6 +3353,10 @@ UNIFORM
     margin-bottom:8px;
 
 }
+
+/*=========================================================
+CALENDAR WRAPPER
+=========================================================*/
 
 .calendar-wrapper{
 
