@@ -3387,3 +3387,58 @@ CALENDAR WRAPPER
  aspect-ratio:1 / 2;
  }
 }
+
+/*=========================================================
+CONTACT
+=========================================================*/
+
+.contact-grid{
+
+    display:grid;
+
+    grid-template-columns:repeat(auto-fit,minmax(340px,1fr));
+
+    gap:24px;
+
+}
+
+.contact-grid .content-card,
+.contact-webmaster{
+
+    display:flex;
+
+    flex-direction:column;
+
+}
+
+.contact-grid .content-card p,
+.contact-webmaster p{
+
+    flex:1;
+
+}
+
+.contact-grid .button-group,
+.contact-webmaster .button-group{
+
+    margin-top:24px;
+
+}
+
+.contact-webmaster{
+
+    max-width:700px;
+
+    margin:0 auto;
+
+    text-align:center;
+
+}
+
+.contact-webmaster p{
+
+    max-width:560px;
+
+    margin:0 auto;
+
+}
