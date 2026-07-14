@@ -3415,6 +3415,7 @@ CONTACT
 
     width:100%;
     max-width:700px;
+     text-align:center;
 
 }
 
@@ -3422,6 +3423,7 @@ CONTACT
 .contact-webmaster p{
 
     flex:1;
+     text-align:center;
 
 }
 
