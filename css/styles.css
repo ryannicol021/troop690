@@ -500,8 +500,8 @@ PAGE HERO
 
     background:
         linear-gradient(
-            var(--navy),
-            var(--navy)
+            var(--red),
+            var(--red)
         ),
         url("../images/hero.jpg")
         center/cover no-repeat;
@@ -516,7 +516,7 @@ PAGE HERO
 
     text-align:center;
 
-    background:var(--navy);
+    background:var(--red);
 
     border:1px solid var(--border);
 
