@@ -240,7 +240,7 @@ href="/css/styles.css">
                 ${incorrect ? `
 
                 <p
-                style="color:#C8102E;font-weight:700;margin-top:16px;">
+                style="color:#C8102E;font-weight:700;margin-top:8px;">
 
                     Incorrect password.
 
