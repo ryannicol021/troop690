@@ -207,7 +207,7 @@ href="/css/styles.css">
 
         <div class="content-card fade-up">
 
-            <h3 styles="color:#C62828;">
+            <h3 style="color:#C62828;">
 
                 Troop Calendar
 
