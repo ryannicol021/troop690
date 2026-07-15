@@ -241,14 +241,14 @@ href="/css/styles.css">
 style="
 height:20px;
 display:flex;
-margin-top:-8px;
 align-items:center;
 justify-content:center;
 color:#C8102E;
 font-weight:700;
+visibility:${incorrect ? "visible" : "hidden"};
 ">
 
-${incorrect ? "Incorrect password." : "&nbsp;"}
+Incorrect password.
 
 </p>
 
