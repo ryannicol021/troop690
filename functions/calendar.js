@@ -239,8 +239,8 @@ href="/css/styles.css">
 
 <p
 style="
-height:24px;
-margin:0;
+height:20px;
+margin:8px 0;
 display:flex;
 align-items:center;
 justify-content:center;
@@ -252,7 +252,7 @@ ${incorrect ? "Incorrect password." : "&nbsp;"}
 
 </p>
 
-                <div class="button-group" style="margin-top:24px;">
+                <div class="button-group" style="margin-top:8px;">
 
                     <button
                         class="btn btn-primary"
