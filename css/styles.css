@@ -499,10 +499,9 @@ PAGE HERO
 
     margin-top:18px;
 
-    background:
-        linear-gradient(
-            var(--red),
-            var(--red)
+linear-gradient(
+            rgba(11,31,58,.80),
+            rgba(11,31,58,.88)
         ),
         center/cover no-repeat;
 
