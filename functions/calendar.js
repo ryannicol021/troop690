@@ -207,7 +207,7 @@ href="/css/styles.css">
 
         <div class="content-card fade-up">
 
-            <h3 styles="color:--red;">
+            <h3 styles="color:#C62828;">
 
                 Troop Calendar
 
@@ -240,7 +240,7 @@ href="/css/styles.css">
                 ${incorrect ? `
 
                 <p
-                style="color:--red;font-weight:700;margin-top:2px;">
+                style="color:#C62828;font-weight:700;margin-top:2px;">
 
                     Incorrect password.
 
