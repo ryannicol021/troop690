@@ -240,7 +240,7 @@ href="/css/styles.css">
 <p
 style="
 height:20px;
-margin:12px 0 16px 0;
+margin:0 0 16px 0;
 display:flex;
 align-items:center;
 justify-content:center;
