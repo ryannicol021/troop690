@@ -27,9 +27,9 @@ export async function onRequest(context) {
             return new Response(null, {
                 status: 303,
                 headers: {
-                    "Location": "/calendar",
+                    "Location": new URL(request.url).pathname,
                     "Set-Cookie":
-                        `calendar_access=${env.CALENDAR_COOKIE}; Path=/; Max-Age=1209600; SameSite=Lax; Secure`
+                        `calendar_access=${env.CALENDAR_COOKIE}; Path=/; Max-Age=1209600; SameSite=Lax; Secure; HttpOnly`
                 }
             });
 
