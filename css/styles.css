@@ -2665,8 +2665,8 @@ HISTORY
     justify-content:center;
     align-items:center;
 
-    background:var(--card);
-    border:1px solid var(--border);
+    background:rgb(255,255,255,0);
+    border:0 solid var(--border);
     border-radius:20px;
 
     padding:22px;
