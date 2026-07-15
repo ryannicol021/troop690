@@ -4,9 +4,10 @@ export async function onRequest(context) {
 
     const url = new URL(request.url);
 
-if (url.pathname !== "/calendar") {
-    return next();
-}
+    // Only protect /calendar
+    if (url.pathname !== "/calendar") {
+        return next();
+    }
 
     // Already authenticated?
     const cookie = request.headers.get("Cookie") || "";
@@ -35,7 +36,7 @@ if (url.pathname !== "/calendar") {
                 headers: {
                     "Location": request.url,
                     "Set-Cookie":
-                        `calendar_access=${env.CALENDAR_COOKIE}; Path=/; Max-Age=1209600; SameSite=Lax; Secure; HttpOnly; Priority=High`
+`calendar_access=${env.CALENDAR_COOKIE}; Path=/; Max-Age=1209600; SameSite=Lax; Secure; HttpOnly; Priority=High`
                 }
             });
 
@@ -46,6 +47,7 @@ if (url.pathname !== "/calendar") {
     }
 
     return new Response(`<!DOCTYPE html>
+
 <html lang="en">
 
 <head>
@@ -54,155 +56,300 @@ if (url.pathname !== "/calendar") {
 
 <meta
 name="viewport"
-content="width=device-width,initial-scale=1">
+content="width=device-width, initial-scale=1.0">
 
-<title>Troop 690 Calendar</title>
+<title>Calendar • Troop 690</title>
 
-<style>
+<meta
+name="description"
+content="Official website of Troop 690 in Seaford, New York.">
 
-:root{
+<link rel="icon" type="image/png" href="/images/favicon.png">
 
---navy:#0B2345;
---red:#C8102E;
+<link
+rel="preconnect"
+href="https://fonts.googleapis.com">
 
-}
+<link
+rel="preconnect"
+href="https://fonts.gstatic.com"
+crossorigin>
 
-*{
+<link
+href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;500;700&family=Merriweather:wght@700&display=swap"
+rel="stylesheet">
 
-box-sizing:border-box;
-
-}
-
-body{
-
-margin:0;
-min-height:100vh;
-display:flex;
-justify-content:center;
-align-items:center;
-padding:24px;
-background:var(--navy);
-font-family:system-ui,sans-serif;
-
-}
-
-.card{
-
-width:100%;
-max-width:420px;
-padding:40px;
-border-radius:24px;
-background:#fff;
-box-shadow:0 16px 40px rgba(0,0,0,.25);
-text-align:center;
-
-}
-
-h1{
-
-margin:0 0 12px;
-color:var(--red);
-font-size:2rem;
-
-}
-
-p{
-
-margin:0 0 24px;
-color:#666;
-line-height:1.6;
-
-}
-
-input{
-
-width:100%;
-padding:14px;
-font-size:16px;
-border-radius:12px;
-border:1px solid #ccc;
-margin-bottom:20px;
-
-}
-
-button{
-
-width:100%;
-padding:14px;
-border:none;
-border-radius:999px;
-background:var(--red);
-color:#fff;
-font-size:16px;
-font-weight:700;
-cursor:pointer;
-transition:.25s;
-
-}
-
-button:hover{
-
-filter:brightness(.92);
-
-}
-
-.error{
-
-margin-top:18px;
-font-weight:700;
-color:var(--red);
-
-}
-
-</style>
+<link
+rel="stylesheet"
+href="/css/styles.css">
 
 </head>
 
 <body>
 
-<div class="card">
+<header class="site-header">
 
-<h1>
+    <div class="container nav-container">
 
-Troop 690 Calendar
+        <a
+            class="logo"
+            href=".">
 
-</h1>
+            <span class="logo-main">
+                Troop 690
+            </span>
 
-<p>
+            <span class="logo-sub">
+                Seaford, New York
+            </span>
 
-Please enter the troop password to continue.
+        </a>
 
-</p>
+        <nav class="desktop-nav">
 
-<form method="POST">
+            <a href=".">
+                Home
+            </a>
 
-<input
-type="password"
-name="password"
-placeholder="Password"
-required
-autofocus>
+            <a href="eagle-scouts">
+                Eagle Scouts
+            </a>
 
-<button type="submit">
+            <a href="leadership">
+                Leadership
+            </a>
 
-Continue
+            <a href="advancement">
+                Advancement
+            </a>
 
-</button>
+            <div class="nav-dropdown desktop-only">
 
-</form>
+                <button>
+                    More
+                </button>
 
-${incorrect ? '<div class="error">Incorrect password.</div>' : ""}
+                <div class="dropdown-menu">
+
+                    <a href="summer-camp">
+                        Summer Camp
+                    </a>
+
+                    <a href="scout-uniform">
+                        Scout Uniform
+                    </a>
+
+                    <a class="active" href="calendar">
+                        Calendar
+                    </a>
+
+                    <a href="contact-us">
+                        Contact Us
+                    </a>
+
+                </div>
+
+            </div>
+
+            <a class="mobile-only" href="summer-camp">
+                Summer Camp
+            </a>
+
+            <a class="mobile-only" href="scout-uniform">
+                Scout Uniform
+            </a>
+
+            <a class="mobile-only active" href="calendar">
+                Calendar
+            </a>
+
+            <a class="mobile-only" href="contact-us">
+                Contact Us
+            </a>
+
+        </nav>
+
+        <button
+            class="mobile-menu-button"
+            aria-label="Menu">
+
+            ☰
+
+        </button>
+
+    </div>
+
+</header>
+
+<section class="hero page-hero">
+
+    <div class="container">
+
+        <div class="hero-card fade-up compact-hero">
+
+            <h1>
+
+                Calendar
+
+            </h1>
+
+        </div>
+
+    </div>
+
+</section>
+
+<main>
+
+<section class="section">
+
+    <div class="container">
+
+        <div class="content-card fade-up">
+
+            <h3>
+
+                Troop Calendar
+
+            </h3>
+
+            <p class="lead">
+
+                The calendar is only accessible to families registered in the troop.
+
+            </p>
+
+            <form method="POST">
+
+                <input
+
+                    class="search-input"
+
+                    type="password"
+
+                    name="password"
+
+                    placeholder="Enter troop password..."
+
+                    autocomplete="current-password"
+
+                    required
+
+                    autofocus>
+
+                ${incorrect ? `
+
+                <p
+                style="color:#C8102E;font-weight:700;margin-top:16px;">
+
+                    Incorrect password.
+
+                </p>
+
+                ` : ""}
+
+                <div class="button-group">
+
+                    <button
+                        class="btn btn-primary"
+                        type="submit">
+
+                        Continue
+
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</section>
+
+</main>
+
+<footer class="site-footer">
+
+    <div class="container">
+
+        <div class="footer-copy">
+
+            <h3>
+
+                Troop 690
+
+            </h3>
+
+            <p>
+
+                <a
+                    href="https://stwilliam.org"
+                    target="_blank"
+                    rel="noopener">
+
+                    St. William the Abbot RC Church
+
+                </a>
+
+            </p>
+
+            <p>
+
+                <a
+                    href="https://scoutingli.org"
+                    target="_blank"
+                    rel="noopener">
+
+                    Scouting America Long Island
+
+                </a>
+
+            </p>
+
+            <p>
+
+                &copy; 1962&ndash;<span id="copyright-year">2026</span>
+                Troop 690. All rights reserved.
+
+            </p>
+
+        </div>
+
+    </div>
+
+</footer>
+
+<div class="modal">
+
+    <div class="modal-window">
+
+        <button
+            class="modal-close">
+
+            &times;
+
+        </button>
+
+        <div class="modal-body">
+
+        </div>
+
+    </div>
 
 </div>
+
+<script src="/js/site.js"></script>
 
 </body>
 
 </html>`, {
 
         headers: {
-    "Content-Type": "text/html;charset=UTF-8",
-    "Cache-Control": "no-store"
-}
+            "Content-Type": "text/html;charset=UTF-8",
+            "Cache-Control": "no-store"
+        }
 
     });
 
