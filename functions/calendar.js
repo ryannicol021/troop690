@@ -2,6 +2,12 @@ export async function onRequest(context) {
 
     const { request, env, next } = context;
 
+    const url = new URL(request.url);
+
+if (url.pathname !== "/calendar") {
+    return next();
+}
+
     // Already authenticated?
     const cookie = request.headers.get("Cookie") || "";
 
@@ -27,9 +33,9 @@ export async function onRequest(context) {
             return new Response(null, {
                 status: 303,
                 headers: {
-                    "Location": new URL(request.url).pathname,
+                    "Location": request.url,
                     "Set-Cookie":
-                        `calendar_access=${env.CALENDAR_COOKIE}; Path=/; Max-Age=1209600; SameSite=Lax; Secure; HttpOnly`
+                        `calendar_access=${env.CALENDAR_COOKIE}; Path=/; Max-Age=1209600; SameSite=Lax; Secure; HttpOnly; Priority=High`
                 }
             });
 
@@ -194,8 +200,9 @@ ${incorrect ? '<div class="error">Incorrect password.</div>' : ""}
 </html>`, {
 
         headers: {
-            "Content-Type": "text/html;charset=UTF-8"
-        }
+    "Content-Type": "text/html;charset=UTF-8",
+    "Cache-Control": "no-store"
+}
 
     });
 
