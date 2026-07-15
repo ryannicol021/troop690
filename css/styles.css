@@ -10,8 +10,8 @@ ROOT
 
 :root{
 
-    --navy:#0B1F3A;
-    --navy-light:#17375F;
+    --navy:#020928;
+    --navy-light:#0B1F3A;
 
     --red:#C62828;
     --red-hover:#E53935;
@@ -22,7 +22,7 @@ ROOT
     --muted:#C8D3E2;
 
     --card:#0B1F3A;
-    --card-hover:#19385F;
+    --card-hover:#0B1F3A;
 
     --border:rgba(255,255,255,.08);
 
