@@ -209,7 +209,7 @@ href="/css/styles.css">
 
             <h3 style="color:#C62828;">
 
-                Troop Calendar
+                Enter the Password
 
             </h3>
 
@@ -229,7 +229,7 @@ href="/css/styles.css">
 
                     name="password"
 
-                    placeholder="Enter troop password..."
+                    placeholder="Password"
 
                     autocomplete="current-password"
 
