@@ -12,6 +12,7 @@ ROOT
 
     --navy:#0B1F3A;
     --navy-light:#0B1F3A;
+    --navy-hover:#1C3E47; 
 
     --red:#C62828;
     --red-hover:#E53935;
@@ -693,6 +694,88 @@ BUTTONS
 .btn-secondary:hover{
 
     background:var(--red);
+
+}
+
+.btna{
+
+    display:inline-flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    gap:10px;
+
+    padding:16px 34px;
+
+    border-radius:999px;
+
+    font-weight:700;
+
+    position:relative;
+
+    overflow:hidden;
+
+    transition:var(--transition);
+
+}
+
+.btna::before{
+
+    content:"";
+
+    position:absolute;
+
+    inset:0;
+
+    background:
+        linear-gradient(
+            120deg,
+            transparent,
+            rgba(255,255,255,.15),
+            transparent
+        );
+
+    transform:translateX(-130%);
+
+    transition:.7s;
+
+}
+
+.btna:hover::before{
+
+    transform:translateX(130%);
+
+}
+
+.btna-primary{
+
+    background:var(--navy);
+
+    color:white;
+
+}
+
+.btna-primary:hover{
+
+    background:var(--navy-hover);
+
+    transform:translateY(-3px);
+
+    box-shadow:0 12px 30px rgba(198,40,40,.35);
+
+}
+
+.btna-secondary{
+
+    border:2px solid var(--navy);
+
+}
+
+.btna-secondary:hover{
+
+    background:var(--navy);
 
 }
 
