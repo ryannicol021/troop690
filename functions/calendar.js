@@ -240,11 +240,11 @@ href="/css/styles.css">
 <p
 style="
 height:20px;
-padding-bottom:8px;
+margin:12px 0 16px 0;
 display:flex;
 align-items:center;
 justify-content:center;
-color:#C8102E;
+color:#C62828;
 font-weight:700;
 visibility:${incorrect ? "visible" : "hidden"};
 ">
