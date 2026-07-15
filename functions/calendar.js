@@ -241,6 +241,7 @@ href="/css/styles.css">
 style="
 height:20px;
 display:flex;
+margin-top:-8px;
 align-items:center;
 justify-content:center;
 color:#C8102E;
