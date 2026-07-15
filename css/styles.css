@@ -12,7 +12,7 @@ ROOT
 
     --navy:#0B1F3A;
     --navy-light:#0B1F3A;
-    --navy-hover:#1C3E47; 
+    --navy-hover:#0E2969; 
 
     --red:#C62828;
     --red-hover:#E53935;
@@ -504,7 +504,6 @@ PAGE HERO
             var(--red),
             var(--red)
         ),
-        url("../images/hero.jpg")
         center/cover no-repeat;
 
 }
