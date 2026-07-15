@@ -237,16 +237,18 @@ href="/css/styles.css">
 
                     autofocus>
 
-                ${incorrect ? `
+<p
+style="
+height:24px;
+margin:16px 0;
+text-align:center;
+color:#C62828;
+font-weight:700;
+">
 
-                <p
-                style="color:#C62828;font-weight:700;margin-top:2px;text-align:center;">
+${incorrect ? "Incorrect password." : "&nbsp;"}
 
-                    Incorrect password.
-
-                </p>
-
-                ` : ""}
+</p>
 
                 <div class="button-group">
 
