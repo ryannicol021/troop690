@@ -542,8 +542,6 @@ async function initEagleScouts(){
 
     const total=document.getElementById("eagle-total");
 
-     const years=document.getElementById("eagle-years");
-
     const response=await fetch("data/eagles.csv");
 
     const text=await response.text();
@@ -573,10 +571,6 @@ async function initEagleScouts(){
     });
 
 total.dataset.counter=eagles.length;
-
-years.dataset.counter=
-
-    new Date().getFullYear()-1967+1;
 
  initCounters();
 
