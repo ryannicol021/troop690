@@ -534,8 +534,6 @@ async function initEagleScouts(){
 
     const container=document.getElementById("eagle-years-container");
 
-    if(!container) return;
-
     const search=document.getElementById("eagle-search");
 
     const jump=document.getElementById("year-jump");
@@ -544,7 +542,7 @@ async function initEagleScouts(){
 
     const total=document.getElementById("eagle-total");
 
-    const years=document.getElementById("eagle-years");
+     const years=document.getElementById("eagle-years");
 
     const response=await fetch("data/eagles.csv");
 
