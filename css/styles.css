@@ -3399,15 +3399,15 @@ UNIFORM
 
     justify-content:center;
 
-    gap:12px;
+    align-content:center;
 
-    margin:0;
+    gap:12px;
 
     max-width:212px;
 
-    margin-left:auto;
+    min-height:100px;
 
-    margin-right:auto;
+    margin:0 auto;
 
 }
 
