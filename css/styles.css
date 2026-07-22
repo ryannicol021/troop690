@@ -3373,7 +3373,7 @@ UNIFORM
 
     flex-direction:column;
 
-    gap:20px;
+    gap:24px;
 
     box-shadow:var(--shadow);
 
@@ -3395,13 +3395,13 @@ UNIFORM
 
     display:grid;
 
-    grid-template-columns:repeat(4,44px);
+    grid-template-columns:repeat(3,44px);
 
     justify-content:center;
 
     gap:12px;
 
-    margin-top:18px;
+    margin:0;
 
 }
 
@@ -3477,7 +3477,7 @@ UNIFORM
 
     text-align:center;
 
-    margin-bottom:8px;
+    margin:0;
 
 }
 
@@ -3511,6 +3511,8 @@ UNIFORM
 
         padding:18px;
 
+        gap:18px;
+
     }
 
     .uniform-card img{
@@ -3526,6 +3528,8 @@ UNIFORM
     .uniform-side-title{
 
         font-size:1rem;
+
+        margin:0;
 
     }
 
