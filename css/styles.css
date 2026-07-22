@@ -3311,7 +3311,7 @@ UNIFORM
 
     display:grid;
 
-    grid-template-columns:repeat(2,minmax(0,460px));
+    grid-template-columns:repeat(4,1fr);
 
     justify-content:center;
 
@@ -3320,6 +3320,8 @@ UNIFORM
     margin-top:-36px;
 
     align-items:stretch;
+
+     display:grid;
 
 }
 
@@ -3407,22 +3409,6 @@ UNIFORM
 
 }
 
-@media(max-width:900px){
-
-    .uniform-classb{
-
-        grid-template-columns:1fr;
-
-    }
-
-    .uniform-grid{
-
-        grid-template-columns:1fr;
-
-    }
-
-}
-
 .uniform-number{
 
     width:36px;
@@ -3466,6 +3452,62 @@ UNIFORM
     text-align:center;
 
     margin-bottom:8px;
+
+}
+
+@media(max-width:900px){
+
+    .uniform-classb{
+
+        grid-template-columns:1fr;
+
+    }
+
+    .uniform-grid{
+
+            grid-template-columns:repeat(2,1fr);
+
+    gap:12px;
+
+    }
+
+ .uniform-card{
+
+    padding:18px;
+
+}
+
+.uniform-card img{
+
+    width:100%;
+
+    max-width:140px;
+
+    margin:0 auto;
+
+}
+
+.uniform-side-title{
+
+    font-size:1rem;
+
+}
+
+.uniform-buttons{
+
+    gap:8px;
+
+}
+
+.uniform-number{
+
+    width:34px;
+
+    height:34px;
+
+    font-size:.9rem;
+
+}
 
 }
 
