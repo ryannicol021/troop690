@@ -3435,6 +3435,10 @@ UNIFORM
 
 .uniform-number{
 
+    position:relative;
+
+    overflow:hidden;
+
     width:36px;
 
     height:36px;
@@ -3455,9 +3459,37 @@ UNIFORM
 
 }
 
+.uniform-number::before{
+
+    content:"";
+
+    position:absolute;
+
+    inset:0;
+
+    background:
+        linear-gradient(
+            120deg,
+            transparent,
+            rgba(255,255,255,.15),
+            transparent
+        );
+
+    transform:translateX(-130%);
+
+    transition:.7s;
+
+}
+
+.uniform-number:hover::before{
+
+    transform:translateX(130%);
+
+}
+
 .uniform-number:hover{
 
-    background:var(--red);
+    background:var(--red-hover);
 
     transform:translateY(-3px);
 
