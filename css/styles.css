@@ -3395,7 +3395,7 @@ UNIFORM
 
     display:grid;
 
-    grid-template-columns:repeat(3,44px);
+    grid-template-columns:repeat(4,44px);
 
     justify-content:center;
 
