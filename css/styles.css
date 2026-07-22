@@ -3452,16 +3452,18 @@ UNIFORM
     cursor:pointer;
 
     transition:
-        background .25s,
-        color .25s,
-        transform .25s,
-        box-shadow .25s;
+        background-color .25s ease,
+        transform .25s ease,
+        box-shadow .25s ease,
+        filter .25s ease;
 
 }
 
 .uniform-number:hover{
 
-    background:var(--red-dark);
+    background:var(--red);
+
+    filter:brightness(1.15);
 
     transform:translateY(-2px);
 
