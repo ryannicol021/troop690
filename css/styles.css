@@ -3275,6 +3275,42 @@ UNIFORM
 
 }
 
+/* ---------- Two-card layout ---------- */
+
+.uniform-grid-2{
+
+    display:grid;
+
+    grid-template-columns:repeat(2,460px);
+
+    justify-content:center;
+
+    gap:32px;
+
+    align-items:stretch;
+
+    margin-top:-36px;
+
+}
+
+.uniform-grid-2 > .container{
+
+    width:100%;
+
+}
+
+.uniform-grid-2 .content-card{
+
+    height:100%;
+
+    display:flex;
+
+    flex-direction:column;
+
+}
+
+/* ---------- Legacy image/text layout ---------- */
+
 .uniform-classb{
 
     display:grid;
@@ -3307,13 +3343,13 @@ UNIFORM
 
 }
 
-.uniform-grid{
+/* ---------- Four-card layout ---------- */
+
+.uniform-grid-4{
 
     display:grid;
 
     grid-template-columns:repeat(4,1fr);
-
-    justify-content:center;
 
     gap:24px;
 
@@ -3321,25 +3357,9 @@ UNIFORM
 
     align-items:stretch;
 
-     display:grid;
-
 }
 
-.uniform-grid > .container{
-
-    width:100%;
-
-}
-
-.uniform-grid .content-card{
-
-    height:100%;
-
-    display:flex;
-
-    flex-direction:column;
-
-}
+/* ---------- Shared card styles ---------- */
 
 .uniform-card{
 
@@ -3356,6 +3376,8 @@ UNIFORM
     gap:20px;
 
     box-shadow:var(--shadow);
+
+    height:100%;
 
 }
 
@@ -3412,6 +3434,7 @@ UNIFORM
 .uniform-number{
 
     width:36px;
+
     height:36px;
 
     border:none;
@@ -3435,14 +3458,21 @@ UNIFORM
 }
 
 .uniform-number:hover{
+
     background:var(--red-dark);
+
     transform:translateY(-2px);
+
     box-shadow:0 10px 24px rgba(0,0,0,.18);
+
 }
 
 .modal-uniform-title{
+
     color:var(--red);
+
     margin-bottom:16px;
+
 }
 
 .uniform-side-title{
@@ -3455,6 +3485,8 @@ UNIFORM
 
 }
 
+/* ---------- Mobile ---------- */
+
 @media(max-width:900px){
 
     .uniform-classb{
@@ -3463,51 +3495,59 @@ UNIFORM
 
     }
 
-    .uniform-grid{
+    .uniform-grid-2{
 
-            grid-template-columns:repeat(2,1fr);
+        grid-template-columns:1fr;
 
-    gap:12px;
+        gap:24px;
 
     }
 
- .uniform-card{
+    .uniform-grid-4{
 
-    padding:18px;
+        grid-template-columns:repeat(2,1fr);
 
-}
+        gap:12px;
 
-.uniform-card img{
+    }
 
-    width:100%;
+    .uniform-card{
 
-    max-width:140px;
+        padding:18px;
 
-    margin:0 auto;
+    }
 
-}
+    .uniform-card img{
 
-.uniform-side-title{
+        width:100%;
 
-    font-size:1rem;
+        max-width:140px;
 
-}
+        margin:0 auto;
 
-.uniform-buttons{
+    }
 
-    gap:8px;
+    .uniform-side-title{
 
-}
+        font-size:1rem;
 
-.uniform-number{
+    }
 
-    width:34px;
+    .uniform-buttons{
 
-    height:34px;
+        gap:8px;
 
-    font-size:.9rem;
+    }
 
-}
+    .uniform-number{
+
+        width:34px;
+
+        height:34px;
+
+        font-size:.9rem;
+
+    }
 
 }
 
