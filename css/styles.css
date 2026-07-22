@@ -3461,9 +3461,7 @@ UNIFORM
 
 .uniform-number:hover{
 
-    background:var(--red);
-
-    filter:brightness(1.15);
+    background:var(--red-hover);
 
     transform:translateY(-2px);
 
