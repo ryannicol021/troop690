@@ -961,11 +961,16 @@ h3{
     }
 
 
-    .year-pill{
-        font-size:.82rem;
-        padding:7px 14px;
+    .year-jump{
+        grid-template-columns:repeat(6,1fr);
+        gap:8px;
     }
 
+    .year-pill{
+        padding:10px 0;
+        font-size:1rem;
+    }
+    
 
     .modal{
         padding:16px;
