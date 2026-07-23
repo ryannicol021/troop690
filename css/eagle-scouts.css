@@ -36,8 +36,10 @@
     box-sizing:border-box;
 }
 
-html{
-    scroll-behavior:smooth;
+html {
+    scroll-behavior: smooth;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255,255,255,.12) transparent;
 }
 
 body{
