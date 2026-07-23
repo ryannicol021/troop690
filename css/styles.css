@@ -398,9 +398,6 @@ margin-top:-12px;
 .btna-secondary:hover{
     background:var(--navy);
 }
-/*=========================================================
-STATISTICS
-=========================================================*/
 .stats-grid{
     display:grid;
     grid-template-columns:repeat(3,1fr);
@@ -431,9 +428,6 @@ STATISTICS
     color:var(--muted);
     font-size:.95rem;
 }
-/*=========================================================
-STANDARD CARDS
-=========================================================*/
 .content-card,
 .join-card,
 .page-hero-card,
@@ -453,9 +447,6 @@ STANDARD CARDS
 .quote-card > h2{
     text-align:center;
 }
-/*=========================================================
-PAGE HERO
-=========================================================*/
 .page-hero-card{
     text-align:center;
     padding:48px 48px 40px;
@@ -467,9 +458,6 @@ PAGE HERO
     max-width:760px;
     margin:0 auto;
 }
-/*=========================================================
-FEATURE GRID
-=========================================================*/
 .feature-grid{
     display:grid;
     grid-template-columns:repeat(2,1fr);
@@ -500,9 +488,6 @@ FEATURE GRID
     font-size:2.75rem;
     line-height:1;
 }
-/*=========================================================
-SCOUT OATH & LAW
-=========================================================*/
 .oath{
     max-width:760px;
     margin:0 auto;
@@ -546,9 +531,6 @@ SCOUT OATH & LAW
     background:var(--red);
     transform:translateY(-4px);
 }
-/*=========================================================
-JOIN
-=========================================================*/
 .join-card{
     text-align:center;
 }
@@ -562,9 +544,6 @@ JOIN
     flex-wrap:wrap;
     gap:18px;
 }
-/*=========================================================
-TIMELINE
-=========================================================*/
 .timeline{
     position:relative;
     max-width:980px;
@@ -628,9 +607,6 @@ TIMELINE
 .timeline-content p:last-child{
     margin-bottom:0;
 }
-/*=========================================================
-FOOTER
-=========================================================*/
 .site-footer{
     margin-top:24px;
     background:#081528;
@@ -655,9 +631,6 @@ FOOTER
     text-align:right;
     color:var(--muted);
 }
-/*=========================================================
-ANIMATIONS
-=========================================================*/
 .fade-up{
     opacity:0;
     transform:translateY(36px);
@@ -691,9 +664,6 @@ ANIMATIONS
     opacity:1;
     transform:none;
 }
-/*=========================================================
-UTILITY CLASSES
-=========================================================*/
 .center{text-align:center;}
 .left{text-align:left;}
 .right{text-align:right;}
@@ -708,9 +678,6 @@ UTILITY CLASSES
 .hidden{
     display:none !important;
 }
-/*=========================================================
-MODALS
-=========================================================*/
 .modal{
     position:fixed;
     inset:0;
@@ -759,9 +726,6 @@ MODALS
     background:var(--red);
     transform:rotate(90deg);
 }
-/*=========================================================
-LEADERSHIP
-=========================================================*/
 .leadership-grid{
     display:grid;
     grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
@@ -790,9 +754,6 @@ LEADERSHIP
     object-fit:contain;
     margin:0 auto 18px;
 }
-/*=========================================================
-ADVANCEMENT
-=========================================================*/
 .rank-grid{
     display:grid;
     grid-template-columns:repeat(7,1fr);
@@ -901,9 +862,6 @@ grid-template-columns:repeat(7,1fr);
 .modal.open{
     pointer-events:auto;
 }
-/*=========================================================
-EAGLE SCOUTS
-=========================================================*/
 .eagle-grid{
     display:grid;
     grid-template-columns:repeat(auto-fit,minmax(340px,1fr));
@@ -967,9 +925,6 @@ EAGLE SCOUTS
     max-width:600px;
     margin:0 auto;
 }
-/*=========================================================
-UNIFORM
-=========================================================*/
 .uniform-layout{
     display:grid;
     grid-template-columns:420px 1fr;
@@ -997,9 +952,6 @@ UNIFORM
     padding:28px;
     box-shadow:var(--shadow);
 }
-/*=========================================================
-MERIT BADGES / AWARDS
-=========================================================*/
 .resource-grid{
     display:grid;
     grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
@@ -1024,9 +976,6 @@ MERIT BADGES / AWARDS
     object-fit:contain;
     margin:0 auto 18px;
 }
-/*=========================================================
-CALENDAR
-=========================================================*/
 .calendar-wrapper{
     background:var(--card);
     border:1px solid var(--border);
@@ -1040,9 +989,6 @@ CALENDAR
     border:none;
     border-radius:18px;
 }
-/*=========================================================
-CONTACT
-=========================================================*/
 .contact-grid{
     display:grid;
     grid-template-columns:repeat(auto-fit,minmax(320px,1fr));
@@ -1073,9 +1019,6 @@ CONTACT
 .contact-card a:hover{
     text-decoration:underline;
 }
-/*=========================================================
-IMAGE PLACEHOLDERS
-=========================================================*/
 .image-card{
     aspect-ratio:16/9;
     background:
@@ -1111,9 +1054,6 @@ IMAGE PLACEHOLDERS
     transform:scale(1.02);
     filter:brightness(1.05);
 }
-/*=========================================================
-TABLES
-=========================================================*/
 table{
     width:100%;
     border-collapse:collapse;
@@ -1132,9 +1072,6 @@ td{
 tr:hover{
     background:rgba(255,255,255,.03);
 }
-/*=========================================================
-RESPONSIVE
-=========================================================*/
 @media (max-width:1100px){
     .uniform-layout{
         grid-template-columns:1fr;
@@ -1219,9 +1156,6 @@ RESPONSIVE
         text-align:left;
     }
 }
-/*=========================================================
-EAGLE SCOUTS
-=========================================================*/
 .search-input{
     display:block;
     width:100%;
@@ -1330,9 +1264,6 @@ EAGLE SCOUTS
     gap:24px;
     align-items:start;
 }
-/*=========================================================
-LEADERSHIP
-=========================================================*/
 .leadership-grid{
     display:grid;
     grid-template-columns:repeat(2,minmax(0,1fr));
@@ -1357,9 +1288,6 @@ LEADERSHIP
     text-align:center;
     margin-bottom:18px;
 }
-/*=========================================================
-POSITION LISTS
-=========================================================*/
 #spl-aspl-buttons,
 #pl-apl-buttons,
 #troop-position-buttons,
@@ -1401,9 +1329,6 @@ POSITION LISTS
     transform:translateX(4px);
     opacity:1;
 }
-/*=========================================================
-HISTORY
-=========================================================*/
 .history-stack{
     display:flex;
     flex-direction:column;
@@ -1462,9 +1387,6 @@ HISTORY
 .history-name{
     margin-top:0;
 }
-/*=========================================================
-MODAL
-=========================================================*/
 .modal-body{
     text-align:center;
 }
@@ -1518,9 +1440,6 @@ font-size:1.55rem;
         padding:14px 16px;
     }
 }
-/*=========================================================
-LEADERSHIP SUBHEADERS
-=========================================================*/
 .leadership-group h3{
     color:var(--red);
     text-align:center;
@@ -1533,9 +1452,6 @@ LEADERSHIP SUBHEADERS
     display:none !important;
     content:none !important;
 }
-/*=========================================================
-RANK ADVANCEMENT
-=========================================================*/
 .rank-group{
     margin-top:30px;
 }
@@ -1560,9 +1476,6 @@ RANK ADVANCEMENT
         min-height:0;
     }
 }
-/*=========================================================
-KNOW YOUR KNOTS
-=========================================================*/
 .knot-grid{
     display:grid;
     grid-template-columns:repeat(3,minmax(0,1fr));
@@ -1606,9 +1519,6 @@ KNOW YOUR KNOTS
 .knots-section{
     padding-top:0;
 }
-/*=========================================================
-AWARDS
-=========================================================*/
 .awards-section{
     padding-top:0;
 }
@@ -1643,15 +1553,9 @@ AWARDS
         gap:14px;
     }
 }
-/*=========================================================
-MERIT BADGES
-=========================================================*/
 .merit-badges-section{
     padding-top:0;
 }
-/*=========================================================
-SITE SCROLLBAR
-=========================================================*/
 html{
     scrollbar-width:thin;
     scrollbar-color:rgba(255,255,255,.12) transparent;
@@ -1686,9 +1590,6 @@ html{
 background:transparent;
     color:transparent;
 }
-/*=========================================================
-SUMMER CAMP
-=========================================================*/
 .summer-image-section{
     padding:0 0 40px;
 }
@@ -1734,9 +1635,6 @@ SUMMER CAMP
         width:100%;
     }
 }
-/*=========================================================
-UNIFORM
-=========================================================*/
 .uniform-list{
     margin:24px 0 0;
     padding-left:24px;
@@ -1747,7 +1645,6 @@ UNIFORM
     color:var(--muted);
     line-height:1.7;
 }
-/* ---------- Two-card layout ---------- */
 .uniform-grid-2{
     display:grid;
     grid-template-columns:repeat(2,460px);
@@ -1764,7 +1661,6 @@ UNIFORM
     display:flex;
     flex-direction:column;
 }
-/* ---------- Legacy image/text layout ---------- */
 .uniform-classb{
     display:grid;
     grid-template-columns:320px 1fr;
@@ -1781,7 +1677,6 @@ UNIFORM
 .uniform-classb p+p{
     margin-top:20px;
 }
-/* ---------- Four-card layout ---------- */
 .uniform-grid-4{
     display:grid;
     grid-template-columns:repeat(4,1fr);
@@ -1789,7 +1684,6 @@ UNIFORM
     margin-top:-36px;
     align-items:stretch;
 }
-/* ---------- Shared card styles ---------- */
 .uniform-card{
     background:var(--card);
     border-radius:var(--radius);
@@ -1897,7 +1791,6 @@ UNIFORM
 .uniform-grid-2 .content-card div{
     margin:0;
 }
-/* ---------- Mobile ---------- */
 @media(max-width:900px){
     .uniform-classb{
         grid-template-columns:1fr;
@@ -1933,9 +1826,6 @@ UNIFORM
         font-size:.9rem;
     }
 }
-/*=========================================================
-CALENDAR WRAPPER
-=========================================================*/
 .calendar-wrapper{
     display:block;
     width:100%;
@@ -1953,9 +1843,6 @@ CALENDAR WRAPPER
  aspect-ratio:1 / 2;
  }
 }
-/*=========================================================
-CONTACT
-=========================================================*/
 .contact-grid{
     display:grid;
     gap:24px;
