@@ -201,7 +201,7 @@ margin-top:-12px;
 }
 .dropdown-menu{
     position:absolute;
-    top:calc(100% + 12px);
+    top:100%;
     right:0;
     background:var(--card);
     border:1px solid var(--border);
@@ -269,7 +269,7 @@ margin-top:-12px;
     margin-bottom:24px;
 }
 .hero-slogan{
-    color:var(--red);
+    color:var(--white);
     font-family:var(--heading);
     font-size:clamp(1.5rem,3vw,2.2rem);
     margin-bottom:30px;
