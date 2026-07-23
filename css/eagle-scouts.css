@@ -1,1 +1,141 @@
+.stats-grid{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:24px;
+}
 
+.stat-card{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    text-align:center;
+    padding:40px;
+    box-shadow:var(--shadow);
+    transition:
+        transform .35s ease,
+        background .35s ease,
+        border-color .35s ease,
+        box-shadow .35s ease;
+}
+
+.stat-number{
+    font-family:var(--heading);
+    color:var(--red);
+    font-size:3.4rem;
+    margin-bottom:10px;
+}
+
+.stat-title{
+    text-transform:uppercase;
+    letter-spacing:2px;
+    color:var(--muted);
+    font-size:.95rem;
+}
+
+.search-input{
+    display:block;
+    width:100%;
+    max-width:620px;
+    margin:32px auto 28px;
+    padding:16px 22px;
+    border-radius:999px;
+    border:1px solid var(--border);
+    background:var(--card);
+    color:var(--text);
+    font:inherit;
+    font-size:1.05rem;
+    transition:var(--transition);
+}
+
+.search-input:focus{
+    outline:none;
+    border-color:var(--red);
+    box-shadow:0 0 0 3px rgba(198,40,40,.18);
+}
+
+.year-jump{
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:center;
+    gap:10px;
+    margin-top:8px;
+}
+
+.search-empty{
+    width:100%;
+    grid-column:1 / -1;
+    text-align:center;
+    margin:24px 0;
+}
+
+.search-empty h2{
+    margin-bottom:12px;
+}
+
+.search-empty p{
+    max-width:600px;
+    margin:0 auto;
+}
+
+.year-pill{
+    padding:8px 16px;
+    border:none;
+    border-radius:999px;
+    background:rgba(198,40,40,.12);
+    border:1px solid rgba(198,40,40,.30);
+    color:var(--text);
+    font:inherit;
+    font-size:.9rem;
+    font-weight:700;
+    cursor:pointer;
+    transition:var(--transition);
+}
+
+.year-pill:hover{
+    background:var(--red);
+    color:#fff;
+    transform:translateY(-2px);
+}
+
+.year-card{
+    margin:0;
+    scroll-margin-top:100px;
+    height:100%;
+}
+
+.year-card h2{
+    margin-bottom:28px;
+}
+
+.eagle-entry{
+    margin:10px 0;
+    padding-bottom:10px;
+    border-bottom:1px solid rgba(255,255,255,.08);
+    font-size:1.05rem;
+}
+
+.eagle-entry:last-child{
+    border-bottom:none;
+    padding-bottom:0;
+}
+
+.eagle-entry strong{
+    display:inline-block;
+    width:3.5rem;
+    color:var(--red);
+}
+
+@media (max-width:700px){
+    .search-input{
+        margin-top:24px;
+    }
+
+    .year-pill{
+        font-size:.82rem;
+        padding:7px 14px;
+    }
+
+    .eagle-entry strong{
+        width:3rem;
+    }
+}
