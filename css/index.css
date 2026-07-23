@@ -260,7 +260,7 @@ p {
 
 .dropdown-menu {
     position: absolute;
-    top: 100%;
+    top: calc(100% + 12px);
     right: 0;
     background: var(--card);
     border: 1px solid var(--border);
