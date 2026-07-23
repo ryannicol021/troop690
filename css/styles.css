@@ -3547,6 +3547,19 @@ UNIFORM
 
 }
 
+.uniform-grid-2 .content-card{
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+    height:100%;
+}
+
+.uniform-grid-2 .content-card h2,
+.uniform-grid-2 .content-card p,
+.uniform-grid-2 .content-card div{
+    margin:0;
+}
+
 /* ---------- Mobile ---------- */
 
 @media(max-width:900px){
