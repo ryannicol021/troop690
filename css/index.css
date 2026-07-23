@@ -224,28 +224,6 @@ p {
     width: 100%;
 }
 
-@media (max-width:900px) {
-
-    .site-header {
-        position: sticky;
-    }
-
-    .nav-container {
-        position: relative;
-    }
-
-    .desktop-nav {
-        top: 90px;
-        left: 0;
-        right: 0;
-        width: 100vw;
-        margin-left: calc(50% - 50vw);
-        border-radius: 0;
-        border-left: none;
-        border-right: none;
-    }
-}
-
 .nav-dropdown {
     position: relative;
 }
