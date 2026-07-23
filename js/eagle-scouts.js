@@ -324,7 +324,7 @@ async function initEagleScouts(){
 
             card.appendChild(heading);
 
-            grouped[year].forEach(eagle=>{
+            grouped[year].slice().reverse().forEach(eagle=>{
 
                 const p=document.createElement("p");
 
