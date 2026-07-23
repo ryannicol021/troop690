@@ -14,10 +14,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         } else {
 
-            heroImage.addEventListener(
-                "load",
-                initScrollAnimations
-            );
+            heroImage.addEventListener("load", initScrollAnimations);
 
         }
 
@@ -31,6 +28,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     initModals();
 
+    initTimeline();
+
 });
 
 /*=========================================================
@@ -39,18 +38,14 @@ MOBILE MENU
 
 function initMobileMenu() {
 
-    const button =
-        document.querySelector(".mobile-menu-button");
-
-    const menu =
-        document.querySelector(".desktop-nav");
+    const button = document.querySelector(".mobile-menu-button");
+    const menu = document.querySelector(".desktop-nav");
 
     if (!button || !menu) return;
 
     button.addEventListener("click", () => {
 
         menu.classList.toggle("mobile-open");
-
         button.classList.toggle("open");
 
     });
@@ -63,21 +58,21 @@ DESKTOP DROPDOWNS
 
 function initDropdowns() {
 
-    document
-        .querySelectorAll(".nav-dropdown")
-        .forEach(dropdown => {
+    document.querySelectorAll(".nav-dropdown").forEach(dropdown => {
 
-            dropdown.addEventListener(
-                "mouseenter",
-                () => dropdown.classList.add("open")
-            );
+        dropdown.addEventListener("mouseenter", () => {
 
-            dropdown.addEventListener(
-                "mouseleave",
-                () => dropdown.classList.remove("open")
-            );
+            dropdown.classList.add("open");
 
         });
+
+        dropdown.addEventListener("mouseleave", () => {
+
+            dropdown.classList.remove("open");
+
+        });
+
+    });
 
 }
 
@@ -88,34 +83,27 @@ SCROLL REVEAL
 function initScrollAnimations() {
 
     const items = document.querySelectorAll(
-
         ".fade-up,.fade-left,.fade-right"
-
     );
 
     if (items.length === 0) return;
 
-    const observer = new IntersectionObserver(
+    const observer = new IntersectionObserver(entries => {
 
-        entries => {
+        entries.forEach(entry => {
 
-            entries.forEach(entry => {
-
-                if (!entry.isIntersecting) return;
+            if (entry.isIntersecting) {
 
                 entry.target.classList.add("visible");
-
                 observer.unobserve(entry.target);
 
-            });
+            }
 
-        },
+        });
 
-        {
-            threshold: 0.05
-        }
-
-    );
+    }, {
+        threshold: 0.05
+    });
 
     items.forEach(item => observer.observe(item));
 
@@ -127,55 +115,33 @@ NUMBER COUNTERS
 
 function initCounters() {
 
-    const founded =
-        document.querySelector("[data-founded]");
-
-    if (founded) {
-
-        founded.dataset.counter =
-            new Date().getFullYear() - 1962;
-
-    }
-
-    const counters =
-        document.querySelectorAll("[data-counter]");
+    const counters = document.querySelectorAll("[data-counter]");
 
     if (counters.length === 0) return;
 
-    const observer = new IntersectionObserver(
+    const observer = new IntersectionObserver(entries => {
 
-        entries => {
+        entries.forEach(entry => {
 
-            entries.forEach(entry => {
+            if (!entry.isIntersecting) return;
 
-                if (!entry.isIntersecting) return;
+            animateCounter(entry.target);
 
-                animateCounter(entry.target);
+            observer.unobserve(entry.target);
 
-                observer.unobserve(entry.target);
+        });
 
-            });
+    }, {
+        threshold: 0.5
+    });
 
-        },
-
-        {
-            threshold: 0.5
-        }
-
-    );
-
-    counters.forEach(counter =>
-        observer.observe(counter)
-    );
+    counters.forEach(counter => observer.observe(counter));
 
 }
 
 function animateCounter(element) {
 
-    const target = parseInt(
-        element.dataset.counter,
-        10
-    );
+    const target = parseInt(element.dataset.counter, 10);
 
     const duration = 1800;
 
@@ -184,15 +150,13 @@ function animateCounter(element) {
     function update(now) {
 
         const progress = Math.min(
-
             (now - startTime) / duration,
-
             1
-
         );
 
-        element.textContent =
-            Math.floor(progress * target);
+        const value = Math.floor(progress * target);
+
+        element.textContent = value;
 
         if (progress < 1) {
 
