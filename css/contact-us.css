@@ -1,1 +1,28 @@
+.contact-grid{
+    display:grid;
+    gap:24px;
+    justify-items:center;
+}
 
+.contact-grid .content-card,
+.contact-webmaster{
+    display:flex;
+    flex-direction:column;
+}
+
+.contact-grid .content-card{
+    width:100%;
+    max-width:700px;
+    text-align:center;
+}
+
+.contact-grid .content-card p,
+.contact-webmaster p{
+    flex:1;
+    text-align:center;
+}
+
+.contact-grid .button-group,
+.contact-webmaster .button-group{
+    margin-top:24px;
+}
