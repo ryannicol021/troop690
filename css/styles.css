@@ -3550,7 +3550,7 @@ UNIFORM
 .uniform-grid-2 .content-card{
     display:flex;
     flex-direction:column;
-    gap:12px;
+    gap:24px;
     height:100%;
 }
 
