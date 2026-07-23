@@ -324,7 +324,7 @@ p {
 }
 
 .hero-slogan {
-    color: var(--red);
+    color: var(--white);
     font-family: var(--heading);
     font-size: clamp(1.5rem,3vw,2.2rem);
     margin-bottom: 30px;
