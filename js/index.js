@@ -336,8 +336,6 @@ if (founded) {
 TIMELINE DATABASE
 =========================================================*/
 
-initTimeline();
-
 async function initTimeline() {
 
     const container = document.getElementById("timeline-container");
