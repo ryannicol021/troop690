@@ -427,16 +427,17 @@ h3{
 ========================= */
 
 .year-jump{
-    display:flex;
-    flex-wrap:wrap;
-    justify-content:center;
+    display:grid;
+    grid-template-columns:repeat(auto-fill,80px);
+    justify-content:start;
 
     gap:10px;
     margin-top:8px;
 }
 
 .year-pill{
-    padding:8px 16px;
+    width:80px;
+    padding:8px 0;
 
     border-radius:999px;
     border:1px solid rgba(198,40,40,.30);
@@ -446,6 +447,7 @@ h3{
 
     font-weight:700;
     font-size:.9rem;
+    text-align:center;
 
     cursor:pointer;
     transition:var(--transition);
