@@ -333,6 +333,10 @@ h3{
     gap:24px;
 }
 
+.stats-grid:has(.stat-card:only-child){
+    grid-template-columns:1fr;
+}
+
 .stat-card{
     background:var(--card);
     border:1px solid var(--border);
