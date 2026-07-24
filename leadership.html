@@ -1,365 +1,111 @@
 <!DOCTYPE html>
 <html lang="en">
-
-<head>
-
-    <meta charset="UTF-8">
-
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0">
-
-    <title>Leadership • Troop 690</title>
-
-    <meta
-        name="description"
-        content="Official website of Troop 690 in Seaford, New York.">
-
-<link rel="icon" type="image/png" href="images/favicon.png">
-
-    <link
-        rel="preconnect"
-        href="https://fonts.googleapis.com">
-
-    <link
-        rel="preconnect"
-        href="https://fonts.googleapis.com"
-        crossorigin>
-
-    <link
-        href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;500;700&family=Merriweather:wght@700&display=swap"
-        rel="stylesheet">
-
-    <link
-        rel="stylesheet"
-        href="css/styles.css">
-
-</head>
-
-<body>
-
-
-<header class="site-header">
-
-    <div class="container nav-container">
-
-        <a
-            class="logo"
-            href=".">
-
-            <span class="logo-main">
-                Troop 690
-            </span>
-
-            <span class="logo-sub">
-                Seaford, New York
-            </span>
-
-        </a>
-
-
-        <nav class="desktop-nav">
-
-            <a href=".">
-                Home
-            </a>
-
-            <a href="eagle-scouts">
-                Eagle Scouts
-            </a>
-
-            <a class="active" href="leadership">
-                Leadership
-            </a>
-
-            <a href="advancement">
-                Advancement
-            </a>
-
-
-            <div class="nav-dropdown desktop-only">
-
-                <button>
-                    More
-                </button>
-
-
-                <div class="dropdown-menu">
-
-                    <a href="summer-camp">
-                        Summer Camp
-                    </a>
-
-                    <a href="scout-uniform">
-                        Scout Uniform
-                    </a>
-
-                    <a href="calendar">
-                        Calendar
-                    </a>
-
-                    <a href="contact-us">
-                        Contact Us
-                    </a>
-
-                </div>
-
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Leadership • Troop 690</title>
+        <meta name="description" content="Official website of Troop 690 in Seaford, New York.">
+        <link rel="icon" type="image/png" href="images/favicon.png">
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;500;700&family=Merriweather:wght@700&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="css/leadership.css">
+        <link rel="stylesheet" href="css/site.css">
+    </head>
+    <body>
+        <header class="site-header">
+            <div class="container nav-container">
+                <a class="logo" href=".">
+                    <span class="logo-main">Troop 690</span>
+                    <span class="logo-sub">Seaford, New York</span>
+                </a>
+                <nav class="desktop-nav">
+                    <a href=".">Home</a>
+                    <a href="eagle-scouts">Eagle Scouts</a>
+                    <a class="active" href="leadership">Leadership</a>
+                    <a href="advancement">Advancement</a>
+                    <div class="nav-dropdown desktop-only">
+                        <button>More</button>
+                        <div class="dropdown-menu">
+                            <a href="summer-camp">Summer Camp</a>
+                            <a href="scout-uniform">Scout Uniform</a>
+                            <a href="calendar">Calendar</a>
+                            <a href="contact-us">Contact Us</a>
+                        </div>
+                    </div>
+                    <a class="mobile-only" href="summer-camp">Summer Camp</a>
+                    <a class="mobile-only" href="scout-uniform">Scout Uniform</a>
+                    <a class="mobile-only" href="calendar">Calendar</a>
+                    <a class="mobile-only" href="contact-us">Contact Us</a>
+                </nav>
+                <button class="mobile-menu-button" aria-label="Menu">☰</button>
             </div>
-
-
-            <a class="mobile-only" href="summer-camp">
-                Summer Camp
-            </a>
-
-            <a class="mobile-only" href="scout-uniform">
-                Scout Uniform
-            </a>
-
-            <a class="mobile-only" href="calendar">
-                Calendar
-            </a>
-
-            <a class="mobile-only" href="contact-us">
-                Contact Us
-            </a>
-
-
-        </nav>
-
-
-        <button
-            class="mobile-menu-button"
-            aria-label="Menu">
-
-            ☰
-
-        </button>
-
-
-    </div>
-
-</header>
-
-
-
-<section class="hero page-hero">
-
-    <div class="container">
-
-        <div class="hero-card fade-up compact-hero">
-
-            <h1>
-                Leadership
-            </h1>
-
+        </header>
+        <section class="hero page-hero">
+            <div class="container">
+                <div class="hero-card fade-up compact-hero">
+                    <h1>Leadership</h1>
+                </div>
+            </div>
+        </section>
+        <main>
+            <section class="section">
+                <div class="container">
+                    <div class="leadership-grid">
+                        <div class="content-card fade-up">
+                            <h2>Youth<br>Leaders</h2>
+                            <div class="leadership-group">
+                                <h3>Senior Patrol Leadership</h3>
+                                <div id="spl-aspl-buttons"></div>
+                            </div>
+                            <div class="leadership-group">
+                                <h3>Patrol Leadership</h3>
+                                <div id="pl-apl-buttons"></div>
+                            </div>
+                            <div class="leadership-group">
+                                <h3>Positions of Responsibility</h3>
+                                <div id="troop-position-buttons"></div>
+                            </div>
+                        </div>
+                        <div class="content-card fade-up">
+                            <h2>Adult<br>Volunteers</h2>
+                            <div class="leadership-group">
+                                <h3>Scoutmasters</h3>
+                                <div id="sm-asm-buttons"></div>
+                            </div>
+                            <div class="leadership-group">
+                                <h3>Committee</h3>
+                                <div id="committee-buttons"></div>
+                            </div>
+                        </div>
+                        <div class="content-card fade-up">
+                            <h2>Senior Patrol<br>Leader History</h2>
+                            <div id="spl-history-container" class="history-stack"></div>
+                        </div>
+                        <div class="content-card fade-up">
+                            <h2>Scoutmaster<br>History</h2>
+                            <div id="sm-history-container" class="history-stack"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+        <footer class="site-footer">
+            <div class="container">
+                <div class="footer-copy">
+                    <h3>Troop 690</h3>
+                    <p><a href="https://stwilliam.org" target="_blank" rel="noopener">St. William the Abbot RC Church</a></p><p><a href="https://scoutingli.org" target="_blank" rel="noopener">Scouting America Long Island</a></p>
+                    <p>&copy; 1962&ndash;<span id="copyright-year">2026</span>Troop 690. All rights reserved.</p>
+                </div>
+            </div>
+        </footer>
+        <div class="modal">
+            <div class="modal-window">
+                <button class="modal-close">&times;</button>
+                <div class="modal-body"></div>
+            </div>
         </div>
-
-    </div>
-
-</section>
-
-
-
-<main>
-
-<section class="section">
-
-<div class="container">
-
-
-<div class="leadership-grid">
-
-
-<!-- =========================
-     YOUTH LEADERS
-========================= -->
-
-<div class="content-card fade-up">
-
-    <h2>Youth<br>Leaders</h2>
-
-    <div class="leadership-group">
-
-        <h3>Senior Patrol Leadership</h3>
-
-        <div id="spl-aspl-buttons"></div>
-
-    </div>
-
-    <div class="leadership-group">
-
-        <h3>Patrol Leadership</h3>
-
-        <div id="pl-apl-buttons"></div>
-
-    </div>
-
-    <div class="leadership-group">
-
-        <h3>Positions of Responsibility</h3>
-
-        <div id="troop-position-buttons"></div>
-
-    </div>
-
-</div>
-
-<!-- =========================
-     ADULT VOLUNTEERS
-========================= -->
-
-<div class="content-card fade-up">
-
-    <h2>Adult<br>Volunteers</h2>
-
-    <div class="leadership-group">
-
-        <h3>Scoutmasters</h3>
-
-        <div id="sm-asm-buttons"></div>
-
-    </div>
-
-    <div class="leadership-group">
-
-        <h3>Committee</h3>
-
-        <div id="committee-buttons"></div>
-
-    </div>
-
-</div>
-
-    <!-- =========================
-     SPL HISTORY
-========================= -->
-
-<div class="content-card fade-up">
-
-    <h2>
-
-        Senior Patrol<br>Leader History
-
-    </h2>
-
-    <div
-        id="spl-history-container"
-        class="history-stack">
-
-    </div>
-
-</div>
-
-
-
-<!-- =========================
-     SCOUTMASTER HISTORY
-========================= -->
-
-<div class="content-card fade-up">
-
-    <h2>
-
-        Scoutmaster<br>History
-
-    </h2>
-
-    <div
-        id="sm-history-container"
-        class="history-stack">
-
-    </div>
-
-</div>
-
-
-</div>
-
-</div>
-
-</section>
-
-</main>
-
-
-
-<footer class="site-footer">
-
-    <div class="container">
-
-        <div class="footer-copy">
-
-            <h3>
-
-                Troop 690
-
-            </h3>
-
-            <p>
-
-                <a
-                    href="https://stwilliam.org"
-                    target="_blank"
-                    rel="noopener">
-
-                    St. William the Abbot RC Church
-
-                </a>
-
-            </p>
-
-            <p>
-
-                <a
-                    href="https://scoutingli.org"
-                    target="_blank"
-                    rel="noopener">
-
-                    Scouting America Long Island
-
-                </a>
-
-            </p>
-
-            <p>
-
-                &copy; 1962&ndash;<span id="copyright-year">2026</span>
-                Troop 690. All rights reserved.
-
-            </p>
-
-        </div>
-
-    </div>
-
-</footer>
-
-
-
-<div class="modal">
-
-    <div class="modal-window">
-
-        <button
-            class="modal-close">
-
-            &times;
-
-        </button>
-
-        <div
-            class="modal-body">
-
-        </div>
-
-    </div>
-
-</div>
-
-
-
-<script src="js/site.js"></script>
-
-</body>
-
+        <script src="js/site.js"></script>
+        <script src="js/leadership.js"></script>
+    </body>
 </html>
