@@ -224,6 +224,49 @@
     margin-bottom:0;
 }
 
+.btnc{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+    padding:16px 34px;
+    border-radius:999px;
+    font-weight:700;
+    position:relative;
+    overflow:hidden;
+    transition:var(--transition);
+}
+
+.btnc::before{
+    content:"";
+    position:absolute;
+    inset:0;
+    background:
+        linear-gradient(
+            120deg,
+            transparent,
+            rgba(255,255,255,.15),
+            transparent
+        );
+    transform:translateX(-130%);
+    transition:.7s;
+}
+
+.btnc:hover::before{
+    transform:translateX(130%);
+}
+
+.btnc-primary{
+    background-color:#FDC116;
+    color:var(--navy);
+}
+
+.btnc-primary:hover{
+    background-color:#FCCE50;
+    transform:translateY(-3px);
+    box-shadow:0 12px 30px rgba(253,193,22,.35);
+}
+
 @media (min-width:1000px){
     .law-grid{
         grid-template-columns:repeat(4,minmax(0,1fr));
