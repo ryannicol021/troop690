@@ -37,6 +37,44 @@
 
 html{
     scroll-behavior:smooth;
+    scrollbar-width:thin;
+    scrollbar-color:rgba(255,255,255,.12) transparent;
+}
+
+::-webkit-scrollbar{
+    width:10px;
+}
+
+::-webkit-scrollbar-track{
+    background:transparent;
+}
+
+::-webkit-scrollbar-thumb{
+    background:rgba(255,255,255,.12);
+    border-radius:999px;
+    border:2px solid transparent;
+    background-clip:padding-box;
+}
+
+::-webkit-scrollbar-thumb:hover{
+    background:rgba(255,255,255,.24);
+    background-clip:padding-box;
+}
+
+::-webkit-scrollbar-button{
+    width:0;
+    height:0;
+    display:none;
+    background:transparent;
+    color:transparent;
+}
+
+::-webkit-scrollbar-button:single-button{
+    width:0;
+    height:0;
+    display:none;
+    background:transparent;
+    color:transparent;
 }
 
 body{
@@ -328,12 +366,6 @@ p{
     align-items:center;
 }
 
-@media (max-width:900px){
-    .hero-layout{
-        grid-template-columns:1fr;
-    }
-}
-
 .page-hero{
     padding:24px 0;
     margin-top:18px;
@@ -571,7 +603,64 @@ tr:hover{
     background:rgba(255,255,255,.03);
 }
 
+.content-card h3{
+    text-align:center;
+}
+
+.modal-body{
+    text-align:center;
+}
+
+.modal-body h2{
+    margin-bottom:18px;
+    padding-left:36px;
+    padding-right:36px;
+    font-size:1.55rem;
+    line-height:1.2;
+}
+
+.modal-person{
+    font-family:var(--heading);
+    color:var(--red);
+    font-size:1.25rem;
+    margin-bottom:8px;
+    line-height:1.3;
+}
+
+.modal-person.modal-many{
+    font-size:1.08rem;
+}
+
+.modal-person.modal-committee{
+    font-size:1.25rem;
+}
+
+.modal-person:last-of-type{
+    margin-bottom:0;
+}
+
+.modal-person span{
+    display:block;
+    margin-top:2px;
+    color:var(--text);
+    opacity:.75;
+    font-family:var(--body);
+    font-size:.95rem;
+    line-height:1.25;
+}
+
+.modal-description{
+    margin-top:22px;
+    padding-top:22px;
+    border-top:1px solid var(--border);
+    text-align:center;
+}
+
 @media (max-width:900px){
+    .hero-layout{
+        grid-template-columns:1fr;
+    }
+    
     .content-card{
         padding:36px 28px;
     }
@@ -630,6 +719,12 @@ tr:hover{
     }
 }
 
+@media (max-width:700px){
+    .content-card{
+        padding:26px 20px;
+    }
+}
+
 @media (max-width:500px){
     .container{
         width:min(calc(100% - 24px),1200px);
@@ -646,104 +741,4 @@ tr:hover{
     .button-group{
         flex-direction:column;
     }
-}
-
-.content-card h3{
-    text-align:center;
-}
-
-.modal-body{
-    text-align:center;
-}
-
-.modal-body h2{
-    margin-bottom:18px;
-    padding-left:36px;
-    padding-right:36px;
-    font-size:1.55rem;
-    line-height:1.2;
-}
-
-.modal-person{
-    font-family:var(--heading);
-    color:var(--red);
-    font-size:1.25rem;
-    margin-bottom:8px;
-    line-height:1.3;
-}
-
-.modal-person.modal-many{
-    font-size:1.08rem;
-}
-
-.modal-person.modal-committee{
-    font-size:1.25rem;
-}
-
-.modal-person:last-of-type{
-    margin-bottom:0;
-}
-
-.modal-person span{
-    display:block;
-    margin-top:2px;
-    color:var(--text);
-    opacity:.75;
-    font-family:var(--body);
-    font-size:.95rem;
-    line-height:1.25;
-}
-
-.modal-description{
-    margin-top:22px;
-    padding-top:22px;
-    border-top:1px solid var(--border);
-    text-align:center;
-}
-
-@media (max-width:700px){
-    .content-card{
-        padding:26px 20px;
-    }
-}
-
-html{
-    scrollbar-width:thin;
-    scrollbar-color:rgba(255,255,255,.12) transparent;
-}
-
-::-webkit-scrollbar{
-    width:10px;
-}
-
-::-webkit-scrollbar-track{
-    background:transparent;
-}
-
-::-webkit-scrollbar-thumb{
-    background:rgba(255,255,255,.12);
-    border-radius:999px;
-    border:2px solid transparent;
-    background-clip:padding-box;
-}
-
-::-webkit-scrollbar-thumb:hover{
-    background:rgba(255,255,255,.24);
-    background-clip:padding-box;
-}
-
-::-webkit-scrollbar-button{
-    width:0;
-    height:0;
-    display:none;
- background:transparent;
-    color:transparent;
-}
-
-::-webkit-scrollbar-button:single-button{
-    width:0;
-    height:0;
-    display:none;
-background:transparent;
-    color:transparent;
 }
