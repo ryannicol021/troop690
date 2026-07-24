@@ -1,3 +1,24 @@
+.search-input{
+    display:block;
+    width:100%;
+    max-width:620px;
+    margin:32px auto 28px;
+    padding:16px 22px;
+    border-radius:999px;
+    border:1px solid var(--border);
+    background:var(--card);
+    color:var(--text);
+    font:inherit;
+    font-size:1.05rem;
+    transition:var(--transition);
+}
+
+.search-input:focus{
+    outline:none;
+    border-color:var(--red);
+    box-shadow:0 0 0 3px rgba(198,40,40,.18);
+}
+
 .calendar-wrapper{
     display:block;
     width:100%;
@@ -20,6 +41,10 @@
 }
 
 @media(max-width:700px){
+    .search-input{
+        margin-top:24px;
+    }
+    
     .calendar-wrapper{
         aspect-ratio:1 / 2;
     }
