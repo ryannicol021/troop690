@@ -48,11 +48,9 @@
 
 .feature-card{
     background:var(--card);
-    border:1px solid var(--border);
     border-radius:var(--radius);
     padding:42px;
     text-align:center;
-    box-shadow:var(--shadow);
     transition:
         transform .35s ease,
         background .35s ease,
