@@ -15,8 +15,8 @@
     --shadow-hover:
         0 20px 56px rgba(0,0,0,.45);
     --transition:.35s ease;
-    --radius:12px;
-    --radius-small:12px;
+    --radius:24px;
+    --radius-small:16px;
     --content-width:1200px;
     --section-space:12px;
     --heading:
