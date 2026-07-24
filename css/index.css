@@ -19,6 +19,7 @@
     text-align:center;
     box-shadow:var(--shadow);
     padding:24px;
+    padding-bottom:36px;
     transition:
         transform .35s ease,
         background .35s ease,
