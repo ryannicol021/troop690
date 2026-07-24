@@ -74,7 +74,6 @@
 }
 
 .quote-card{
-    background:var(--card);
     border-radius:var(--radius);
     padding:48px;
     transition:
@@ -132,11 +131,8 @@
 }
 
 .join-card{
-    background:var(--card);
-    border:1px solid var(--border);
     border-radius:var(--radius);
     padding:48px;
-    box-shadow:var(--shadow);
     transition:
         transform .35s ease,
         background .35s ease,
@@ -154,10 +150,7 @@
     position:relative;
     max-width:980px;
     margin:0 auto;
-    background:var(--card);
-    border:1px solid var(--border);
     border-radius:30px;
-    box-shadow:var(--shadow);
     padding:32px 24px;
 }
 
