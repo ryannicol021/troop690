@@ -274,6 +274,10 @@
 }
 
 @media (max-width:900px){
+    .stats-grid{
+        grid-template-columns:1fr;
+    }
+    
     .feature-grid{
         grid-template-columns:1fr;
     }
