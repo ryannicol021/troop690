@@ -1,1 +1,26 @@
+.calendar-wrapper{
+    display:block;
+    width:100%;
+    aspect-ratio:4 / 3;
+    border:0;
+    border-radius:var(--radius);
+    background:#F0F4F8;
+    box-shadow:var(--shadow);
+    overflow:hidden;
+    box-sizing:border-box;
+    padding:24px;
+    padding-top:12px;
+}
 
+.calendar-wrapper iframe{
+    width:100%;
+    min-height:720px;
+    border:none;
+    border-radius:18px;
+}
+
+@media(max-width:700px){
+    .calendar-wrapper{
+        aspect-ratio:1 / 2;
+    }
+}
