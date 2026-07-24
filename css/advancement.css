@@ -1,1 +1,242 @@
+.rank-grid{
+    display:grid;
+    grid-template-columns:repeat(7,1fr);
+    gap:22px;
+}
 
+.mt-4{
+  margin-top:64px;
+}
+
+.rank-card{
+    aspect-ratio:1;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+    gap:14px;
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:24px;
+    box-shadow:var(--shadow);
+    transition:var(--transition);
+}
+
+.rank-card:hover{
+    transform:translateY(-8px);
+    background:var(--card-hover);
+    border-color:rgba(198,40,40,.4);
+    box-shadow:var(--shadow-hover);
+}
+
+.rank-card img{
+    width:64px;
+    height:64px;
+    object-fit:contain;
+}
+
+.rank-card span{
+    font-weight:700;
+    color:white;
+}
+
+.knots-section{
+    padding-top:0;
+}
+
+.knot-grid{
+    display:grid;
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:28px;
+    margin-top:36px;
+}
+
+.knot-column{
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+}
+
+.merit-badges-section{
+    padding-top:0;
+}
+
+.mt-3{
+  margin-top:40px;
+}
+
+.awards-section{
+    padding-top:0;
+}
+
+.award-grid{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:14px 28px;
+    margin-top:28px;
+}
+
+.rank-divider{
+    height:1px;
+    background:var(--border);
+    margin:28px 0 22px;
+}
+
+.requirement-grid{
+    display:grid;
+    grid-template-columns:repeat(7,1fr);
+    gap:14px;
+    margin-top:28px;
+}
+
+.requirement-grid.single-rank{
+    justify-content:left;
+}
+
+.rank-group{
+    margin-top:30px;
+}
+
+.requirement{
+    width:70px;
+    aspect-ratio:1;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:0;
+    border-radius:14px;
+    background:rgba(198,40,40,.12);
+    border:1px solid rgba(198,40,40,.35);
+    color:white;
+    font-weight:700;
+    font-size:1.2rem;
+    text-decoration:none;
+    transition:var(--transition);
+}
+
+.requirement:hover{
+    background:var(--red);
+    transform:translateY(-3px);
+}
+
+.requirement:visited{
+    color:white;
+}
+
+.requirement:link{
+    color:white;
+}
+
+.requirement.disabled{
+    background:rgba(255,255,255,.08);
+    border-color:rgba(255,255,255,.10);
+    color:rgba(255,255,255,.35);
+    cursor:default;
+    pointer-events:none;
+    transform:none;
+    box-shadow:none;
+}
+
+.requirement.disabled:hover{
+    background:rgba(255,255,255,.08);
+    transform:none;
+}
+
+.knot-button{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    width:100%;
+    min-height:64px;
+    padding:18px 22px;
+    border-radius:18px;
+    background:rgba(198,40,40,.10);
+    border:1px solid rgba(198,40,40,.28);
+    color:white;
+    font-weight:700;
+    text-align:center;
+    transition:var(--transition);
+}
+
+.knot-button:hover{
+    background:var(--red);
+    transform:translateY(-3px);
+    box-shadow:0 10px 24px rgba(198,40,40,.25);
+}
+
+.award-button{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    width:100%;
+    padding:18px 22px;
+    border-radius:18px;
+    background:rgba(198,40,40,.10);
+    border:1px solid rgba(198,40,40,.28);
+    color:white;
+    font-weight:700;
+    text-align:center;
+    transition:var(--transition);
+}
+
+.award-button:hover{
+    background:var(--red);
+    transform:translateY(-3px);
+    box-shadow:0 10px 24px rgba(198,40,40,.25);
+}
+
+@media (min-width:701px){
+    .requirement-grid.single-rank{
+        justify-content:center;
+    }
+  
+    .requirement-grid.single-rank .requirement{
+        width:100%;
+    }
+}
+
+@media (max-width:700px){
+    .rank-grid{
+        display:grid;
+        grid-template-columns:repeat(3,1fr);
+        gap:16px;
+    }
+
+    .rank-card{
+        width:100%;
+        aspect-ratio:1;
+    }
+  
+    .rank-card:last-child{
+        grid-column:2;
+        aspect-ratio:1;
+        min-height:0;
+    }
+
+    .knot-grid{
+        grid-template-columns:1fr;
+        gap:14px;
+    }
+
+    .knot-column{
+        gap:14px;
+    }
+
+    .award-grid{
+        grid-template-columns:1fr;
+        gap:14px;
+    }
+
+    .requirement-grid{
+        grid-template-columns:repeat(4,calc((100% - 36px) / 4));
+        gap:10px;
+        justify-content:left;
+    }
+
+    .requirement{
+        width:100%;
+        aspect-ratio:1;
+        min-width:0;
+        font-size:1rem;
+    }
+}
