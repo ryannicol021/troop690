@@ -6,6 +6,40 @@
     object-fit:cover;
 }
 
+.stats-grid{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:24px;
+}
+
+.stat-card{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    text-align:center;
+    padding:40px;
+    box-shadow:var(--shadow);
+    transition:
+        transform .35s ease,
+        background .35s ease,
+        border-color .35s ease,
+        box-shadow .35s ease;
+}
+
+.stat-number{
+    font-family:var(--heading);
+    color:var(--red);
+    font-size:3.4rem;
+    margin-bottom:10px;
+}
+
+.stat-title{
+    text-transform:uppercase;
+    letter-spacing:2px;
+    color:var(--muted);
+    font-size:.95rem;
+}
+
 .feature-grid{
     display:grid;
     grid-template-columns:repeat(2,1fr);
