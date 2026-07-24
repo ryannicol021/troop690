@@ -734,10 +734,6 @@ tr:hover{
         padding:28px 20px;
     }
     
-    .btn{
-        width:100%;
-    }
-    
     .button-group{
         flex-direction:column;
     }
