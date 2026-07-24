@@ -75,6 +75,17 @@
     opacity:1;
 }
 
+#spl-aspl-buttons,
+#pl-apl-buttons,
+#troop-position-buttons,
+#sm-asm-buttons,
+#committee-buttons{
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+    margin-top:16px;
+}
+
 .history-card{
     height:100px;
     display:flex;
