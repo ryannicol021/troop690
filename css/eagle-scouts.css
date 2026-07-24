@@ -132,9 +132,25 @@
     align-items:start;
 }
 
+#search-results{
+    display:grid;
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:24px;
+    align-items:start;
+}
+
+#search-results .content-card h3{
+    text-align:left;
+    margin-bottom:8px;
+}
+
 @media (max-width:900px){
     .stats-grid{
         grid-template-columns:1fr;
+    }
+
+    #search-results{
+        grid-template-columns:repeat(2,minmax(0,1fr));
     }
 }
 
@@ -150,5 +166,11 @@
 
     .eagle-entry strong{
         width:3rem;
+    }
+}
+
+@media (max-width:600px){
+    #search-results{
+        grid-template-columns:1fr;
     }
 }
