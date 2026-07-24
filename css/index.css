@@ -18,6 +18,8 @@
     border-radius:var(--radius);
     text-align:center;
     box-shadow:var(--shadow);
+    padding:12px;
+    padding-top:10px;
     transition:
         transform .35s ease,
         background .35s ease,
