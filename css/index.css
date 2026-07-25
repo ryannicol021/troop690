@@ -151,6 +151,8 @@
     position:relative;
     max-width:400px;
     margin:0 auto;
+    background:var(--card);
+    border:1px solid var(--border);
     border-radius:30px;
     padding:32px 24px;
 }
