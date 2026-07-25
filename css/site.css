@@ -333,7 +333,6 @@ p{
     border:1px solid var(--border);
     border-radius:var(--radius);
     padding:24px 24px;
-    backdrop-filter:blur(12px);
 }
 
 .hero h1{
