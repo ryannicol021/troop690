@@ -130,7 +130,8 @@ function initScrollAnimations(){
 
     },{
 
-        threshold:.05
+        threshold: 0,
+        rootMargin: "0px 0px -10% 0px"
 
     });
 
