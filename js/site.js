@@ -60,7 +60,7 @@ function initScrollAnimations(){
             }
         });
     },{
-        threshold: 0.5,
+        threshold: 0,
     });
     items.forEach(item=>observer.observe(item));
 }
