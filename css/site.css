@@ -488,7 +488,7 @@ p{
 
 .site-footer{
     margin-top:24px;
-    background:#081528;
+    background:rgba(8,24,48,.92);
     border-top:1px solid var(--border);
     padding:56px 0;
 }
