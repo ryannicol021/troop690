@@ -16,7 +16,6 @@
     border:1px solid var(--border);
     border-radius:var(--radius);
     text-align:center;
-    box-shadow:var(--shadow);
     padding:24px;
     padding-bottom:36px;
     transition:
