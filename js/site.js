@@ -382,14 +382,14 @@ async function initLeadership(){
             });
         });
     };
-    buildButtons("spl-aspl-buttons","data/spl-aspl-current.csv",{"Senior Patrol Leader":"⚜️","Assistant Senior Patrol Leader":"⭐"});
-    buildButtons("pl-apl-buttons","data/pl-apl-current.csv",{"Patrol Leader":"🧭","Assistant Patrol Leader":"🥾"});
-    buildButtons("troop-position-buttons","data/troop-position-current.csv",{"Junior Assistant Scoutmaster":"🦅","Troop Guide":"🥾","Order of the Arrow Representative":"🏹","Chaplain Aide":"🙏","Outdoor Ethics Guide":"🌲","Webmaster":"💻","Historian":"📷","Librarian":"📚","Quartermaster":"📦","Scribe":"✏️","Bugler":"🎺"});
-    buildButtons("sm-asm-buttons","data/sm-asm-current.csv",{"Scoutmaster":"👨‍🏫","Assistant Scoutmaster":"🧑‍🏫"});
-    buildButtons("committee-buttons","data/committee-current.csv",{"Executive Officer":"⛪","Chartered Organization Representative":"🤝","Committee Chair":"📋","Committee Member":"👥"});
+    buildButtons("spl-aspl-buttons","data/current-youth-spl.csv",{"Senior Patrol Leader":"⚜️","Assistant Senior Patrol Leader":"⭐"});
+    buildButtons("pl-apl-buttons","data/current-youth-patrol.csv",{"Patrol Leader":"🧭","Assistant Patrol Leader":"🥾"});
+    buildButtons("troop-position-buttons","data/current-youth-troop.csv",{"Junior Assistant Scoutmaster":"🦅","Troop Guide":"🥾","Order of the Arrow Representative":"🏹","Chaplain Aide":"🙏","Outdoor Ethics Guide":"🌲","Webmaster":"💻","Historian":"📷","Librarian":"📚","Quartermaster":"📦","Scribe":"✏️","Bugler":"🎺"});
+    buildButtons("sm-asm-buttons","data/current-adult-sm.csv",{"Scoutmaster":"👨‍🏫","Assistant Scoutmaster":"🧑‍🏫"});
+    buildButtons("committee-buttons","data/current-adult-committee.csv",{"Executive Officer":"⛪","Chartered Organization Representative":"🤝","Committee Chair":"📋","Committee Member":"👥"});
     const splHistory=document.getElementById("spl-history-container");
     if(splHistory){
-        const rows=await loadCSV("data/spl-history.csv");
+        const rows=await loadCSV("data/history-spl.csv");
         splHistory.innerHTML="";
         [...rows].reverse().forEach(r=>{
             splHistory.innerHTML += historyCard(r[0] === r[1] ? r[0] : `${r[0]}–${r[1]}`, [`<div class="history-role"><strong>SPL</strong>${r[2]}</div>`,`<div class="history-role smaller"><strong>ASPL</strong>${r[3]}</div>`]);
@@ -397,7 +397,7 @@ async function initLeadership(){
     }
     const smHistory=document.getElementById("sm-history-container");
     if(smHistory){
-        const rows=await loadCSV("data/sm-history.csv");
+        const rows=await loadCSV("data/history-sm.csv");
         smHistory.innerHTML="";
         [...rows].reverse().forEach(r=>{
             smHistory.innerHTML += historyCard(r[0] === r[1] ? r[0] : `${r[0]}–${r[1]}`, [`<div class="history-role even-smaller history-title"><strong> </strong></div><div class="history-role history-name">${r[2]}</div><div class="history-role even-smaller history-title"><strong> </strong></div>`]);
@@ -445,11 +445,11 @@ async function initLeadershipModals(){
             });
         });
     }
-    await loadHolders("data/spl-aspl-current.csv");
-    await loadHolders("data/pl-apl-current.csv");
-    await loadHolders("data/troop-position-current.csv");
-    await loadHolders("data/sm-asm-current.csv");
-    await loadHolders("data/committee-current.csv");
+    await loadHolders("data/current-youth-spl.csv");
+    await loadHolders("data/current-youth-patrol.csv");
+    await loadHolders("data/current-youth-troop.csv");
+    await loadHolders("data/current-adult-sm.csv");
+    await loadHolders("data/current-adult-committee.csv");
     document.querySelectorAll(".position-button").forEach(button=>{
         button.addEventListener("click",()=>{
             const position = button.querySelector(".position-label").textContent.trim();
@@ -478,7 +478,7 @@ async function initAdvancement(){
     const modal=document.querySelector(".modal");
     const body=modal.querySelector(".modal-body");
     if(!grid || !modal || !body) return;
-    const text=await fetch("data/rank-requirements.csv").then(r=>r.text());
+    const text=await fetch("data/links-requirements.csv").then(r=>r.text());
     const rows=text.trim().split("\n").slice(1).map(row=>row.match(/(".*?"|[^",]+)(?=\s*,|\s*$)/g).map(col=>col.replace(/^"|"$/g,"")));
     const requirements={};
     rows.forEach(r=>{
@@ -548,7 +548,7 @@ async function initKnots(){
     const column2=document.getElementById("knot-column-2");
     const column3=document.getElementById("knot-column-3");
     if(!column1) return;
-    const rows=await fetch("data/knot-videos.csv").then(r=>r.text()).then(text=>text.trim().split("\n").slice(1).map(row=>row.match(/(".*?"|[^",]+)(?=\s*,|\s*$)/g).map(col=>col.replace(/^"|"$/g,""))));
+    const rows=await fetch("data/links-knots.csv").then(r=>r.text()).then(text=>text.trim().split("\n").slice(1).map(row=>row.match(/(".*?"|[^",]+)(?=\s*,|\s*$)/g).map(col=>col.replace(/^"|"$/g,""))));
     const columns={
         "Square Knot":column1,
         "Two Half-Hitches":column1,
@@ -578,7 +578,7 @@ initAwards();
 async function initAwards(){
     const grid=document.getElementById("award-grid");
     if(!grid) return;
-    const rows=await fetch("data/award-links.csv").then(r=>r.text()).then(text=>text.trim().split("\n").slice(1).map(row=>row.match(/(".*?"|[^",]+)(?=\s*,|\s*$)/g).map(col=>col.replace(/^"|"$/g,""))));
+    const rows=await fetch("data/links-awards.csv").then(r=>r.text()).then(text=>text.trim().split("\n").slice(1).map(row=>row.match(/(".*?"|[^",]+)(?=\s*,|\s*$)/g).map(col=>col.replace(/^"|"$/g,""))));
     rows.forEach(row=>{
         const button=document.createElement("a");
         button.className="award-button";
