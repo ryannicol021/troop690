@@ -1,3 +1,7 @@
+if ("scrollRestoration" in history) {
+    history.scrollRestoration = "manual";
+}
+
 document.addEventListener("DOMContentLoaded", () => {
     window.scrollTo(0, 0);
     initMobileMenu();
