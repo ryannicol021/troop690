@@ -14,7 +14,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 if(!document.getElementById("spl-aspl-buttons")){
 
-    const heroImage = document.querySelector(".hero-image img");
+    const heroImage = document.querySelector(".hero-photo img");
 
     if(heroImage){
 
