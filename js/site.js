@@ -60,8 +60,7 @@ function initScrollAnimations(){
             }
         });
     },{
-        threshold: 0,
-        rootMargin: "0px 0px -10% 0px"
+        threshold: 0.5,
     });
     items.forEach(item=>observer.observe(item));
 }
