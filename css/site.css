@@ -1,14 +1,11 @@
 :root{
     --navy:#0B1F3A;
-    --navy-light:#0B1F3A;
     --navy-hover:#0E2969; 
     --red:#C62828;
     --red-hover:#E53935;
-    --white:#FFFFFF;
     --text:#F7F9FC;
     --muted:#C8D3E2;
-    --card:#0B1F3A;
-    --card-hover:#0B1F3A;
+    --card:rgba(8,24,48,.92);
     --border:rgba(255,255,255,.08);
     --shadow:
         0 12px 40px rgba(0,0,0,.35);
@@ -16,7 +13,6 @@
         0 20px 56px rgba(0,0,0,.45);
     --transition:.35s ease;
     --radius:24px;
-    --radius-small:16px;
     --content-width:1200px;
     --section-space:12px;
     --heading:
@@ -346,7 +342,7 @@ p{
 }
 
 .hero-slogan{
-    color:var(--white);
+    color:white;
     font-family:var(--heading);
     font-size:clamp(1.5rem,3vw,2.2rem);
     margin-bottom:30px;
