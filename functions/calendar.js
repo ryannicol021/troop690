@@ -69,8 +69,8 @@ export async function onRequest(context) {
                 </section>
                 <main>
                     <section class="section">
-                        <div class="container">
-                            <div class="content-card fade-up">
+                        <div class="container fade-up">
+                            <div class="content-card">
                                 <h3 style="color:#C62828;">Enter the Password</h3>
                                 <p class="lead">The calendar is only accessible to families registered in the troop.</p>
                                 <form method="POST">
