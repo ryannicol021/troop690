@@ -233,7 +233,7 @@ async function initEagleScouts(){
     const jump=document.getElementById("year-jump");
     const results=document.getElementById("search-results");
     const total=document.getElementById("eagle-total");
-    const response=await fetch("data/eagles.csv");
+    const response=await fetch("data/eagle-scouts.csv");
     const text=await response.text();
     const rows=text.trim().split("\n").slice(1);
     const eagles=rows.map(row=>{
