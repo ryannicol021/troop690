@@ -1,7 +1,7 @@
 .hero-photo img{
     width:100%;
     display:block;
-    border-radius:18px;
+    border-radius:var(--radius-lg);
     object-fit:cover;
 }
 
@@ -14,7 +14,7 @@
 .stat-card{
     background:var(--card);
     border:1px solid var(--border);
-    border-radius:var(--radius);
+    border-radius:var(--radius-lg);
     text-align:center;
     padding:24px;
     padding-bottom:36px;
@@ -47,7 +47,7 @@
 .feature-card{
     background:var(--card);
     border:1px solid var(--border);
-    border-radius:var(--radius);
+    border-radius:var(--radius-lg);
     padding:42px;
     text-align:center;
     transition:
@@ -73,7 +73,7 @@
 .quote-card{
     background:var(--card);
     border:1px solid var(--border);
-    border-radius:var(--radius);
+    border-radius:var(--radius-lg);
     padding:48px;
     transition:
         transform .35s ease,
@@ -132,7 +132,7 @@
 .join-card{
     background:var(--card);
     border:1px solid var(--border);
-    border-radius:var(--radius);
+    border-radius:var(--radius-lg);
     padding:48px;
     transition:
         transform .35s ease,
