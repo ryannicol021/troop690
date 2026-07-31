@@ -697,8 +697,6 @@ p{
 
     border-radius:var(--radius-lg);
 
-    box-shadow:var(--shadow);
-
 }
 
 .hero h1{
@@ -912,8 +910,6 @@ p{
     border-radius:var(--radius-lg);
 
     padding:var(--space-4);
-
-    box-shadow:var(--shadow);
 
 }
 
