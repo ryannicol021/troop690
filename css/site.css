@@ -264,7 +264,7 @@ select{
 .section{
 
     padding:
-        var(--space-4)
+        var(--space-2)
         0;
 
 }
