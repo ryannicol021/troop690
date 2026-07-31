@@ -319,7 +319,7 @@ async function initEagleScouts(){
             if(eagle.suffix){
                 name+=" "+eagle.suffix;
             }
-            card.innerHTML=`<h3><span style="color:var(--red);">${eagle.number}.</span> ${name}</h3><p>Eagle Scout Class of ${eagle.year}</p>`;
+            card.innerHTML=`<h3><span style="color:var(--red);">${eagle.number}.</span><br>${name}</h3><p>Eagle Scout Class of ${eagle.year}</p>`;
             results.appendChild(card);
         });
     });
