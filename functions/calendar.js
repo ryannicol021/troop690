@@ -94,6 +94,12 @@ export async function onRequest(context) {
                         </div>
                     </div>
                 </footer>
+                <div class="modal">
+                    <div class="modal-window">
+                        <button class="modal-close">&times;</button>
+                        <div class="modal-body"></div>
+                    </div>
+                </div>
                 <script src="/js/site.js"></script>
             </body>
         </html>`,
