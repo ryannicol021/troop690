@@ -660,13 +660,6 @@ p{
 
     margin-top:var(--space-2);
 
-    background:
-        linear-gradient(
-            rgba(11,31,58,.80),
-            rgba(11,31,58,.88)
-        ),
-        center/cover no-repeat;
-
 }
 
 .hero-layout{
