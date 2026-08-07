@@ -7,7 +7,7 @@
 .stat-card{
     background:var(--card);
     border:1px solid var(--border);
-    border-radius:var(--radius);
+    border-radius:var(--radius-lg);
     text-align:center;
     padding:24px;
     padding-bottom:36px;
