@@ -84,7 +84,7 @@ async function hashPassword(
     {
       name: 'PBKDF2',
       salt: s as unknown as BufferSource,
-      iterations: 210000,
+      iterations: 100000,
       hash: 'SHA-256'
     },
     key,
