@@ -307,114 +307,160 @@ app.post('/api/logout',async c=>{
 });
 
 app.post('/api/bootstrap',async c=>{
-  if(!c.env.BOOTSTRAP_SECRET){
-    return json(
-      c,
-      {error:'Bootstrap disabled'},
-      404
-    );
-  }
+  try{
+    if(!c.env.BOOTSTRAP_SECRET){
+      return json(
+        c,
+        {error:'Bootstrap disabled'},
+        404
+      );
+    }
 
-  const body=await c.req.json();
+    const body=await c.req.json();
 
-  if(body.secret!==c.env.BOOTSTRAP_SECRET){
-    return json(
-      c,
-      {error:'Forbidden'},
-      403
-    );
-  }
+    if(body.secret!==c.env.BOOTSTRAP_SECRET){
+      return json(
+        c,
+        {error:'Forbidden'},
+        403
+      );
+    }
 
-  const count=await c.env.DB
-    .prepare(
-      'SELECT COUNT(*) n FROM accounts WHERE active=1'
-    )
-    .first<any>();
-
-  if(Number(count?.n)>0){
-    return json(
-      c,
-      {error:'Already bootstrapped'},
-      409
-    );
-  }
-
-  const pw=await hashPassword(
-    String(body.password||'')
-  );
-
-  const person=await c.env.DB
-    .prepare(`
-      INSERT INTO people(
-        first_name,
-        last_name,
-        gender,
-        adult,
-        adult_leader
+    const count=await c.env.DB
+      .prepare(
+        'SELECT COUNT(*) n FROM accounts WHERE active=1'
       )
-      VALUES(?,?,?,?,?)
-    `)
-    .bind(
-      body.firstName||'Administrator',
-      body.lastName||'Troop 690',
-      'Male',
-      1,
-      1
-    )
-    .run();
+      .first<any>();
 
-  const pid=person.meta.last_row_id as number;
+    if(Number(count?.n)>0){
+      return json(
+        c,
+        {error:'Already bootstrapped'},
+        409
+      );
+    }
 
-  const a=await c.env.DB
-    .prepare(`
-      INSERT INTO accounts(
-        person_id,
-        username,
-        password_hash,
-        password_salt,
-        active
+    const pos=await c.env.DB
+      .prepare(
+        "SELECT id FROM positions WHERE name='Scoutmaster'"
       )
-      VALUES(?,?,?,?,1)
-    `)
-    .bind(
-      pid,
-      body.username,
-      pw.hash,
-      pw.salt
-    )
-    .run();
+      .first<any>();
 
-  const pos=await c.env.DB
-    .prepare(
-      "SELECT id FROM positions WHERE name='Scoutmaster'"
-    )
-    .first<any>();
+    if(!pos){
+      return json(
+        c,
+        {error:"Required position 'Scoutmaster' was not found"},
+        500
+      );
+    }
 
-  const admin=await c.env.DB
-    .prepare(
-      "SELECT id FROM permission_titles WHERE name='Admin'"
-    )
-    .first<any>();
+    const admin=await c.env.DB
+      .prepare(
+        "SELECT id FROM permission_titles WHERE name='Admin'"
+      )
+      .first<any>();
 
-  await c.env.DB
-    .prepare(
-      "INSERT OR IGNORE INTO person_positions(person_id,position_id) VALUES(?,?)"
-    )
-    .bind(pid,pos.id)
-    .run();
+    if(!admin){
+      return json(
+        c,
+        {error:"Required permission 'Admin' was not found"},
+        500
+      );
+    }
 
-  await c.env.DB
-    .prepare(
-      "INSERT OR IGNORE INTO position_permissions(position_id,permission_id) VALUES(?,?)"
-    )
-    .bind(pos.id,admin.id)
-    .run();
+    const pw=await hashPassword(
+      String(body.password||'')
+    );
 
-  return json(c,{
-    ok:true,
-    accountId:a.meta.last_row_id,
-    personId:pid
-  });
+    const person=await c.env.DB
+      .prepare(`
+        INSERT INTO people(
+          first_name,
+          last_name,
+          gender,
+          adult,
+          adult_leader
+        )
+        VALUES(?,?,?,?,?)
+      `)
+      .bind(
+        body.firstName||'Administrator',
+        body.lastName||'Troop 690',
+        'Male',
+        1,
+        1
+      )
+      .run();
+
+    const pid=person.meta.last_row_id as number;
+
+    if(!pid){
+      return json(
+        c,
+        {error:'Bootstrap created the person record but could not determine its ID'},
+        500
+      );
+    }
+
+    const a=await c.env.DB
+      .prepare(`
+        INSERT INTO accounts(
+          person_id,
+          username,
+          password_hash,
+          password_salt,
+          active
+        )
+        VALUES(?,?,?,?,1)
+      `)
+      .bind(
+        pid,
+        body.username,
+        pw.hash,
+        pw.salt
+      )
+      .run();
+
+    await c.env.DB
+      .prepare(
+        "INSERT OR IGNORE INTO person_positions(person_id,position_id) VALUES(?,?)"
+      )
+      .bind(
+        pid,
+        pos.id
+      )
+      .run();
+
+    await c.env.DB
+      .prepare(
+        "INSERT OR IGNORE INTO position_permissions(position_id,permission_id) VALUES(?,?)"
+      )
+      .bind(
+        pos.id,
+        admin.id
+      )
+      .run();
+
+    return json(c,{
+      ok:true,
+      accountId:a.meta.last_row_id,
+      personId:pid
+    });
+
+  }catch(error){
+    console.error('Bootstrap error:',error);
+
+    return json(
+      c,
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : String(error)
+      },
+      500
+    );
+  }
 });
 
 app.get('/api/home',async c=>{
