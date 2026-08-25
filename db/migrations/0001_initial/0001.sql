@@ -50,6 +50,14 @@ INSERT OR IGNORE INTO positions(name,category) VALUES
 ('Executive Officer','adult'),('Chartered Organization Representative','adult'),('Committee Chair','adult'),('Scoutmaster','adult'),('Assistant Scoutmaster','adult'),('Committee Member','adult'),('Secretary','adult'),('Treasurer','adult'),('Outdoor Activities Coordinator','adult'),('Advancement Coordinator','adult'),('Training Coordinator','adult'),('Equipment Coordinator','adult'),('Membership Coordinator','adult'),('Public Relations Coordinator','adult'),('High Adventure Coordinator','adult'),('Health and Safety Coordinator','adult'),('Fundraising Coordinator','adult'),('Transportation Coordinator','adult'),('Summer Camp Coordinator','adult'),('Religious Emblems Coordinator','adult'),('Chaplain','adult'),('Scout Moderator','adult'),('Merit Badge Counselor','adult');
 INSERT OR IGNORE INTO leadership_positions(name,description,public_visible) VALUES ('Senior Patrol Leader','',1),('Assistant Senior Patrol Leader','',1),('Scoutmaster','',1);
 INSERT OR IGNORE INTO knots(name) VALUES ('Square Knot'),('Two Half-Hitches'),('Taut-Line Hitch'),('Sheet Bend Knot'),('Bowline Knot'),('Clove Hitch'),('Timber Hitch');
-INSERT OR IGNORE INTO awards(name) VALUES ('Catholic Religious Emblems'),('All Religious Emblems'),("Totin' Chip'),("Firem'n Chit"),('Recruiter Strip'),('Interpreter Strip'),('National Outdoor Awards'),('National Honor Patrol');
+INSERT OR IGNORE INTO awards(name) VALUES
+('Catholic Religious Emblems'),
+('All Religious Emblems'),
+('Totin'' Chip'),
+('Firem''n Chit'),
+('Recruiter Strip'),
+('Interpreter Strip'),
+('National Outdoor Awards'),
+('National Honor Patrol');
 INSERT OR IGNORE INTO summer_camp(id) VALUES (1);
 INSERT OR IGNORE INTO site_content(key,value) VALUES ('history',''),('troop_photo',''),('uniform_class_a',''),('uniform_class_b',''),('uniform_right_sleeve',''),('uniform_left_sleeve',''),('uniform_right_pocket',''),('uniform_left_pocket',''),('ahmr_template','');
