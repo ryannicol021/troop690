@@ -1,0 +1,1 @@
+-- Optional initial content seed. Do not invent troop-specific facts here.

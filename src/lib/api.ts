@@ -1,0 +1,3 @@
+export async function api<T=any>(path:string, options:RequestInit={}){ const r=await fetch('/api'+path,{credentials:'include',...options}); const ct=r.headers.get('content-type')||''; const data=ct.includes('application/json')?await r.json():await r.text(); if(!r.ok) throw new Error(data?.error||data||`HTTP ${r.status}`); return data as T; }
+export const post=(path:string,body:any)=>api(path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+export const put=(path:string,body:any)=>api(path,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
