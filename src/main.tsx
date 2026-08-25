@@ -6,10 +6,11 @@ import {api,post,put} from './lib/api';
 
 const nav=[['/','Home','public'],['/eagles','Eagle Scouts','public'],['/calendar','Calendar','member'],['/photos','Photo Gallery','member'],['/documents','Documents','member'],['/leadership','Leadership','public'],['/advancement','Advancement','public'],['/summer-camp','Summer Camp','public'],['/uniform','Scout Uniform','public'],['/contact','Contact Us','public']];
 const adminNav=[['/member-info','Member Info','admin'],['/email','Email','admin'],['/administration','Administration','admin']];
+const ranks=['Scout','Tenderfoot','Second Class','First Class','Star','Life','Eagle Scout'];
 
 function App(){
   const [me,setMe]=useState<any>(null);
-  const [open,setOpen]=useState<'account'|'nav'|null>(null);
+  const [menu,setMenu]=useState<'account'|'nav'|null>(null);
   const navg=useNavigate();
   const loc=useLocation();
 
@@ -18,6 +19,7 @@ function App(){
   },[]);
 
   const can=(p:string)=>!!me&&me.permissions?.includes(p);
+
   const visible=[
     ...nav.filter(x=>x[2]==='public'||(me&&x[2]==='member')),
     ...(can('Admin')?adminNav:[])
@@ -25,39 +27,24 @@ function App(){
 
   return <div className="app">
     <header>
-      <button className="brand" onClick={()=>navg('/')}>Troop 690</button>
+      <button className="brand" onClick={()=>navg('/')}>
+        <span>Troop 690</span>
+      </button>
 
       <div className="header-actions">
         <div className="drop">
           <button
             className="icon-button"
             aria-label="Account"
-            aria-expanded={open==='account'}
-            onClick={()=>setOpen(open==='account'?null:'account')}
+            onClick={()=>setMenu(menu==='account'?null:'account')}
           >
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <circle
-                cx="12"
-                cy="12"
-                r="10"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.8"
-              />
-              <path
-                d="M12 11a3.25 3.25 0 1 0 0-6.5A3.25 3.25 0 0 0 12 11Zm-5.2 7.1c.8-2.45 2.65-3.6 5.2-3.6s4.4 1.15 5.2 3.6"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-              />
-            </svg>
+            <span className="person-icon" aria-hidden="true"></span>
           </button>
 
-          {open==='account'&&
+          {menu==='account'&&
             <div className="menu account-menu">
               <button onClick={()=>{
-                setOpen(null);
+                setMenu(null);
                 navg(me?'/settings':'/login');
               }}>
                 {me?'Settings':'Log In'}
@@ -67,7 +54,7 @@ function App(){
                 <button onClick={async()=>{
                   await post('/logout',{});
                   setMe(null);
-                  setOpen(null);
+                  setMenu(null);
                   navg('/');
                 }}>
                   Log Out
@@ -81,32 +68,27 @@ function App(){
           <button
             className="icon-button"
             aria-label="Navigation"
-            aria-expanded={open==='nav'}
-            onClick={()=>setOpen(open==='nav'?null:'nav')}
+            onClick={()=>setMenu(menu==='nav'?null:'nav')}
           >
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path
-                d="M4 7h16M4 12h16M4 17h16"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-              />
-            </svg>
+            <span className="hamburger-icon" aria-hidden="true">
+              <i></i>
+              <i></i>
+              <i></i>
+            </span>
           </button>
 
-          {open==='nav'&&
+          {menu==='nav'&&
             <div className="menu nav-menu">
-              {visible.map(([path,name])=>
+              {visible.map(([p,n])=>
                 <button
-                  key={path}
+                  key={p}
                   onClick={()=>{
-                    setOpen(null);
-                    navg(path);
+                    setMenu(null);
+                    navg(p);
                   }}
-                  className={loc.pathname===path?'active':''}
+                  className={loc.pathname===p?'active':''}
                 >
-                  {name}
+                  {n}
                 </button>
               )}
             </div>
@@ -121,36 +103,25 @@ function App(){
 
     <footer>
       <div>© {new Date().getFullYear()} Troop 690. All rights reserved.</div>
-      <a
-        href="https://stwilliam.org"
-        target="_blank"
-        rel="noreferrer"
-      >
-        St. William the Abbot RC Church
-      </a>
-      <a
-        href="https://scoutingli.org"
-        target="_blank"
-        rel="noreferrer"
-      >
-        Scouting America Long Island
-      </a>
+      <div>
+        <a href="https://stwilliam.org" target="_blank" rel="noreferrer">
+          St. William the Abbot RC Church
+        </a>
+      </div>
+      <div>
+        <a href="https://scoutingli.org" target="_blank" rel="noreferrer">
+          Scouting America Long Island
+        </a>
+      </div>
     </footer>
   </div>
 }
 
-function RouterPage({
-  me,
-  setMe
-}:{
-  me:any,
-  setMe:(x:any)=>void
-}){
+function RouterPage({me,setMe}:{me:any,setMe:(x:any)=>void}){
   const p=useLocation().pathname;
 
   if(p==='/')return <Home me={me}/>;
   if(p==='/login')return <Login setMe={setMe}/>;
-  if(p==='/bootstrap')return <Bootstrap/>;
   if(p.startsWith('/claim/'))return <Claim/>;
   if(p==='/settings')return <Settings me={me}/>;
   if(p==='/eagles')return <Eagles/>;
@@ -192,14 +163,6 @@ function Loading(){
   return <div className="muted">Loading...</div>
 }
 
-function EmptyState({
-  children
-}:{
-  children:React.ReactNode
-}){
-  return <div className="empty-state">{children}</div>
-}
-
 function Home({me}:{me:any}){
   const [d,setD]=useState<any>();
 
@@ -210,6 +173,10 @@ function Home({me}:{me:any}){
   if(!d)return <Page title="Troop 690"><Loading/></Page>;
 
   return <Page title="Troop 690">
+    <div className="member-notice">
+      <strong>Welcome to Troop 690!</strong> This website is password-protected, and some personal content is hidden.
+    </div>
+
     <div className="hero-image">
       {d.content.troop_photo
         ? <img src={'/files/'+d.content.troop_photo} alt="Troop 690"/>
@@ -217,51 +184,50 @@ function Home({me}:{me:any}){
       }
     </div>
 
-    <section className="home-intro">
+    <section>
       <h2>History</h2>
-      <p>
-        {d.content.history||'There is no troop history available to view.'}
-      </p>
+      {d.content.history
+        ? <p>{d.content.history}</p>
+        : <EmptyState text="There is no troop history available to view."/>
+      }
     </section>
 
     {me&&
-      <>
-        <div className="member-welcome">
-          Welcome to Troop 690! This website is password-protected, and some personal content is hidden.
-        </div>
+      <div className="grid two">
+        <section className="card">
+          <h2>Upcoming Calendar Events</h2>
 
-        <div className="grid two">
-          <section className="card">
-            <h2>Upcoming Calendar Events</h2>
-
-            {d.events.length
-              ? d.events.map((e:any)=>
+          {d.events.length
+            ? d.events.map((e:any)=>
                 <div className="list-row" key={e.id}>
                   <b>{e.title}</b>
                   <span>{new Date(e.start_at).toLocaleString()}</span>
                 </div>
               )
-              : <EmptyState>There are no upcoming events.</EmptyState>
-            }
-          </section>
+            : <EmptyState text="There are no upcoming events."/>
+          }
+        </section>
 
-          <section className="card">
-            <h2>Recent Photo Albums</h2>
+        <section className="card">
+          <h2>Recent Photo Albums</h2>
 
-            {d.recent.length
-              ? d.recent.map((e:any)=>
+          {d.recent.length
+            ? d.recent.map((e:any)=>
                 <div className="list-row" key={e.id}>
                   <b>{e.title}</b>
                   <span>{new Date(e.start_at).toLocaleDateString()}</span>
                 </div>
               )
-              : <EmptyState>The photo gallery is empty.</EmptyState>
-            }
-          </section>
-        </div>
-      </>
+            : <EmptyState text="The photo gallery is empty."/>
+          }
+        </section>
+      </div>
     }
   </Page>
+}
+
+function EmptyState({text}:{text:string}){
+  return <div className="empty-state">{text}</div>
 }
 
 function Login({setMe}:{setMe:(x:any)=>void}){
@@ -277,7 +243,11 @@ function Login({setMe}:{setMe:(x:any)=>void}){
         e.preventDefault();
 
         try{
-          await post('/login',{username:u,password:p});
+          await post('/login',{
+            username:u,
+            password:p
+          });
+
           const x=await api('/me');
           setMe(x.user);
           nav('/');
@@ -308,105 +278,6 @@ function Login({setMe}:{setMe:(x:any)=>void}){
       {err&&<p className="error">{err}</p>}
 
       <button className="primary">Log In</button>
-    </form>
-  </Page>
-}
-
-function Bootstrap(){
-  const [secret,setSecret]=useState('');
-  const [username,setUsername]=useState('admin');
-  const [password,setPassword]=useState('');
-  const [firstName,setFirstName]=useState('Administrator');
-  const [lastName,setLastName]=useState('Troop 690');
-  const [msg,setMsg]=useState('');
-  const [err,setErr]=useState('');
-  const nav=useNavigate();
-
-  return <Page title="Set Up Administrator">
-    <p className="muted">
-      This one-time setup creates the first administrator account.
-      It stops working after an active account exists.
-    </p>
-
-    <form
-      className="form narrow"
-      onSubmit={async e=>{
-        e.preventDefault();
-        setErr('');
-        setMsg('');
-
-        try{
-          await post('/bootstrap',{
-            secret,
-            username,
-            password,
-            firstName,
-            lastName
-          });
-
-          setMsg('Administrator created. You can now log in.');
-          setTimeout(()=>nav('/login'),800);
-        }catch(e:any){
-          setErr(e.message);
-        }
-      }}
-    >
-      <label>
-        Bootstrap secret
-        <input
-          type="password"
-          value={secret}
-          onChange={e=>setSecret(e.target.value)}
-          autoComplete="off"
-          required
-        />
-      </label>
-
-      <label>
-        Username
-        <input
-          value={username}
-          onChange={e=>setUsername(e.target.value)}
-          autoComplete="username"
-          required
-        />
-      </label>
-
-      <label>
-        Password
-        <input
-          type="password"
-          value={password}
-          onChange={e=>setPassword(e.target.value)}
-          autoComplete="new-password"
-          required
-        />
-      </label>
-
-      <label>
-        First name
-        <input
-          value={firstName}
-          onChange={e=>setFirstName(e.target.value)}
-          required
-        />
-      </label>
-
-      <label>
-        Last name
-        <input
-          value={lastName}
-          onChange={e=>setLastName(e.target.value)}
-          required
-        />
-      </label>
-
-      {err&&<p className="error">{err}</p>}
-      {msg&&<p className="muted">{msg}</p>}
-
-      <button className="primary">
-        Create Administrator
-      </button>
     </form>
   </Page>
 }
@@ -459,9 +330,7 @@ function Claim(){
 
             {err&&<p className="error">{err}</p>}
 
-            <button className="primary">
-              Create Account
-            </button>
+            <button className="primary">Create Account</button>
           </>
       }
     </form>
@@ -471,7 +340,11 @@ function Claim(){
 function Settings({me}:{me:any}){
   const [x,setX]=useState(me?.person||{});
 
-  if(!me)return <Login setMe={()=>{}}/>;
+  if(!me){
+    return <Page title="Settings">
+      <p>Please log in first.</p>
+    </Page>
+  }
 
   const fields=[
     'prefix',
@@ -552,9 +425,7 @@ function Eagles(){
             </tbody>
           </table>
         </div>
-      : <EmptyState>
-          There are no Eagle Scouts available to view.
-        </EmptyState>
+      : <EmptyState text="There are no Eagle Scout entries available to view."/>
     }
   </Page>
 }
@@ -573,8 +444,7 @@ function Calendar(){
     actions={<a className="button" href="/api/calendar.ics">Calendar subscription</a>}
   >
     <p className="muted">
-      Copy the subscription link into Apple Calendar or Google Calendar.
-      The feed stays current as the troop calendar changes.
+      Copy the subscription link into Apple Calendar or Google Calendar. The feed stays current as the troop calendar changes.
     </p>
 
     <div className="calendar-list">
@@ -663,7 +533,7 @@ function Photos(){
             </article>
           )}
         </div>
-      : <EmptyState>The photo gallery is empty.</EmptyState>
+      : <EmptyState text="The photo gallery is empty."/>
     }
   </Page>
 }
@@ -705,9 +575,7 @@ function Documents(){
             </article>
           )}
         </div>
-      : <EmptyState>
-          There are no documents available to view.
-        </EmptyState>
+      : <EmptyState text="There are no documents available to view."/>
     }
   </Page>
 }
@@ -721,84 +589,45 @@ function Leadership(){
 
   if(!d)return <Page title="Leadership"><Loading/></Page>;
 
-  const youth=d.positions.filter(
-    (x:any)=>
-      x.name!=='Scoutmaster' &&
-      !['Assistant Scoutmaster','Committee Chair','Committee Member'].includes(x.name)
-  );
-
-  const adult=d.positions.filter(
-    (x:any)=>
-      ['Scoutmaster','Assistant Scoutmaster','Committee Chair','Committee Member'].includes(x.name)
-  );
-
-  const renderPosition=(x:any)=>
-    <article className="card leadership-position" key={x.id}>
-      <details>
-        <summary>
-          <span className="position-title">{x.name}</span>
-          {x.holder&&
-            <span className="holder">{x.holder}</span>
-          }
-        </summary>
-
-        <p>{x.description||''}</p>
-      </details>
-    </article>;
-
-  const historySection=(title:string,rows:any[])=>
-    <section className="card leadership-history">
-      <h2>{title}</h2>
-
-      {rows.length
-        ? rows.map((x:any)=>
-            <div className="list-row" key={x.id}>
-              <b>{x.person_name}</b>
-              <span>{x.start_year}-{x.end_year}</span>
-            </div>
-          )
-        : <EmptyState>No history is available to view.</EmptyState>
-      }
-    </section>;
-
   return <Page title="Leadership">
-    <div className="leadership-grid">
-      <section className="card">
-        <h2>Youth Leaders</h2>
-
-        {youth.length
-          ? youth.map(renderPosition)
-          : <EmptyState>
-              There are no youth leadership positions available to view.
-            </EmptyState>
-        }
-      </section>
-
-      <section className="card">
-        <h2>Adult Volunteers</h2>
-
-        {adult.length
-          ? adult.map(renderPosition)
-          : <EmptyState>
-              There are no adult volunteer positions available to view.
-            </EmptyState>
-        }
-      </section>
-
-      {d.history&&d.history.length>0&&
-        <>
-          {historySection(
-            'Senior Patrol Leader History',
-            d.history.filter((x:any)=>x.type==='SPL'||x.type==='ASPL')
-          )}
-
-          {historySection(
-            'Scoutmaster History',
-            d.history.filter((x:any)=>x.type==='Scoutmaster')
-          )}
-        </>
-      }
+    <div className="grid two">
+      {d.positions.map((x:any)=>
+        <article className="card" key={x.id}>
+          <h2>{x.name}</h2>
+          <p>{x.description}</p>
+          {x.holder&&<p className="holder">{x.holder}</p>}
+        </article>
+      )}
     </div>
+
+    <section>
+      <h2>SPL History</h2>
+
+      {d.history
+        .filter((x:any)=>x.type==='SPL'||x.type==='ASPL')
+        .map((x:any)=>
+          <div className="list-row" key={x.id}>
+            <span>{x.type}</span>
+            <b>{x.person_name}</b>
+            <span>{x.start_year}-{x.end_year}</span>
+          </div>
+        )
+      }
+    </section>
+
+    <section>
+      <h2>Scoutmaster History</h2>
+
+      {d.history
+        .filter((x:any)=>x.type==='Scoutmaster')
+        .map((x:any)=>
+          <div className="list-row" key={x.id}>
+            <b>{x.person_name}</b>
+            <span>{x.start_year}-{x.end_year}</span>
+          </div>
+        )
+      }
+    </section>
   </Page>
 }
 
@@ -810,16 +639,6 @@ function Advancement(){
   },[]);
 
   if(!d)return <Page title="Advancement"><Loading/></Page>;
-
-  const ranks=[
-    'Scout',
-    'Tenderfoot',
-    'Second Class',
-    'First Class',
-    'Star',
-    'Life',
-    'Eagle Scout'
-  ];
 
   return <Page title="Advancement">
     {ranks.map(r=>
@@ -865,9 +684,9 @@ function Advancement(){
 
     <section>
       <h2>Merit Badges</h2>
+
       <p>
-        Merit badges provide Scouts opportunities to learn about subjects
-        and complete requirements with guidance from counselors.
+        Merit badges provide Scouts opportunities to learn about subjects and complete requirements with guidance from counselors.
       </p>
 
       <a
@@ -911,7 +730,11 @@ function SummerCamp(){
 
   return <Page title="Summer Camp">
     <h2>Onteora Scout Reservation</h2>
-    <p>{d.camp.description}</p>
+
+    {d.camp.description
+      ? <p>{d.camp.description}</p>
+      : <EmptyState text="There is no summer camp information available to view."/>
+    }
 
     <h2>Merit Badges</h2>
     <p>{d.camp.merit_badges}</p>
@@ -964,18 +787,15 @@ function Uniform(){
     ['uniform_left_pocket','Left pocket']
   ];
 
-  const keyFor=(area:string)=>
-    d.key.filter((x:any)=>x.image_area===area);
-
   return <Page title="Scout Uniform">
-    <div className="uniform-class-grid">
-      <section className="card uniform-class">
+    <div className="grid two">
+      <section>
         <h2>Class A uniform</h2>
         <p>The Class A uniform is the troop's formal Scout uniform.</p>
         <ImgSlot src={d.content.uniform_class_a}/>
       </section>
 
-      <section className="card uniform-class">
+      <section>
         <h2>Class B uniform</h2>
         <p>The Class B uniform is the troop's activity uniform.</p>
         <ImgSlot src={d.content.uniform_class_b}/>
@@ -985,23 +805,23 @@ function Uniform(){
     <section>
       <h2>Insignia Guide</h2>
 
-      <div className="insignia-grid">
+      <div className="uniform-grid">
         {areas.map(([k,n])=>
-          <div className="card insignia-card" key={k}>
+          <div className="card" key={k}>
             <h3>{n}</h3>
 
             <ImgSlot src={d.content[k]}/>
 
-            {keyFor(n).length?
-              <div className="insignia-key">
-                {keyFor(n).map((x:any)=>
+            <div className="small-key">
+              {d.key
+                .filter((x:any)=>x.image_area===k.replace('uniform_',''))
+                .map((x:any)=>
                   <div key={x.id}>
-                    <b>{x.number}.</b> {x.label}
+                    <b>{x.number}</b> {x.label}
                   </div>
-                )}
-              </div>
-              : null
-            }
+                )
+              }
+            </div>
           </div>
         )}
       </div>
@@ -1011,42 +831,30 @@ function Uniform(){
 
 function ImgSlot({src}:{src?:string}){
   return src
-    ? <img
-        className="uniform-img"
-        src={'/files/'+src}
-        alt="Uniform guide"
-      />
+    ? <img className="uniform-img" src={'/files/'+src} alt="Uniform guide"/>
     : <div className="image-slot">Owner-supplied image</div>
 }
 
 function Contact({me}:{me:any}){
   return <Page title="Contact Us">
     <div className="grid three">
-      <section className="card contact-card">
+      <section className="card">
         <h2>Join the Troop</h2>
-        <p>
-          For information about joining Troop 690, contact the troop committee.
-        </p>
+        <p>Contact the troop if you are interested in joining.</p>
 
-        {!me
-          ? <a
-              className="button"
-              href="mailto:committee@troop690.org?cc=scoutmaster@troop690.org"
-            >
-              Contact the committee
-            </a>
-          : <span className="muted">
-              Available to non-members.
-            </span>
+        {!me&&
+          <a
+            className="button"
+            href="mailto:committee@troop690.org?cc=scoutmaster@troop690.org"
+          >
+            Contact the committee
+          </a>
         }
       </section>
 
-      <section className="card contact-card">
+      <section className="card">
         <h2>Any Questions?</h2>
-        <p>
-          For questions about Troop 690, activities, or scouting,
-          contact the Scoutmaster.
-        </p>
+        <p>Contact the Scoutmaster with questions about the troop.</p>
 
         <a
           className="button"
@@ -1056,18 +864,15 @@ function Contact({me}:{me:any}){
         </a>
       </section>
 
-      <section className="card contact-card">
+      <section className="card">
         <h2>Website Feedback</h2>
-        <p>
-          Have a suggestion, found an issue, or need help with the website?
-          Let us know.
-        </p>
+        <p>Send feedback or report a problem with the website.</p>
 
         <a
           className="button"
           href="mailto:webmaster@troop690.org"
         >
-          Send website feedback
+          Send feedback
         </a>
       </section>
     </div>
@@ -1077,70 +882,79 @@ function Contact({me}:{me:any}){
 function MemberInfo(){
   const [rows,setRows]=useState<any[]>([]);
   const [edit,setEdit]=useState<any|null>(null);
+  const [loading,setLoading]=useState(true);
+
+  const load=async()=>{
+    setLoading(true);
+
+    try{
+      setRows((await api('/admin/members')).members)
+    }finally{
+      setLoading(false)
+    }
+  };
 
   useEffect(()=>{
-    api('/admin/members').then(x=>setRows(x.members))
+    load()
   },[]);
+
+  const active=rows.filter(x=>!x.archived);
+  const archived=rows.filter(x=>x.archived);
 
   return <Page
     title="Member Info"
     actions={
       <div className="button-row">
+        <button
+          className="primary"
+          onClick={()=>
+            setEdit({
+              first_name:'',
+              last_name:'',
+              gender:'Male',
+              adult:0,
+              adult_leader:0,
+              rank:'',
+              email:'',
+              phone:'',
+              _new:true
+            })
+          }
+        >
+          Add Member
+        </button>
+
         <a className="button" href="/api/admin/quick-text.csv">
           Quick Text
         </a>
+
         <a className="button" href="/api/admin/emergency-contacts.csv">
           Emergency Contacts
         </a>
       </div>
     }
   >
-    <div className="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Position</th>
-            <th>Rank</th>
-            <th>Date of birth</th>
-            <th>Phone</th>
-            <th>Email</th>
-            <th>Address</th>
-            <th>Username</th>
-            <th></th>
-          </tr>
-        </thead>
+    {loading
+      ? <Loading/>
+      : <>
+          <MemberTable
+            title="Current Members"
+            rows={active}
+            onEdit={setEdit}
+            onRefresh={load}
+          />
 
-        <tbody>
-          {rows.map(x=>
-            <tr key={x.id}>
-              <td>{x.last_name}, {x.first_name}</td>
-              <td></td>
-              <td>{x.rank}</td>
-              <td>{x.dob||''}</td>
-              <td>{x.phone}</td>
-              <td>{x.email}</td>
-              <td>{[x.street,x.town,x.zip].filter(Boolean).join(', ')}</td>
-              <td>{x.username||''}</td>
-              <td>
-                <button onClick={()=>setEdit(x)}>Edit</button>
-
-                {!x.username&&
-                  <button
-                    onClick={async()=>{
-                      const r=await post('/admin/invite/'+x.id,{});
-                      prompt('Send this invitation link',r.inviteUrl)
-                    }}
-                  >
-                    Invite
-                  </button>
-                }
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
-    </div>
+          {archived.length>0&&
+            <MemberTable
+              title="Archive"
+              rows={archived}
+              onEdit={setEdit}
+              onRefresh={load}
+              archived
+            />
+          }
+        </>
+    }
 
     {edit&&
       <MemberEditor
@@ -1148,11 +962,119 @@ function MemberInfo(){
         onClose={()=>setEdit(null)}
         onSaved={async()=>{
           setEdit(null);
-          setRows((await api('/admin/members')).members)
+          await load();
         }}
       />
     }
   </Page>
+}
+
+function MemberTable({
+  title,
+  rows,
+  onEdit,
+  onRefresh,
+  archived=false
+}:{
+  title:string,
+  rows:any[],
+  onEdit:(x:any)=>void,
+  onRefresh:()=>void,
+  archived?:boolean
+}){
+  return <section>
+    <h2>{title}</h2>
+
+    {rows.length===0
+      ? <EmptyState
+          text={
+            archived
+              ? 'The member archive is empty.'
+              : 'There are no members to display.'
+          }
+        />
+      : <div className="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Type</th>
+                <th>Rank</th>
+                <th>Username</th>
+                <th>Status</th>
+                <th></th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {rows.map(x=>
+                <tr key={x.id}>
+                  <td>
+                    <b>{x.last_name}, {x.first_name}</b>
+                  </td>
+
+                  <td>
+                    {x.adult?'Adult':'Youth'}
+                    {x.adult_leader?' / Adult Leader':''}
+                  </td>
+
+                  <td>{x.rank||''}</td>
+
+                  <td>
+                    {x.username
+                      ? x.username
+                      : <span className="muted">No login</span>
+                    }
+                  </td>
+
+                  <td>
+                    {x.archived
+                      ? 'Archived'
+                      : x.active
+                        ? 'Active'
+                        : x.username
+                          ? 'Inactive'
+                          : 'No account'
+                    }
+                  </td>
+
+                  <td>
+                    <div className="button-row">
+                      <button onClick={()=>onEdit(x)}>
+                        Edit
+                      </button>
+
+                      {!x.username&&!x.archived&&
+                        <button
+                          onClick={async()=>{
+                            const r=await post('/admin/invite/'+x.id,{});
+                            prompt('Send this invitation link',r.inviteUrl);
+                            await onRefresh();
+                          }}
+                        >
+                          Invite
+                        </button>
+                      }
+
+                      {x.archived&&
+                        <button
+                          onClick={async()=>{
+                            await post('/admin/members/'+x.id+'/reactivate',{});
+                            await onRefresh();
+                          }}
+                        >
+                          Reactivate
+                        </button>
+                      }
+                    </div>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+    }
+  </section>
 }
 
 function MemberEditor({
@@ -1165,55 +1087,437 @@ function MemberEditor({
   onSaved:()=>void
 }){
   const [x,setX]=useState({...value});
+  const [positions,setPositions]=useState<any[]>([]);
+  const [selected,setSelected]=useState<number[]>([]);
+  const [busy,setBusy]=useState(false);
+  const [error,setError]=useState('');
 
-  const fields=[
-    'prefix',
-    'first_name',
-    'middle_name',
-    'last_name',
-    'suffix',
-    'gender',
-    'dob',
-    'phone',
-    'email',
-    'street',
-    'town',
-    'zip',
-    'rank',
-    'join_date',
-    'cub_scout_pack',
-    'patrol',
-    'scouting_membership_id',
-    'registration_expiration',
-    'syt_expiration'
-  ];
+  const isNew=!!x._new;
+
+  useEffect(()=>{
+    api('/admin/positions')
+      .then(async d=>{
+        setPositions(d.positions);
+
+        if(!isNew){
+          const r=await api('/admin/members/'+x.id);
+          setSelected((r.positions||[]).map((p:any)=>p.id));
+        }
+      })
+      .catch(e=>setError(e.message));
+  },[x.id,isNew]);
+
+  const adult=!!x.adult;
+
+  const allowed=positions.filter(
+    p=>
+      p.category==='other' ||
+      (adult
+        ? p.category==='adult'
+        : p.category==='youth')
+  );
+
+  const save=async(e:React.FormEvent)=>{
+    e.preventDefault();
+    setBusy(true);
+    setError('');
+
+    try{
+      let id=x.id;
+
+      if(isNew){
+        const r=await post('/admin/members',x);
+        id=r.id;
+      }else{
+        await put('/admin/members/'+id,x);
+      }
+
+      await put('/admin/members/'+id+'/positions',{
+        positionIds:selected
+      });
+
+      await onSaved();
+    }catch(e:any){
+      setError(e.message);
+    }finally{
+      setBusy(false);
+    }
+  };
+
+  const set=(k:string,v:any)=>
+    setX((q:any)=>({...q,[k]:v}));
 
   return <div className="modal">
-    <form
-      className="modal-card form"
-      onSubmit={async e=>{
-        e.preventDefault();
-        await put('/admin/members/'+x.id,x);
-        onSaved()
-      }}
-    >
-      <h2>Edit Member</h2>
+    <form className="modal-card form" onSubmit={save}>
+      <div className="page-head">
+        <h2>{isNew?'Add Member':'Edit Member'}</h2>
 
-      <div className="grid two">
-        {fields.map(f=>
-          <label key={f}>
-            {f.replaceAll('_',' ')}
-            <input
-              value={x[f]||''}
-              onChange={e=>setX({...x,[f]:e.target.value})}
-            />
-          </label>
-        )}
+        <button type="button" onClick={onClose}>
+          Close
+        </button>
       </div>
 
+      {error&&<p className="error">{error}</p>}
+
+      <section>
+        <h3>Basic Information</h3>
+
+        <div className="grid two">
+          <label>
+            Prefix
+            <input
+              value={x.prefix||''}
+              onChange={e=>set('prefix',e.target.value)}
+            />
+          </label>
+
+          <label>
+            Suffix
+            <input
+              value={x.suffix||''}
+              onChange={e=>set('suffix',e.target.value)}
+            />
+          </label>
+
+          <label>
+            First Name
+            <input
+              required
+              value={x.first_name||''}
+              onChange={e=>set('first_name',e.target.value)}
+            />
+          </label>
+
+          <label>
+            Middle Name
+            <input
+              value={x.middle_name||''}
+              onChange={e=>set('middle_name',e.target.value)}
+            />
+          </label>
+
+          <label>
+            Last Name
+            <input
+              required
+              value={x.last_name||''}
+              onChange={e=>set('last_name',e.target.value)}
+            />
+          </label>
+
+          <label>
+            Gender
+            <select
+              value={x.gender||'Male'}
+              onChange={e=>set('gender',e.target.value)}
+            >
+              <option>Male</option>
+              <option>Female</option>
+            </select>
+          </label>
+
+          <label>
+            Date of Birth
+            <input
+              type="date"
+              value={x.dob||''}
+              onChange={e=>set('dob',e.target.value)}
+            />
+          </label>
+
+          <label>
+            Phone
+            <input
+              value={x.phone||''}
+              onChange={e=>set('phone',e.target.value)}
+            />
+          </label>
+
+          <label>
+            Email
+            <input
+              type="email"
+              value={x.email||''}
+              onChange={e=>set('email',e.target.value)}
+            />
+          </label>
+
+          <label>
+            Street
+            <input
+              value={x.street||''}
+              onChange={e=>set('street',e.target.value)}
+            />
+          </label>
+
+          <label>
+            Town
+            <input
+              value={x.town||''}
+              onChange={e=>set('town',e.target.value)}
+            />
+          </label>
+
+          <label>
+            ZIP Code
+            <input
+              value={x.zip||''}
+              onChange={e=>set('zip',e.target.value)}
+            />
+          </label>
+        </div>
+      </section>
+
+      <section>
+        <h3>Scouting Information</h3>
+
+        <div className="grid two">
+          <label>
+            Member Type
+
+            <select
+              value={adult?'adult':'youth'}
+              onChange={e=>{
+                const a=e.target.value==='adult';
+
+                set('adult',a?1:0);
+
+                if(!a)
+                  set('adult_leader',0);
+              }}
+            >
+              <option value="youth">Youth</option>
+              <option value="adult">Adult</option>
+            </select>
+          </label>
+
+          {adult&&
+            <label className="checkbox-label">
+              <input
+                type="checkbox"
+                checked={!!x.adult_leader}
+                onChange={e=>
+                  set(
+                    'adult_leader',
+                    e.target.checked?1:0
+                  )
+                }
+              />
+              Adult Leader
+            </label>
+          }
+
+          {!adult&&
+            <label>
+              Rank
+
+              <select
+                value={x.rank||''}
+                onChange={e=>set('rank',e.target.value)}
+              >
+                <option value="">Select rank</option>
+
+                {ranks.map(r=>
+                  <option key={r} value={r}>
+                    {r}
+                  </option>
+                )}
+              </select>
+            </label>
+          }
+
+          {adult&&
+            <label>
+              Registration Expiration
+              <input
+                type="date"
+                value={x.registration_expiration||''}
+                onChange={e=>
+                  set(
+                    'registration_expiration',
+                    e.target.value
+                  )
+                }
+              />
+            </label>
+          }
+
+          {adult&&x.adult_leader&&
+            <label>
+              SYT Expiration
+              <input
+                type="date"
+                value={x.syt_expiration||''}
+                onChange={e=>
+                  set(
+                    'syt_expiration',
+                    e.target.value
+                  )
+                }
+              />
+            </label>
+          }
+
+          {!adult&&
+            <>
+              <label>
+                Troop Join Date
+                <input
+                  type="date"
+                  value={x.join_date||''}
+                  onChange={e=>set('join_date',e.target.value)}
+                />
+              </label>
+
+              <label>
+                Cub Scout Pack
+                <input
+                  value={x.cub_scout_pack||''}
+                  onChange={e=>set('cub_scout_pack',e.target.value)}
+                />
+              </label>
+
+              <label>
+                Patrol
+                <input
+                  value={x.patrol||''}
+                  onChange={e=>set('patrol',e.target.value)}
+                />
+              </label>
+
+              <label className="checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={!!x.oa_member}
+                  onChange={e=>
+                    set(
+                      'oa_member',
+                      e.target.checked?1:0
+                    )
+                  }
+                />
+                OA Member
+              </label>
+            </>
+          }
+
+          {!isNew&&x.rank==='Eagle Scout'&&
+            <label className="checkbox-label">
+              <input
+                type="checkbox"
+                checked={!!x.eagle_scout_archive}
+                onChange={e=>
+                  set(
+                    'eagle_scout_archive',
+                    e.target.checked?1:0
+                  )
+                }
+              />
+              Eagle Scout Archive
+            </label>
+          }
+
+          <label>
+            Scouting America Membership ID
+            <input
+              value={x.scouting_membership_id||''}
+              onChange={e=>
+                set(
+                  'scouting_membership_id',
+                  e.target.value
+                )
+              }
+            />
+          </label>
+
+          <label className="checkbox-label">
+            <input
+              type="checkbox"
+              checked={!!x.email_default_opt_out}
+              onChange={e=>
+                set(
+                  'email_default_opt_out',
+                  e.target.checked?1:0
+                )
+              }
+            />
+            Email default opt out
+          </label>
+        </div>
+      </section>
+
+      {!isNew&&
+        <section>
+          <h3>Leadership Positions</h3>
+
+          <p className="muted">
+            Assign positions here. Adult positions are available only to adults and youth positions only to youth.
+          </p>
+
+          <div className="check-grid">
+            {allowed.map(p=>
+              <label className="checkbox-label" key={p.id}>
+                <input
+                  type="checkbox"
+                  checked={selected.includes(p.id)}
+                  onChange={e=>
+                    setSelected(
+                      e.target.checked
+                        ? [...selected,p.id]
+                        : selected.filter(id=>id!==p.id)
+                    )
+                  }
+                />
+                {p.name}
+              </label>
+            )}
+          </div>
+        </section>
+      }
+
+      {!isNew&&
+        <section>
+          <h3>Account</h3>
+
+          <p>
+            {x.username
+              ? <>
+                  <b>{x.username}</b>
+                  {' · '}
+                  {x.active?'Active':'Inactive'}
+                </>
+              : 'No login account yet.'
+            }
+          </p>
+
+          {!x.username&&!x.archived&&
+            <button
+              type="button"
+              onClick={async()=>{
+                const r=await post('/admin/invite/'+x.id,{});
+                prompt('Send this invitation link',r.inviteUrl);
+              }}
+            >
+              Create Invitation
+            </button>
+          }
+        </section>
+      }
+
       <div className="button-row">
-        <button className="primary">Save</button>
-        <button type="button" onClick={onClose}>Cancel</button>
+        <button
+          className="primary"
+          disabled={busy}
+        >
+          {busy?'Saving...':'Save Member'}
+        </button>
+
+        <button
+          type="button"
+          onClick={onClose}
+        >
+          Cancel
+        </button>
       </div>
     </form>
   </div>
@@ -1228,16 +1532,17 @@ function Email(){
       setRows(x.members);
 
       const s:any={};
-      x.members.forEach((m:any)=>{
-        s[m.id]=!m.email_default_opt_out
-      });
 
-      setSelected(s)
+      x.members.forEach((m:any)=>
+        s[m.id]=!m.email_default_opt_out
+      );
+
+      setSelected(s);
     })
   },[]);
 
   const emails=rows
-    .filter(x=>selected[x.id]&&x.email)
+    .filter(x=>selected[x.id]&&x.email&&!x.archived)
     .map(x=>x.email);
 
   return <Page title="Email">
@@ -1252,25 +1557,28 @@ function Email(){
         </thead>
 
         <tbody>
-          {rows.map(x=>
-            <tr key={x.id}>
-              <td>
-                <input
-                  type="checkbox"
-                  checked={!!selected[x.id]}
-                  onChange={e=>
-                    setSelected({
-                      ...selected,
-                      [x.id]:e.target.checked
-                    })
-                  }
-                />
-              </td>
+          {rows
+            .filter(x=>!x.archived)
+            .map(x=>
+              <tr key={x.id}>
+                <td>
+                  <input
+                    type="checkbox"
+                    checked={!!selected[x.id]}
+                    onChange={e=>
+                      setSelected({
+                        ...selected,
+                        [x.id]:e.target.checked
+                      })
+                    }
+                  />
+                </td>
 
-              <td>{x.last_name}, {x.first_name}</td>
-              <td>{x.email}</td>
-            </tr>
-          )}
+                <td>{x.last_name}, {x.first_name}</td>
+                <td>{x.email}</td>
+              </tr>
+            )
+          }
         </tbody>
       </table>
     </div>
@@ -1286,67 +1594,106 @@ function Email(){
 
 function Administration(){
   const [rows,setRows]=useState<any[]>([]);
-  const [username,setUsername]=useState('');
-  const [secret,setSecret]=useState('');
+  const [saving,setSaving]=useState<number|null>(null);
+
+  const load=()=>api('/admin/account-logins')
+    .then(x=>setRows(x.accounts));
 
   useEffect(()=>{
-    api('/admin/account-logins').then(x=>setRows(x.accounts))
+    load()
   },[]);
 
   return <Page title="Administration">
-    <section>
-      <h2>Account Logins</h2>
+    <div className="admin-grid">
+      <section className="card">
+        <h2>People & Accounts</h2>
 
-      {rows.map(x=>
-        <div className="list-row" key={x.id}>
-          <span>{x.first_name} {x.last_name}</span>
+        <p>
+          Manage troop members, account invitations, leadership positions, and archived members.
+        </p>
 
-          <input
-            value={x.username}
-            onChange={e=>
-              setRows(
-                rows.map(r=>
-                  r.id===x.id
-                    ? {...r,username:e.target.value}
-                    : r
-                )
-              )
-            }
-          />
+        <a className="primary button" href="/member-info">
+          Open Member Info
+        </a>
+      </section>
 
-          <button
-            onClick={()=>
-              put(
-                '/admin/account-logins/'+x.id,
-                {username:x.username}
-              )
-            }
-          >
-            Save
-          </button>
+      <section className="card">
+        <h2>Account Logins</h2>
 
-          <button
-            onClick={async()=>{
-              await fetch(
-                '/api/admin/account-logins/'+x.id,
-                {method:'DELETE'}
-              );
+        <p className="muted">
+          Passwords are never shown here. Administrators can only manage usernames and whether an account exists.
+        </p>
 
-              setRows(rows.filter(r=>r.id!==x.id))
-            }}
-          >
-            Delete login
-          </button>
-        </div>
-      )}
-    </section>
+        {rows.length===0
+          ? <EmptyState text="There are no account logins."/>
+          : rows.map(x=>
+              <div className="list-row" key={x.id}>
+                <span>
+                  <b>{x.first_name} {x.last_name}</b>
+                  <small>{x.active?'Active':'Inactive'}</small>
+                </span>
 
-    <section>
+                <input
+                  value={x.username}
+                  onChange={e=>
+                    setRows(
+                      rows.map(r=>
+                        r.id===x.id
+                          ? {...r,username:e.target.value}
+                          : r
+                      )
+                    )
+                  }
+                />
+
+                <button
+                  disabled={saving===x.id}
+                  onClick={async()=>{
+                    setSaving(x.id);
+
+                    try{
+                      await put(
+                        '/admin/account-logins/'+x.id,
+                        {username:x.username}
+                      );
+                    }finally{
+                      setSaving(null);
+                    }
+                  }}
+                >
+                  Save
+                </button>
+
+                <button
+                  onClick={async()=>{
+                    if(!confirm(
+                      'Delete this login account? The member record will remain.'
+                    ))return;
+
+                    await fetch(
+                      '/api/admin/account-logins/'+x.id,
+                      {
+                        method:'DELETE',
+                        credentials:'include'
+                      }
+                    );
+
+                    await load();
+                  }}
+                >
+                  Delete
+                </button>
+              </div>
+            )
+        }
+      </section>
+    </div>
+
+    <section className="card">
       <h2>Owner-supplied assets</h2>
 
       <p className="muted">
-        Upload the troop photo, uniform images, and official AHMR
-        template through the admin upload endpoint after deployment.
+        These uploads are stored in the troop's R2 bucket and can later be managed from the relevant page.
       </p>
 
       <Upload
@@ -1355,12 +1702,11 @@ function Administration(){
       />
     </section>
 
-    <section>
+    <section className="card">
       <h2>Bootstrap</h2>
 
       <p className="muted">
-        The first administrator is created once using the BOOTSTRAP_SECRET
-        Worker secret. This UI does not store that secret.
+        The initial administrator was created through the bootstrap process. Bootstrap is not a normal account-management feature.
       </p>
     </section>
   </Page>
@@ -1379,6 +1725,7 @@ function Upload({
   return <div className="upload">
     <label>
       {label}
+
       <input
         type="file"
         onChange={e=>setFile(e.target.files?.[0]||null)}
@@ -1390,6 +1737,7 @@ function Upload({
         if(!file)return;
 
         const f=new FormData();
+
         f.append('file',file);
         f.append('kind',kind);
 
@@ -1402,7 +1750,7 @@ function Upload({
           }
         );
 
-        setMsg(r.ok?'Uploaded':'Upload failed')
+        setMsg(r.ok?'Uploaded':'Upload failed');
       }}
     >
       Upload
