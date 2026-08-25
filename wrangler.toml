@@ -11,7 +11,7 @@ not_found_handling = "single-page-application"
 [[d1_databases]]
 binding = "DB"
 database_name = "troop690"
-database_id = "REPLACE_WITH_D1_DATABASE_ID"
+database_id = "ef771423-b3f0-4425-b54a-053d658adcd1"
 migrations_dir = "db/migrations"
 
 [[r2_buckets]]
