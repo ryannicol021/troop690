@@ -832,7 +832,7 @@ app.post(
 app.get(
   '/api/calendar.ics',
   async c=>{
-    const deny=requirePerm('Youth');
+    const deny=requirePerm('Youth')(c);
     if(deny)return deny;
 
     const rows=await c.env.DB
