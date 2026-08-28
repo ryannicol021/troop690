@@ -333,42 +333,53 @@ app.get('/api/home',async c=>{
     .prepare('SELECT key,value FROM site_content')
     .all<any>();
 
-  const events=await c.env.DB
-    .prepare(`
-      SELECT
-        e.*,
-        p.first_name||' '||p.last_name leader_name
-      FROM events e
-      LEFT JOIN people p ON p.id=e.leader_person_id
-      WHERE e.start_at>=datetime('now')
-      ORDER BY e.start_at
-      LIMIT 8
-    `)
-    .all<any>();
+  let events:any[]=[];
+  let recent:any[]=[];
 
-  const recent=await c.env.DB
-    .prepare(`
-      SELECT
-        e.id,
-        e.title,
-        e.start_at,
-        (
-          SELECT storage_key
+  // Public visitors only need homepage content. Keep member-only queries
+  // out of the public request path so a problem with optional event/photo
+  // data cannot prevent the homepage itself from loading.
+  if(user){
+    const eventRows=await c.env.DB
+      .prepare(`
+        SELECT
+          e.*,
+          p.first_name||' '||p.last_name leader_name
+        FROM events e
+        LEFT JOIN people p ON p.id=e.leader_person_id
+        WHERE e.start_at>=datetime('now')
+        ORDER BY e.start_at
+        LIMIT 8
+      `)
+      .all<any>();
+
+    const recentRows=await c.env.DB
+      .prepare(`
+        SELECT
+          e.id,
+          e.title,
+          e.start_at,
+          (
+            SELECT storage_key
+            FROM photos ph
+            WHERE ph.event_id=e.id
+            ORDER BY ph.id DESC
+            LIMIT 1
+          ) photo
+        FROM events e
+        WHERE EXISTS(
+          SELECT 1
           FROM photos ph
           WHERE ph.event_id=e.id
-          ORDER BY ph.id DESC
-          LIMIT 1
-        ) photo
-      FROM events e
-      WHERE EXISTS(
-        SELECT 1
-        FROM photos ph
-        WHERE ph.event_id=e.id
-      )
-      ORDER BY e.start_at DESC
-      LIMIT 6
-    `)
-    .all<any>();
+        )
+        ORDER BY e.start_at DESC
+        LIMIT 6
+      `)
+      .all<any>();
+
+    events=eventRows.results??[];
+    recent=recentRows.results??[];
+  }
 
   return json(c,{
     content:Object.fromEntries(
@@ -376,8 +387,8 @@ app.get('/api/home',async c=>{
         x=>[x.key,x.value]
       )
     ),
-    events:user?events.results:[],
-    recent:user?recent.results:[]
+    events,
+    recent
   });
 });
 
