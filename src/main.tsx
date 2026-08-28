@@ -36,7 +36,7 @@ function App(){
             aria-label="Account"
             onClick={()=>setOpen(v=>v==='account'?null:'account')}
           >
-            ♙
+            <span className="person-icon" aria-hidden="true"></span>
           </button>
           {open==='account'&&
             <div className="menu account-menu">
@@ -65,7 +65,9 @@ function App(){
             aria-label="Navigation"
             onClick={()=>setOpen(v=>v==='nav'?null:'nav')}
           >
-            ☰
+            <span className="hamburger-icon" aria-hidden="true">
+              <i></i><i></i><i></i>
+            </span>
           </button>
           {open==='nav'&&
             <div className="menu nav-menu">
@@ -91,7 +93,19 @@ function App(){
       <RouterPage me={me} setMe={setMe} authReady={authReady}/>
     </main>
 
-    <footer>Troop 690</footer>
+    <footer>
+      <div>© {new Date().getFullYear()} Troop 690. All rights reserved.</div>
+      <div>
+        <a href="https://stwilliam.org" target="_blank" rel="noreferrer">
+          St. William the Abbot RC Church
+        </a>
+      </div>
+      <div>
+        <a href="https://scoutingli.org" target="_blank" rel="noreferrer">
+          Scouting America Long Island
+        </a>
+      </div>
+    </footer>
   </div>
 }
 
@@ -173,10 +187,16 @@ function Loading(){
 
 function Home({me}:{me:any}){
   const [d,setD]=useState<any>();
+  const [error,setError]=useState('');
 
   useEffect(()=>{
-    api('/home').then(setD)
+    api('/home')
+      .then(setD)
+      .catch((e:any)=>setError(e?.message||'Unable to load the homepage.'));
   },[]);
+
+  if(error)
+    return <Page title="Troop 690"><p className="error">{error}</p></Page>;
 
   if(!d)
     return <Page title="Troop 690"><Loading/></Page>;
