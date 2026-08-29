@@ -53,6 +53,103 @@ async function verifyPassword(password:string,hash:string,salt:string){
   return x.hash===hash;
 }
 
+async function ensurePermissionSchema(c: Context<AppEnv>) {
+  const cols = await c.env.DB
+    .prepare('PRAGMA table_info(permission_titles)')
+    .all<any>();
+
+  const names = new Set(
+    (cols.results ?? []).map((x:any) => String(x.name))
+  );
+
+  // Older databases used only permission_titles.name. Bring those databases
+  // forward without requiring a manual database command from the site owner.
+  if (!names.has('code'))
+    await c.env.DB.prepare(
+      'ALTER TABLE permission_titles ADD COLUMN code TEXT'
+    ).run();
+
+  if (!names.has('description'))
+    await c.env.DB.prepare(
+      "ALTER TABLE permission_titles ADD COLUMN description TEXT NOT NULL DEFAULT ''"
+    ).run();
+
+  if (!names.has('system'))
+    await c.env.DB.prepare(
+      'ALTER TABLE permission_titles ADD COLUMN system INTEGER NOT NULL DEFAULT 0'
+    ).run();
+
+  await c.env.DB.prepare(
+    'CREATE UNIQUE INDEX IF NOT EXISTS idx_permission_titles_code ON permission_titles(code)'
+  ).run();
+
+  // If the old six-title permission model is present, replace it with the
+  // current code-based model. This block only runs when the code column was
+  // missing, so an already-migrated database is left alone.
+  if (!names.has('code')) {
+    const permissions = [
+      ['CAL','View Calendar'],['PHV','View Photo Gallery'],
+      ['DOCV','View Documents'],['LDV','View Member Leadership'],
+      ['HSTV','View Leadership History'],['SET','Settings'],
+      ['MIV','View Member Info'],['MIE','Edit Member Info'],
+      ['MDEL','Delete Members'],['INV','Invite Accounts'],
+      ['ACCT','Manage Account Logins'],['EML','View Email'],
+      ['EMS','Send Email'],['EVT','Manage Calendar'],
+      ['ATTV','View Attendance'],['ATTM','Manage Attendance'],
+      ['SIGN','Sign Digital Permissions'],['PHOTO','Manage Photos'],
+      ['DOC','Manage Documents'],['EAGLE','Manage Eagle Scouts'],
+      ['LEAD','Manage Leadership'],['HIST','Manage Leadership History'],
+      ['ADV','Manage Advancement'],['CAMP','Manage Summer Camp'],
+      ['UNIF','Manage Uniform'],['HOME','Manage Homepage'],
+      ['CONT','Manage Contact'],['POS','Manage Positions'],
+      ['PMAP','Manage Position Permissions'],['PERM','Manage Permissions'],
+      ['ADMIN','Administration']
+    ];
+
+    await c.env.DB.batch(
+      permissions.map(([code,name]) =>
+        c.env.DB.prepare(
+          'INSERT OR IGNORE INTO permission_titles(code,name,description,system) VALUES(?,?,?,1)'
+        ).bind(code,name,'')
+      )
+    );
+
+    await c.env.DB.prepare(
+      "UPDATE permission_titles SET code='ADMIN', name='Administration', description='', system=1 WHERE name='Admin' AND code IS NULL"
+    ).run();
+
+    await c.env.DB.prepare(
+      "DELETE FROM permission_titles WHERE code IS NULL"
+    ).run();
+
+    // Give the built-in positions their initial permissions. Existing custom
+    // mappings are preserved because these are INSERT OR IGNORE operations.
+    await c.env.DB.batch([
+      c.env.DB.prepare("INSERT OR IGNORE INTO positions(name,category) VALUES('Guest','other')"),
+      c.env.DB.prepare("INSERT OR IGNORE INTO positions(name,category) VALUES('Youth','youth')"),
+      c.env.DB.prepare("INSERT OR IGNORE INTO positions(name,category) VALUES('Adult','adult')")
+    ]);
+
+    const defaults: Record<string,string[]> = {
+      Youth:['CAL','PHV','DOCV','LDV','HSTV','SET','SIGN'],
+      Adult:['CAL','PHV','DOCV','LDV','HSTV','SET','SIGN'],
+      Scoutmaster:['CAL','PHV','DOCV','LDV','HSTV','SET','MIV','MIE','MDEL','INV','ACCT','EML','EMS','EVT','ATTV','ATTM','SIGN','PHOTO','DOC','EAGLE','LEAD','HIST','ADV','CAMP','UNIF','HOME','CONT','POS','PMAP','PERM','ADMIN']
+    };
+
+    for (const [position,codes] of Object.entries(defaults)) {
+      for (const code of codes) {
+        await c.env.DB.prepare(`
+          INSERT OR IGNORE INTO position_permissions(position_id,permission_id)
+          SELECT p.id,x.id
+          FROM positions p
+          JOIN permission_titles x ON x.code=?
+          WHERE p.name=?
+        `).bind(code,position).run();
+      }
+    }
+  }
+}
+
 async function userFromRequest(
   c: Context<AppEnv>
 ): Promise<User | null> {
@@ -124,6 +221,7 @@ async function userFromRequest(
 }
 
 app.use('/api/*', async (c, next) => {
+  await ensurePermissionSchema(c);
   c.set('user', await userFromRequest(c));
   await next();
 });
