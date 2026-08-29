@@ -221,6 +221,7 @@ async function userFromRequest(
 }
 
 app.use('/api/*', async (c, next) => {
+  await ensurePermissionSchema(c);
   c.set('user', await userFromRequest(c));
   await next();
 });
