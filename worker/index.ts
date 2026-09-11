@@ -121,17 +121,20 @@ async function ensurePermissionSchema(c: Context<AppEnv>) {
 
     // Give the built-in positions their initial permissions. Existing custom
     // mappings are preserved because these are INSERT OR IGNORE operations.
-    await c.env.DB.batch([
-      c.env.DB.prepare("INSERT OR IGNORE INTO positions(name,category) VALUES('Guest','other')"),
-      c.env.DB.prepare("INSERT OR IGNORE INTO positions(name,category) VALUES('Youth','youth')"),
-      c.env.DB.prepare("INSERT OR IGNORE INTO positions(name,category) VALUES('Adult','adult')")
-    ]);
+ await c.env.DB.batch([
+  c.env.DB.prepare("INSERT OR IGNORE INTO positions(name,category) VALUES('Guest','other')"),
+  c.env.DB.prepare("INSERT OR IGNORE INTO positions(name,category) VALUES('Youth','youth')"),
+  c.env.DB.prepare("INSERT OR IGNORE INTO positions(name,category) VALUES('Adult','adult')"),
+  c.env.DB.prepare("INSERT OR IGNORE INTO positions(name,category) VALUES('Adult Leader','adult')")
+]);
 
-    const defaults: Record<string,string[]> = {
-      Youth:['CAL','PHV','DOCV','LDV','HSTV','SET','SIGN'],
-      Adult:['CAL','PHV','DOCV','LDV','HSTV','SET','SIGN'],
-      Scoutmaster:['CAL','PHV','DOCV','LDV','HSTV','SET','MIV','MIE','MDEL','INV','ACCT','EML','EMS','EVT','ATTV','ATTM','SIGN','PHOTO','DOC','EAGLE','LEAD','HIST','ADV','CAMP','UNIF','HOME','CONT','POS','PMAP','PERM','ADMIN']
-    };
+const defaults: Record<string,string[]> = {
+  Guest:[],
+  Youth:['CAL','PHV','DOCV','LDV','HSTV','SET','SIGN'],
+  Adult:['CAL','PHV','DOCV','LDV','HSTV','SET','SIGN'],
+  'Adult Leader':['CAL','PHV','DOCV','LDV','HSTV','SET','SIGN'],
+  Scoutmaster:['CAL','PHV','DOCV','LDV','HSTV','SET','MIV','MIE','MDEL','INV','ACCT','EML','EMS','EVT','ATTV','ATTM','SIGN','PHOTO','DOC','EAGLE','LEAD','HIST','ADV','CAMP','UNIF','HOME','CONT','POS','PMAP','PERM','ADMIN']
+};
 
     for (const [position,codes] of Object.entries(defaults)) {
       for (const code of codes) {
