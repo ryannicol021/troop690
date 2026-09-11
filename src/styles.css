@@ -713,15 +713,6 @@ footer a:hover{
   white-space:nowrap
 }
 
-.permission-grid th:first-child,
-.permission-grid td:first-child{
-  position:sticky;
-  left:0;
-  z-index:2;
-  background:#fff;
-  text-align:left
-}
-
 .permission-grid thead th{
   position:sticky;
   top:0;
@@ -736,16 +727,26 @@ footer a:hover{
 }
 
 .permission-grid tbody th{
+  position:sticky;
+  left:0;
+  z-index:2;
+  text-align:left;
   font-weight:600
 }
 
-.permission-grid tr:last-child th,
-.permission-grid tr:last-child td{
-  border-bottom:0
+.permission-grid tbody tr:nth-child(odd) th,
+.permission-grid tbody tr:nth-child(odd) td{
+  background:#fff
 }
 
-.permission-grid-head{
-  position:relative
+.permission-grid tbody tr:nth-child(even) th,
+.permission-grid tbody tr:nth-child(even) td{
+  background:var(--khaki-light)
+}
+
+.permission-grid tbody tr:last-child th,
+.permission-grid tbody tr:last-child td{
+  border-bottom:0
 }
 
 .permission-code{
@@ -757,6 +758,15 @@ footer a:hover{
   color:var(--navy);
   font-weight:700;
   cursor:help
+}
+
+.permission-locked{
+  background:rgba(0,63,135,.08)!important
+}
+
+.permission-locked input{
+  opacity:.55;
+  cursor:not-allowed
 }
 
 .permission-tooltip-popup{
@@ -774,7 +784,7 @@ footer a:hover{
   white-space:normal;
   box-shadow:0 3px 10px rgba(0,0,0,.16);
   z-index:100;
-  pointer-events:none;
+  pointer-events:none
 }
 
 .permission-tooltip-arrow{
@@ -786,7 +796,7 @@ footer a:hover{
   height:0;
   border-left:7px solid transparent;
   border-right:7px solid transparent;
-  border-top:7px solid var(--border);
+  border-top:7px solid var(--border)
 }
 
 @media(max-width:800px){
