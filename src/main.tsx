@@ -1132,7 +1132,29 @@ function Administration({me}:{me:any}){
     code:'',
     description:''
   });
-  const [msg,setMsg]=useState('');
+    const [msg,setMsg]=useState('');
+  const [permissionTip,setPermissionTip]=useState<{
+    text:string;
+    x:number;
+    y:number;
+  }|null>(null);
+
+  const showPermissionTip=(
+    e:React.MouseEvent<HTMLButtonElement>,
+    text:string
+  )=>{
+    const r=e.currentTarget.getBoundingClientRect();
+
+    setPermissionTip({
+      text,
+      x:r.left+(r.width/2),
+      y:r.top-10
+    });
+  };
+
+  const hidePermissionTip=()=>{
+    setPermissionTip(null);
+  };
 
   const can=(p:string)=>!!me&&me.permissions?.includes(p);
 
