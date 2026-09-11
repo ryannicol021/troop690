@@ -559,13 +559,7 @@ app.post('/api/bootstrap',async c=>{
 
   const pos=await c.env.DB
     .prepare(
-      "SELECT id FROM positions WHERE name='Scoutmaster'"
-    )
-    .first<any>();
-
-  const admin=await c.env.DB
-    .prepare(
-      "SELECT id FROM permission_titles WHERE code='ADMIN'"
+      "SELECT id FROM positions WHERE code='ADMIN'"
     )
     .first<any>();
 
