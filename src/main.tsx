@@ -1253,86 +1253,126 @@ function Administration({me}:{me:any}){
 
   return <Page title="Administration">
 
-    {can('ACCT')&&
+        {can('ACCT')&&
       <section>
         <h2>Account Logins</h2>
 
-        {accounts.map(x=>
-          <div className="admin-row" key={x.id}>
-            <div>
-              <b>{x.first_name} {x.last_name}</b>
-              <small>{x.username}</small>
-            </div>
+        <div className="admin-table-wrap">
+          <table className="admin-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Username</th>
+                <th>Options</th>
+              </tr>
+            </thead>
 
-            <div className="button-row">
-              <button
-                onClick={()=>
-                  setEditingAccount(
-                    editingAccount===x.id?null:x.id
-                  )
-                }
-              >
-                Edit
-              </button>
+            <tbody>
+              {accounts.map(x=>
+                <tr key={x.id}>
+                  <td>
+                    <b>{x.first_name} {x.last_name}</b>
+                  </td>
 
-              <button onClick={async()=>{
-                if(!confirm('Delete this login?'))
-                  return;
+                  <td>
+                    {editingAccount===x.id?
+                      <div className="admin-inline-edit">
+                        <input
+                          value={x.username}
+                          onChange={e=>
+                            setAccounts(
+                              accounts.map(a=>
+                                a.id===x.id?
+                                  {...a,username:e.target.value}:
+                                  a
+                              )
+                            )
+                          }
+                        />
 
-                await fetch(
-                  '/api/admin/account-logins/'+x.id,
-                  {
-                    method:'DELETE',
-                    credentials:'include'
-                  }
-                );
+                        <button
+                          className="primary admin-action-button"
+                          onClick={async()=>{
+                            try{
+                              await put(
+                                '/admin/account-logins/'+x.id,
+                                {username:x.username}
+                              );
 
-                await load()
-              }}>
-                Delete
-              </button>
-            </div>
+                              setEditingAccount(null);
+                              await load();
 
-            {editingAccount===x.id&&
-              <div className="inline-edit">
-                <input
-                  value={x.username}
-                  onChange={e=>
-                    setAccounts(
-                      accounts.map(a=>
-                        a.id===x.id?
-                          {...a,username:e.target.value}:
-                          a
-                      )
-                    )
-                  }
-                />
-
-                <button
-                  className="primary"
-                  onClick={async()=>{
-                    try{
-                      await put(
-                        '/admin/account-logins/'+x.id,
-                        {username:x.username}
-                      );
-
-                      setEditingAccount(null);
-                      await load();
-
-                      setMsg('Saved');
-                      setTimeout(()=>setMsg(''),1800)
-                    }catch(e:any){
-                      setMsg(e.message)
+                              setMsg('Saved');
+                              setTimeout(()=>setMsg(''),1800)
+                            }catch(e:any){
+                              setMsg(e.message)
+                            }
+                          }}
+                        >
+                          Save
+                        </button>
+                      </div>
+                    :
+                      x.username
                     }
-                  }}
-                >
-                  Save
-                </button>
-              </div>
-            }
-          </div>
-        )}
+                  </td>
+
+                  <td>
+                    <div className="admin-action-row">
+                      <button
+                        className="admin-action-button"
+                        onClick={()=>
+                          setEditingAccount(
+                            editingAccount===x.id?null:x.id
+                          )
+                        }
+                      >
+                        Edit
+                      </button>
+
+                      <button
+                        className="admin-action-button"
+                        onClick={async()=>{
+                          if(!confirm(
+                            'Are you sure you want to delete this login? This action cannot be undone.'
+                          ))
+                            return;
+
+                          try{
+                            const r=await fetch(
+                              '/api/admin/account-logins/'+x.id,
+                              {
+                                method:'DELETE',
+                                credentials:'include'
+                              }
+                            );
+
+                            if(!r.ok){
+                              const data=await r.json().catch(()=>({}));
+                              setMsg(data.error||'Delete failed');
+                              setTimeout(()=>setMsg(''),2200);
+                              return;
+                            }
+
+                            await load();
+
+                            setMsg('Deleted');
+                            setTimeout(()=>setMsg(''),1800)
+                          }catch(e:any){
+                            setMsg(e.message);
+                            setTimeout(()=>setMsg(''),2200)
+                          }
+                        }}
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </section>
     }
 
