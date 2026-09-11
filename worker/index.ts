@@ -54,195 +54,311 @@ async function verifyPassword(password:string,hash:string,salt:string){
 }
 
 async function ensurePermissionSchema(c: Context<AppEnv>) {
-  const cols = await c.env.DB
+  const permissionCols = await c.env.DB
     .prepare('PRAGMA table_info(permission_titles)')
     .all<any>();
 
-  const names = new Set(
-    (cols.results ?? []).map((x:any) => String(x.name))
+  const permissionNames = new Set(
+    (permissionCols.results ?? []).map((x:any)=>String(x.name))
   );
 
-  // Older databases used only permission_titles.name. Bring those databases
-  // forward without requiring a manual database command from the site owner.
-  if (!names.has('code'))
+  if(!permissionNames.has('code')){
     await c.env.DB.prepare(
       'ALTER TABLE permission_titles ADD COLUMN code TEXT'
     ).run();
+  }
 
-  if (!names.has('description'))
+  if(!permissionNames.has('description')){
     await c.env.DB.prepare(
       "ALTER TABLE permission_titles ADD COLUMN description TEXT NOT NULL DEFAULT ''"
     ).run();
+  }
 
-  if (!names.has('system'))
+  if(!permissionNames.has('system')){
     await c.env.DB.prepare(
       'ALTER TABLE permission_titles ADD COLUMN system INTEGER NOT NULL DEFAULT 0'
     ).run();
+  }
 
   await c.env.DB.prepare(
     'CREATE UNIQUE INDEX IF NOT EXISTS idx_permission_titles_code ON permission_titles(code)'
   ).run();
 
-  // If the old six-title permission model is present, replace it with the
-  // current code-based model. This block only runs when the code column was
-  // missing, so an already-migrated database is left alone.
-    if (true) {
-      const permissions = [
-    ['CAL','View Calendar'],['PHV','View Photo Gallery'],
-    ['DOCV','View Documents'],['LDV','View Member Leadership'],
-    ['HSTV','View Leadership History'],['SET','Settings'],
-    ['MIV','View Member Info'],['MIE','Edit Member Info'],
-    ['MDEL','Delete Members'],['INV','Invite Accounts'],
-    ['ACCT','Manage Account Logins'],['EML','View Email'],
-    ['EMS','Send Email'],['EVT','Manage Calendar'],
-    ['ATTV','View Attendance'],['ATTM','Manage Attendance'],
-    ['SIGN','Sign Digital Permissions'],['PHOTO','Manage Photos'],
-    ['DOC','Manage Documents'],['EAGLE','Manage Eagle Scouts'],
-    ['LEAD','Manage Leadership'],['HIST','Manage Leadership History'],
-    ['ADV','Manage Advancement'],['CAMP','Manage Summer Camp'],
-    ['UNIF','Manage Uniform'],['HOME','Manage Homepage'],
-    ['CONT','Manage Contact'],['POS','Manage Positions'],
-    ['PMAP','Manage Position Permissions'],['PERM','Manage Permissions'],
-    ['ADMIN','Administration']
+  const positionCols = await c.env.DB
+    .prepare('PRAGMA table_info(positions)')
+    .all<any>();
+
+  const positionNames = new Set(
+    (positionCols.results ?? []).map((x:any)=>String(x.name))
+  );
+
+  if(!positionNames.has('code')){
+    await c.env.DB.prepare(
+      'ALTER TABLE positions ADD COLUMN code TEXT'
+    ).run();
+  }
+
+  if(!positionNames.has('system')){
+    await c.env.DB.prepare(
+      'ALTER TABLE positions ADD COLUMN system INTEGER NOT NULL DEFAULT 0'
+    ).run();
+  }
+
+  await c.env.DB.prepare(
+    'CREATE UNIQUE INDEX IF NOT EXISTS idx_positions_code ON positions(code)'
+  ).run();
+
+  await c.env.DB.prepare(`
+    CREATE TABLE IF NOT EXISTS position_base_roles(
+      position_id INTEGER NOT NULL,
+      base_position_id INTEGER NOT NULL,
+      PRIMARY KEY(position_id,base_position_id),
+      FOREIGN KEY(position_id) REFERENCES positions(id) ON DELETE CASCADE,
+      FOREIGN KEY(base_position_id) REFERENCES positions(id) ON DELETE CASCADE
+    )
+  `).run();
+
+  const permissions=[
+    ['CAL','View Calendar','Access the member calendar.'],
+    ['PHV','View Photo Gallery','View and download member photos.'],
+    ['DOCV','View Documents','Access member documents.'],
+    ['LDV','View Member Leadership','View member-only leadership holders.'],
+    ['HSTV','View Leadership History','View member-only leadership history.'],
+    ['SET','Settings','Access and edit personal settings.'],
+    ['MIV','View Member Info','View the member information area.'],
+    ['MIE','Edit Member Info','Create and edit member records.'],
+    ['MDEL','Delete Members','Delete member records.'],
+    ['INV','Invite Accounts','Create account invitations for members.'],
+    ['ACCT','Manage Account Logins','Change or delete account logins.'],
+    ['EML','View Email','Access the troop email page.'],
+    ['EMS','Send Email','Generate troop mailing links.'],
+    ['EVT','Manage Calendar','Create, edit, and delete calendar events.'],
+    ['ATTV','View Attendance','View attendance records.'],
+    ['ATTM','Manage Attendance','Confirm and edit attendance records.'],
+    ['SIGN','Sign Digital Permissions','Submit digital permission forms for connected Scouts.'],
+    ['PHOTO','Manage Photos','Upload, caption, and delete photos.'],
+    ['DOC','Manage Documents','Upload and delete documents.'],
+    ['EAGLE','Manage Eagle Scouts','Create and edit Eagle Scout records.'],
+    ['LEAD','Manage Leadership','Manage leadership positions and current holders.'],
+    ['HIST','Manage Leadership History','Manage SPL, ASPL, and Scoutmaster history.'],
+    ['ADV','Manage Advancement','Manage advancement requirements and links.'],
+    ['CAMP','Manage Summer Camp','Manage Summer Camp content and documents.'],
+    ['UNIF','Manage Uniform','Manage uniform images and insignia information.'],
+    ['HOME','Manage Homepage','Manage homepage content.'],
+    ['CONT','Manage Contact','Manage Contact Us content.'],
+    ['POS','Manage Positions','Create, edit, and remove configurable positions.'],
+    ['PMAP','Manage Position Permissions','Assign permissions to positions.'],
+    ['PERM','Manage Permissions','Create, edit, and remove permissions.']
   ];
 
-  await c.env.DB.batch(
-    permissions.map(([code,name]) =>
-      c.env.DB.prepare(`
-        INSERT OR IGNORE INTO permission_titles(
-          code,name,description,system
-        ) VALUES(?,?,?,1)
-      `).bind(code,name,'')
+  for(const [code,name,description] of permissions){
+    await c.env.DB.prepare(`
+      INSERT OR IGNORE INTO permission_titles(
+        code,name,description,system
+      ) VALUES(?,?,?,1)
+    `).bind(code,name,description).run();
+
+    await c.env.DB.prepare(`
+      UPDATE permission_titles
+      SET name=?,description=?,system=1
+      WHERE code=?
+    `).bind(name,description,code).run();
+  }
+
+  await c.env.DB.batch([
+    c.env.DB.prepare(`
+      INSERT OR IGNORE INTO positions(name,category,code,system)
+      VALUES('Guest','other','GUEST',1)
+    `),
+    c.env.DB.prepare(`
+      INSERT OR IGNORE INTO positions(name,category,code,system)
+      VALUES('Youth','youth','YOUTH',1)
+    `),
+    c.env.DB.prepare(`
+      INSERT OR IGNORE INTO positions(name,category,code,system)
+      VALUES('Adult','adult','ADULT',1)
+    `),
+    c.env.DB.prepare(`
+      INSERT OR IGNORE INTO positions(name,category,code,system)
+      VALUES('Adult Leader','adult','ADULTL',1)
+    `),
+    c.env.DB.prepare(`
+      INSERT OR IGNORE INTO positions(name,category,code,system)
+      VALUES('Administrator','adult','ADMIN',1)
+    `)
+  ]);
+
+  await c.env.DB.batch([
+    c.env.DB.prepare(`
+      UPDATE positions
+      SET code='GUEST',system=1,category='other'
+      WHERE name='Guest'
+    `),
+    c.env.DB.prepare(`
+      UPDATE positions
+      SET code='YOUTH',system=1,category='youth'
+      WHERE name='Youth'
+    `),
+    c.env.DB.prepare(`
+      UPDATE positions
+      SET code='ADULT',system=1,category='adult'
+      WHERE name='Adult'
+    `),
+    c.env.DB.prepare(`
+      UPDATE positions
+      SET code='ADULTL',system=1,category='adult'
+      WHERE name='Adult Leader'
+    `),
+    c.env.DB.prepare(`
+      UPDATE positions
+      SET code='ADMIN',system=1,category='adult'
+      WHERE name='Administrator'
+    `)
+  ]);
+
+  const oldAdminPermission=await c.env.DB.prepare(`
+    SELECT id
+    FROM permission_titles
+    WHERE code='ADMIN'
+  `).first<any>();
+
+  const administrator=await c.env.DB.prepare(`
+    SELECT id
+    FROM positions
+    WHERE code='ADMIN'
+  `).first<any>();
+
+  if(oldAdminPermission?.id&&administrator?.id){
+    const legacyAdmins=await c.env.DB.prepare(`
+      SELECT DISTINCT pp.person_id
+      FROM person_positions pp
+      JOIN position_permissions px
+        ON px.position_id=pp.position_id
+      WHERE px.permission_id=?
+    `).bind(oldAdminPermission.id).all<any>();
+
+    for(const row of (legacyAdmins.results??[])){
+      await c.env.DB.prepare(`
+        INSERT OR IGNORE INTO person_positions(
+          person_id,
+          position_id
+        )
+        VALUES(?,?)
+      `).bind(
+        Number(row.person_id),
+        Number(administrator.id)
+      ).run();
+    }
+
+    await c.env.DB.prepare(`
+      DELETE FROM position_permissions
+      WHERE permission_id=?
+    `).bind(oldAdminPermission.id).run();
+
+    await c.env.DB.prepare(`
+      DELETE FROM permission_titles
+      WHERE id=?
+    `).bind(oldAdminPermission.id).run();
+  }
+
+  const allPermissions=await c.env.DB.prepare(`
+    SELECT id
+    FROM permission_titles
+  `).all<any>();
+
+  for(const row of (allPermissions.results??[])){
+    await c.env.DB.prepare(`
+      INSERT OR IGNORE INTO position_permissions(
+        position_id,
+        permission_id
+      )
+      VALUES(?,?)
+    `).bind(
+      Number(administrator.id),
+      Number(row.id)
+    ).run();
+  }
+
+  const roleRows=await c.env.DB.prepare(`
+    SELECT id,code
+    FROM positions
+    WHERE code IN('GUEST','YOUTH','ADULT','ADULTL','ADMIN')
+  `).all<any>();
+
+  const roleIds=new Map(
+    (roleRows.results??[]).map(
+      (x:any)=>[String(x.code),Number(x.id)]
     )
   );
 
-  await c.env.DB.prepare(
-    "INSERT OR IGNORE INTO positions(name,category) VALUES('Guest','other')"
-  ).run();
-
-  await c.env.DB.prepare(
-    "INSERT OR IGNORE INTO positions(name,category) VALUES('Youth','youth')"
-  ).run();
-
-  await c.env.DB.prepare(
-    "INSERT OR IGNORE INTO positions(name,category) VALUES('Adult','adult')"
-  ).run();
-
-  const defaults: Record<string,string[]> = {
-    Youth:['CAL','PHV','DOCV','LDV','HSTV','SET','SIGN'],
-    Adult:['CAL','PHV','DOCV','LDV','HSTV','SET','SIGN'],
-    Scoutmaster:[
-      'CAL','PHV','DOCV','LDV','HSTV','SET',
-      'MIV','MIE','MDEL','INV','ACCT','EML','EMS',
-      'EVT','ATTV','ATTM','SIGN','PHOTO','DOC',
-      'EAGLE','LEAD','HIST','ADV','CAMP','UNIF',
-      'HOME','CONT','POS','PMAP','PERM','ADMIN'
-    ]
-  };
-
-  for (const [position,codes] of Object.entries(defaults)) {
-    for (const code of codes) {
-      await c.env.DB.prepare(`
-        INSERT OR IGNORE INTO position_permissions(
-          position_id,permission_id
-        )
-        SELECT p.id,x.id
-        FROM positions p
-        JOIN permission_titles x ON x.code=?
-        WHERE p.name=?
-      `).bind(code,position).run();
-    }
-  }
-
-  const adminPosition = await c.env.DB.prepare(
-    "SELECT id FROM positions WHERE name='Scoutmaster'"
-  ).first<any>();
-
-  const adminPermission = await c.env.DB.prepare(
-    "SELECT id FROM permission_titles WHERE code='ADMIN'"
-  ).first<any>();
-
-  if (adminPosition?.id && adminPermission?.id) {
+  if(roleIds.has('GUEST')&&roleIds.has('YOUTH'))
     await c.env.DB.prepare(`
-      INSERT OR IGNORE INTO position_permissions(
-        position_id,permission_id
+      INSERT OR IGNORE INTO position_base_roles(
+        position_id,base_position_id
       ) VALUES(?,?)
     `).bind(
-      adminPosition.id,
-      adminPermission.id
+      roleIds.get('YOUTH'),
+      roleIds.get('GUEST')
     ).run();
-  }
-    }
-  }
 
-async function userFromRequest(
-  c: Context<AppEnv>
-): Promise<User | null> {
-  const token = getCookie(c, 'troop690_session');
+  if(roleIds.has('GUEST')&&roleIds.has('ADULT'))
+    await c.env.DB.prepare(`
+      INSERT OR IGNORE INTO position_base_roles(
+        position_id,base_position_id
+      ) VALUES(?,?)
+    `).bind(
+      roleIds.get('ADULT'),
+      roleIds.get('GUEST')
+    ).run();
 
-  if (!token) return null;
+  if(roleIds.has('YOUTH')&&roleIds.has('ADULT'))
+    await c.env.DB.prepare(`
+      INSERT OR IGNORE INTO position_base_roles(
+        position_id,base_position_id
+      ) VALUES(?,?)
+    `).bind(
+      roleIds.get('ADULT'),
+      roleIds.get('YOUTH')
+    ).run();
 
-  const tokenHash = await sha256(token);
+  if(roleIds.has('GUEST')&&roleIds.has('ADULTL'))
+    await c.env.DB.prepare(`
+      INSERT OR IGNORE INTO position_base_roles(
+        position_id,base_position_id
+      ) VALUES(?,?)
+    `).bind(
+      roleIds.get('ADULTL'),
+      roleIds.get('GUEST')
+    ).run();
 
-  const row = await c.env.DB.prepare(`
-    SELECT s.account_id,a.person_id,a.username,p.*
-    FROM sessions s
-    JOIN accounts a ON a.id=s.account_id
-    LEFT JOIN people p ON p.id=a.person_id
-    WHERE s.token_hash=? AND s.expires_at>datetime('now') AND a.active=1
-  `).bind(tokenHash).first<any>();
+  if(roleIds.has('YOUTH')&&roleIds.has('ADULTL'))
+    await c.env.DB.prepare(`
+      INSERT OR IGNORE INTO position_base_roles(
+        position_id,base_position_id
+      ) VALUES(?,?)
+    `).bind(
+      roleIds.get('ADULTL'),
+      roleIds.get('YOUTH')
+    ).run();
 
-  if (!row) return null;
+  if(roleIds.has('ADULT')&&roleIds.has('ADULTL'))
+    await c.env.DB.prepare(`
+      INSERT OR IGNORE INTO position_base_roles(
+        position_id,base_position_id
+      ) VALUES(?,?)
+    `).bind(
+      roleIds.get('ADULTL'),
+      roleIds.get('ADULT')
+    ).run();
 
-  const positionRows = row.person_id
-    ? await c.env.DB.prepare(`
-        SELECT id,name FROM positions
-        WHERE name=CASE WHEN ?=1 THEN 'Adult' ELSE 'Youth' END
-        UNION
-        SELECT id,name FROM positions
-        WHERE name='Adult Leader' AND ?=1
-        UNION
-        SELECT DISTINCT pos.id,pos.name
-        FROM positions pos
-        JOIN person_positions pp ON pp.position_id=pos.id
-        WHERE pp.person_id=?
-      `).bind(
-        Number(row.adult),
-        Number(row.adult_leader),
-        Number(row.person_id)
-      ).all<any>()
-    : await c.env.DB.prepare(
-        `SELECT id,name FROM positions WHERE name='Guest'`
-      ).all<any>();
-
-  const positionIds=(positionRows.results??[]).map(
-    (x:any)=>Number(x.id)
-  );
-
-  let permissions:any[]=[];
-
-  if(positionIds.length){
-    const marks=positionIds.map(()=>'?').join(',');
-
-    const result=await c.env.DB.prepare(`
-      SELECT DISTINCT p.code
-      FROM permission_titles p
-      JOIN position_permissions pp ON pp.permission_id=p.id
-      WHERE pp.position_id IN (${marks})
-    `).bind(...positionIds).all<any>();
-
-    permissions=(result.results??[]).map(
-      (x:any)=>String(x.code)
-    );
-  }
-
-  return {
-    accountId:Number(row.account_id),
-    personId:row.person_id==null?null:Number(row.person_id),
-    username:String(row.username),
-    permissions:[...new Set(permissions)],
-    person:row
-  };
+  await c.env.DB.prepare(`
+    INSERT OR IGNORE INTO position_permissions(
+      position_id,
+      permission_id
+    )
+    SELECT ?,id
+    FROM permission_titles
+  `).bind(administrator.id).run();
 }
 
 app.use('/api/*', async (c, next) => {
@@ -266,12 +382,16 @@ app.use('/api/*', async (c, next) => {
 const requirePerm = (permission: string) => (c: any) => {
   const user = c.get('user') as User | null;
 
-  if (!user) {
-    return json(c, { error: 'Login required' }, 401);
+  if(!user){
+    return json(c,{error:'Login required'},401);
   }
 
-  if (!user.permissions.includes(permission)) {
-    return json(c, { error: 'Forbidden' }, 403);
+  if(user.isAdministrator){
+    return null;
+  }
+
+  if(!user.permissions.includes(permission)){
+    return json(c,{error:'Forbidden'},403);
   }
 
   return null;
@@ -1017,8 +1137,8 @@ app.get('/api/uniform',async c=>{
 });
 
 const admin = (
-  c: any,
-  permission='ADMIN'
+  c:any,
+  permission='PMAP'
 ) => requirePerm(permission)(c);
 
 app.get('/api/admin/members',async c=>{
@@ -2028,7 +2148,7 @@ app.post('/api/permissions/sign',async c=>{
 });
 
 app.get('/api/admin/permissions',async c=>{
-  const d=admin(c,'ADMIN');
+  const d=admin(c,'PMAP');
   if(d)return d;
 
   const permissions=await c.env.DB
@@ -2040,6 +2160,7 @@ app.get('/api/admin/permissions',async c=>{
         description,
         system
       FROM permission_titles
+      WHERE code<>'ADMIN'
       ORDER BY id
     `)
     .all<any>();
@@ -2050,6 +2171,8 @@ app.get('/api/admin/permissions',async c=>{
         p.id,
         p.name,
         p.category,
+        p.code,
+        p.system,
         COALESCE(
           (
             SELECT json_group_array(pp.permission_id)
@@ -2057,31 +2180,43 @@ app.get('/api/admin/permissions',async c=>{
             WHERE pp.position_id=p.id
           ),
           '[]'
-        ) permission_ids
+        ) permission_ids,
+        COALESCE(
+          (
+            SELECT json_group_array(br.base_position_id)
+            FROM position_base_roles br
+            WHERE br.position_id=p.id
+          ),
+          '[]'
+        ) base_position_ids
       FROM positions p
       ORDER BY
-        CASE p.name
-          WHEN 'Guest' THEN 0
-          WHEN 'Youth' THEN 1
-          WHEN 'Adult' THEN 2
-          ELSE 3
+        CASE p.code
+          WHEN 'GUEST' THEN 0
+          WHEN 'YOUTH' THEN 1
+          WHEN 'ADULT' THEN 2
+          WHEN 'ADULTL' THEN 3
+          WHEN 'ADMIN' THEN 4
+          ELSE 5
         END,
-        p.category,
+        CASE p.category
+          WHEN 'youth' THEN 0
+          WHEN 'adult' THEN 1
+          ELSE 2
+        END,
         p.name
     `)
     .all<any>();
 
   return json(c,{
     permissions:permissions.results??[],
-    positions:(positions.results??[]).map(
-      (p:any)=>({
-        ...p,
-        permission_ids:
-          JSON.parse(
-            p.permission_ids||'[]'
-          ).map(Number)
-      })
-    )
+    positions:(positions.results??[]).map((p:any)=>({
+      ...p,
+      permission_ids:
+        JSON.parse(p.permission_ids||'[]').map(Number),
+      base_position_ids:
+        JSON.parse(p.base_position_ids||'[]').map(Number)
+    }))
   });
 });
 
@@ -2265,19 +2400,15 @@ app.put('/api/admin/positions/:id/permissions',async c=>{
   const id=Number(c.req.param('id'));
   const x=await c.req.json();
 
-  const pos=await c.env.DB
-    .prepare(
-      'SELECT id,name FROM positions WHERE id=?'
-    )
-    .bind(id)
-    .first<any>();
+  const pos=await c.env.DB.prepare(`
+    SELECT id,name,code,system
+    FROM positions
+    WHERE id=?
+  `).bind(id).first<any>();
 
-  if(!pos)
-    return json(
-      c,
-      {error:'Position not found'},
-      404
-    );
+  if(!pos){
+    return json(c,{error:'Position not found'},404);
+  }
 
   const permissionIds=[
     ...new Set(
@@ -2291,44 +2422,138 @@ app.put('/api/admin/positions/:id/permissions',async c=>{
     )
   ];
 
-  const valid=
-    permissionIds.length?
-      await c.env.DB
-        .prepare(`
-          SELECT id
-          FROM permission_titles
-          WHERE id IN (
-            ${permissionIds.map(()=>'?').join(',')}
-          )
-        `)
-        .bind(...permissionIds)
-        .all<any>():
-      {results:[]};
-
-  const validIds=(valid.results??[])
-    .map((r:any)=>Number(r.id));
-
-  await c.env.DB
-    .prepare(
-      'DELETE FROM position_permissions WHERE position_id=?'
-    )
-    .bind(id)
-    .run();
-
-  for(const permissionId of validIds){
-    await c.env.DB
-      .prepare(`
-        INSERT INTO position_permissions(
-          position_id,
-          permission_id
-        )
-        VALUES(?,?)
-      `)
-      .bind(
-        id,
-        permissionId
+  const baseIds=[
+    ...new Set(
+      (
+        Array.isArray(x.basePositionIds)?
+          x.basePositionIds:
+          []
       )
-      .run();
+      .map(Number)
+      .filter(Number.isInteger)
+    )
+  ];
+
+  if(String(pos.code)==='ADMIN'){
+    await c.env.DB.prepare(`
+      DELETE FROM position_base_roles
+      WHERE position_id=?
+    `).bind(id).run();
+
+    await c.env.DB.prepare(`
+      DELETE FROM position_permissions
+      WHERE position_id=?
+    `).bind(id).run();
+
+    await c.env.DB.prepare(`
+      INSERT OR IGNORE INTO position_permissions(
+        position_id,permission_id
+      )
+      SELECT ?,id
+      FROM permission_titles
+    `).bind(id).run();
+
+    return json(c,{ok:true});
+  }
+
+  const baseRows=baseIds.length?
+    await c.env.DB.prepare(`
+      SELECT id,code
+      FROM positions
+      WHERE id IN(${baseIds.map(()=>'?').join(',')})
+        AND code IN('GUEST','YOUTH','ADULT','ADULTL')
+    `).bind(...baseIds).all<any>()
+    :
+    {results:[]};
+
+  const validBaseCodes=(baseRows.results??[])
+    .map((x:any)=>String(x.code));
+
+  const allowedRoleBases:Record<string,string[]>={
+    GUEST:[],
+    YOUTH:['GUEST'],
+    ADULT:['GUEST','YOUTH'],
+    ADULTL:['GUEST','YOUTH','ADULT']
+  };
+
+  if(
+    String(pos.code) in allowedRoleBases
+    &&
+    !baseIds.every(id=>{
+      const row=(baseRows.results??[])
+        .find((x:any)=>Number(x.id)===id);
+
+      return !!row&&
+        allowedRoleBases[String(pos.code)]
+          .includes(String(row.code));
+    })
+  ){
+    return json(
+      c,
+      {error:'That base role cannot be assigned to this built-in role.'},
+      400
+    );
+  }
+
+  if(
+    ['GUEST','YOUTH','ADULT','ADULTL'].includes(
+      String(pos.code)
+    )
+  ){
+    const allowed=allowedRoleBases[String(pos.code)];
+
+    if(validBaseCodes.some(code=>!allowed.includes(code))){
+      return json(
+        c,
+        {error:'That base role cannot be assigned to this built-in role.'},
+        400
+      );
+    }
+  }
+
+  const validPermissions=permissionIds.length?
+    await c.env.DB.prepare(`
+      SELECT id
+      FROM permission_titles
+      WHERE id IN(
+        ${permissionIds.map(()=>'?').join(',')}
+      )
+      AND code<>'ADMIN'
+    `).bind(...permissionIds).all<any>()
+    :
+    {results:[]};
+
+  const validPermissionIds=(validPermissions.results??[])
+    .map((x:any)=>Number(x.id));
+
+  await c.env.DB.prepare(`
+    DELETE FROM position_base_roles
+    WHERE position_id=?
+  `).bind(id).run();
+
+  for(const baseId of baseIds){
+    await c.env.DB.prepare(`
+      INSERT OR IGNORE INTO position_base_roles(
+        position_id,
+        base_position_id
+      )
+      VALUES(?,?)
+    `).bind(id,baseId).run();
+  }
+
+  await c.env.DB.prepare(`
+    DELETE FROM position_permissions
+    WHERE position_id=?
+  `).bind(id).run();
+
+  for(const permissionId of validPermissionIds){
+    await c.env.DB.prepare(`
+      INSERT INTO position_permissions(
+        position_id,
+        permission_id
+      )
+      VALUES(?,?)
+    `).bind(id,permissionId).run();
   }
 
   return json(c,{ok:true});
