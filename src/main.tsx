@@ -21,7 +21,13 @@ function App(){
       .finally(()=>setAuthReady(true));
   },[]);
 
-  const can=(p:string)=>!!me&&me.permissions?.includes(p);
+    const can=(p:string)=>
+    !!me &&
+    (
+      p==='__ADMIN_ROLE__'?
+        !!me.isAdministrator:
+        !!me.permissions?.includes(p)
+    );
   const visible=[
     ...nav.filter(x=>x[2]==='public'||can(x[2])),
     ...adminNav.filter(x=>can(x[2]))
@@ -138,7 +144,14 @@ function RouterPage({
 
   if(
     requiredPermission&&
-    (!me||!me.permissions?.includes(requiredPermission))
+    (
+      !me||
+      (
+        requiredPermission==='__ADMIN_ROLE__'?
+          !me.isAdministrator:
+          !me.permissions?.includes(requiredPermission)
+      )
+    )
   )
     return <NotFound/>;
 
@@ -1182,7 +1195,10 @@ function Administration({me}:{me:any}){
   const savePosition=async(position:any)=>{
     await put(
       '/admin/positions/'+position.id+'/permissions',
-      {permissionIds:position.permission_ids}
+      {
+        permissionIds:position.permission_ids,
+        basePositionIds:position.base_position_ids||[]
+      }
     );
 
     setMsg('Saved');
@@ -1661,10 +1677,7 @@ function Administration({me}:{me:any}){
                       onClick={async()=>{
                         await savePosition({
                           ...p,
-                          permission_ids:
-                            administratorSelected?
-                              []:
-                              p.permission_ids,
+                          permission_ids:p.permission_ids,
                           base_position_ids:
                             p.base_position_ids||[]
                         })
