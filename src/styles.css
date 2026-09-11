@@ -759,11 +759,9 @@ footer a:hover{
   cursor:help
 }
 
-.permission-tooltip{
-  position:absolute;
-  left:50%;
-  bottom:calc(100% + 10px);
-  transform:translateX(-50%);
+.permission-tooltip-popup{
+  position:fixed;
+  transform:translate(-50%,-100%);
   width:150px;
   padding:8px 10px;
   border:1px solid var(--border);
@@ -775,14 +773,11 @@ footer a:hover{
   text-align:center;
   white-space:normal;
   box-shadow:0 3px 10px rgba(0,0,0,.16);
-  opacity:0;
-  visibility:hidden;
+  z-index:100;
   pointer-events:none;
-  transition:opacity .12s ease
 }
 
-.permission-tooltip::after{
-  content:"";
+.permission-tooltip-arrow{
   position:absolute;
   left:50%;
   top:100%;
@@ -791,14 +786,7 @@ footer a:hover{
   height:0;
   border-left:7px solid transparent;
   border-right:7px solid transparent;
-  border-top:7px solid var(--border)
-}
-
-.permission-code:hover .permission-tooltip,
-.permission-code:focus .permission-tooltip,
-.permission-code:focus-visible .permission-tooltip{
-  opacity:1;
-  visibility:visible
+  border-top:7px solid var(--border);
 }
 
 @media(max-width:800px){
