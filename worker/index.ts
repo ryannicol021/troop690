@@ -174,7 +174,6 @@ async function ensurePermissionSchema(c: Context<AppEnv>) {
   }
     }
   }
-}
 
 async function userFromRequest(
   c: Context<AppEnv>
