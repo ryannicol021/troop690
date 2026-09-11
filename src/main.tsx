@@ -1408,18 +1408,42 @@ function Administration({me}:{me:any}){
               <tr>
                 <th>Position</th>
 
-                {config.permissions.map((p:any)=>
+                                {config.permissions.map((p:any)=>
                   <th key={p.id} className="permission-grid-head">
                     <button
                       type="button"
                       className="permission-code"
-                      title={p.description||p.name}
+                      onMouseEnter={e=>
+                        showPermissionTip(
+                          e,
+                          p.description||p.name
+                        )
+                      }
+                      onMouseLeave={hidePermissionTip}
+                      onFocus={e=>
+                        showPermissionTip(
+                          e,
+                          p.description||p.name
+                        )
+                      }
+                      onBlur={hidePermissionTip}
+                      onClick={e=>{
+                        e.stopPropagation();
+
+                        if(
+                          permissionTip?.text===
+                          (p.description||p.name)
+                        ){
+                          hidePermissionTip();
+                        }else{
+                          showPermissionTip(
+                            e,
+                            p.description||p.name
+                          );
+                        }
+                      }}
                     >
                       {p.code}
-
-                      <span className="permission-tooltip">
-                        {p.description||p.name}
-                      </span>
                     </button>
                   </th>
                 )}
