@@ -106,21 +106,18 @@ async function ensurePermissionSchema(c: Context<AppEnv>) {
       ['ADMIN','Administration']
     ];
 
+        await c.env.DB.batch([
+      c.env.DB.prepare('DELETE FROM position_permissions'),
+      c.env.DB.prepare('DELETE FROM permission_titles')
+    ]);
+
     await c.env.DB.batch(
       permissions.map(([code,name]) =>
         c.env.DB.prepare(
-          'INSERT OR IGNORE INTO permission_titles(code,name,description,system) VALUES(?,?,?,1)'
+          'INSERT INTO permission_titles(code,name,description,system) VALUES(?,?,?,1)'
         ).bind(code,name,'')
       )
     );
-
-    await c.env.DB.prepare(
-      "UPDATE permission_titles SET code='ADMIN', name='Administration', description='', system=1 WHERE name='Admin' AND code IS NULL"
-    ).run();
-
-    await c.env.DB.prepare(
-      "DELETE FROM permission_titles WHERE code IS NULL"
-    ).run();
 
     // Give the built-in positions their initial permissions. Existing custom
     // mappings are preserved because these are INSERT OR IGNORE operations.
