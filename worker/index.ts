@@ -252,68 +252,77 @@ const requirePerm = (permission: string) => (c: any) => {
 app.get('/api/me',c=>json(c,{user:c.get('user')}));
 
 app.post('/api/login',async c=>{
-  const {username,password}=await c.req.json();
+  try {
+    const {username,password}=await c.req.json();
 
-  const a=await c.env.DB
-    .prepare(
-      'SELECT * FROM accounts WHERE username=? AND active=1'
+    const a=await c.env.DB
+      .prepare(
+        'SELECT * FROM accounts WHERE username=? AND active=1'
+      )
+      .bind(String(username??''))
+      .first<any>();
+
+    if(
+      !a||
+      !a.password_hash||
+      !a.password_salt||
+      !(await verifyPassword(
+        String(password??''),
+        a.password_hash,
+        a.password_salt
+      ))
+    ){
+      return json(
+        c,
+        {error:'Invalid username or password'},
+        401
+      );
+    }
+
+    const token=b64(random(36));
+    const days=Number(c.env.SESSION_TTL_DAYS||30);
+
+    const exp=new Date(
+      Date.now()+days*86400000
     )
-    .bind(String(username??''))
-    .first<any>();
+      .toISOString()
+      .replace('T',' ')
+      .slice(0,19);
 
-  if(
-    !a||
-    !a.password_hash||
-    !a.password_salt||
-    !(await verifyPassword(
-      String(password??''),
-      a.password_hash,
-      a.password_salt
-    ))
-  )
-    return json(
+    await c.env.DB
+      .prepare(
+        'INSERT INTO sessions(account_id,token_hash,expires_at) VALUES(?,?,?)'
+      )
+      .bind(
+        a.id,
+        await sha256(token),
+        exp
+      )
+      .run();
+
+    setCookie(
       c,
-      {error:'Invalid username or password'},
-      401
+      'troop690_session',
+      token,
+      {
+        httpOnly:true,
+        secure:true,
+        sameSite:'Lax',
+        path:'/',
+        maxAge:days*86400
+      }
     );
 
-  const token=b64(random(36));
-  const days=Number(
-    c.env.SESSION_TTL_DAYS||30
-  );
-
-  const exp=new Date(
-    Date.now()+days*86400000
-  )
-    .toISOString()
-    .replace('T',' ')
-    .slice(0,19);
-
-  await c.env.DB
-    .prepare(
-      'INSERT INTO sessions(account_id,token_hash,expires_at) VALUES(?,?,?)'
-    )
-    .bind(
-      a.id,
-      await sha256(token),
-      exp
-    )
-    .run();
-
-  setCookie(
-    c,
-    'troop690_session',
-    token,
-    {
-      httpOnly:true,
-      secure:true,
-      sameSite:'Lax',
-      path:'/',
-      maxAge:days*86400
-    }
-  );
-
-  return json(c,{ok:true});
+    return json(c,{ok:true});
+  } catch(e:any) {
+    return json(
+      c,
+      {
+        error: `Login error: ${e?.message || String(e)}`
+      },
+      500
+    );
+  }
 });
 
 app.post('/api/logout',async c=>{
