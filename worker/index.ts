@@ -4,7 +4,14 @@ import { setCookie, getCookie, deleteCookie } from 'hono/cookie';
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
 
 type Env = { DB: D1Database; FILES: R2Bucket; ASSETS: Fetcher; PUBLIC_SITE_URL:string; INTERIM_SITE_URL:string; SESSION_TTL_DAYS:string; BOOTSTRAP_SECRET?:string };
-type User = { accountId:number; personId:number|null; username:string; permissions:string[]; person:any };
+type User = {
+  accountId:number;
+  personId:number|null;
+  username:string;
+  permissions:string[];
+  isAdministrator:boolean;
+  person:any
+};
 type AppEnv = {
   Bindings: Env;
   Variables: {
@@ -118,38 +125,38 @@ async function ensurePermissionSchema(c: Context<AppEnv>) {
     )
   `).run();
 
-  const permissions=[
-    ['CAL','View Calendar','Access the member calendar.'],
-    ['PHV','View Photo Gallery','View and download member photos.'],
-    ['DOCV','View Documents','Access member documents.'],
-    ['LDV','View Member Leadership','View member-only leadership holders.'],
-    ['HSTV','View Leadership History','View member-only leadership history.'],
-    ['SET','Settings','Access and edit personal settings.'],
-    ['MIV','View Member Info','View the member information area.'],
-    ['MIE','Edit Member Info','Create and edit member records.'],
-    ['MDEL','Delete Members','Delete member records.'],
-    ['INV','Invite Accounts','Create account invitations for members.'],
-    ['ACCT','Manage Account Logins','Change or delete account logins.'],
-    ['EML','View Email','Access the troop email page.'],
-    ['EMS','Send Email','Generate troop mailing links.'],
-    ['EVT','Manage Calendar','Create, edit, and delete calendar events.'],
-    ['ATTV','View Attendance','View attendance records.'],
-    ['ATTM','Manage Attendance','Confirm and edit attendance records.'],
-    ['SIGN','Sign Digital Permissions','Submit digital permission forms for connected Scouts.'],
-    ['PHOTO','Manage Photos','Upload, caption, and delete photos.'],
-    ['DOC','Manage Documents','Upload and delete documents.'],
-    ['EAGLE','Manage Eagle Scouts','Create and edit Eagle Scout records.'],
-    ['LEAD','Manage Leadership','Manage leadership positions and current holders.'],
-    ['HIST','Manage Leadership History','Manage SPL, ASPL, and Scoutmaster history.'],
-    ['ADV','Manage Advancement','Manage advancement requirements and links.'],
-    ['CAMP','Manage Summer Camp','Manage Summer Camp content and documents.'],
-    ['UNIF','Manage Uniform','Manage uniform images and insignia information.'],
-    ['HOME','Manage Homepage','Manage homepage content.'],
-    ['CONT','Manage Contact','Manage Contact Us content.'],
-    ['POS','Manage Positions','Create, edit, and remove configurable positions.'],
-    ['PMAP','Manage Position Permissions','Assign permissions to positions.'],
-    ['PERM','Manage Permissions','Create, edit, and remove permissions.']
-  ];
+const permissions=[
+  ['CAL','View Calendar','View Calendar'],
+  ['PHV','View Photo Gallery','View Photo Gallery'],
+  ['DOCV','View Documents','View Documents'],
+  ['LDV','View Member Leadership','View Member Leadership'],
+  ['HSTV','View Leadership History','View Leadership History'],
+  ['SET','Settings','Settings'],
+  ['MIV','View Member Info','View Member Info'],
+  ['MIE','Edit Member Info','Edit Member Info'],
+  ['MDEL','Delete Members','Delete Members'],
+  ['INV','Invite Accounts','Invite Accounts'],
+  ['ACCT','Manage Account Logins','Manage Account Logins'],
+  ['EML','View Email','View Email'],
+  ['EMS','Send Email','Send Email'],
+  ['EVT','Manage Calendar','Manage Calendar'],
+  ['ATTV','View Attendance','View Attendance'],
+  ['ATTM','Manage Attendance','Manage Attendance'],
+  ['SIGN','Sign Digital Permissions','Sign Digital Permissions'],
+  ['PHOTO','Manage Photos','Manage Photos'],
+  ['DOC','Manage Documents','Manage Documents'],
+  ['EAGLE','Manage Eagle Scouts','Manage Eagle Scouts'],
+  ['LEAD','Manage Leadership','Manage Leadership'],
+  ['HIST','Manage Leadership History','Manage Leadership History'],
+  ['ADV','Manage Advancement','Manage Advancement'],
+  ['CAMP','Manage Summer Camp','Manage Summer Camp'],
+  ['UNIF','Manage Uniform','Manage Uniform'],
+  ['HOME','Manage Homepage','Manage Homepage'],
+  ['CONT','Manage Contact','Manage Contact'],
+  ['POS','Manage Positions','Manage Positions'],
+  ['PMAP','Manage Position Permissions','Manage Position Permissions'],
+  ['PERM','Manage Permissions','Manage Permissions']
+];
 
   for(const [code,name,description] of permissions){
     await c.env.DB.prepare(`
@@ -279,78 +286,6 @@ async function ensurePermissionSchema(c: Context<AppEnv>) {
     ).run();
   }
 
-  const roleRows=await c.env.DB.prepare(`
-    SELECT id,code
-    FROM positions
-    WHERE code IN('GUEST','YOUTH','ADULT','ADULTL','ADMIN')
-  `).all<any>();
-
-  const roleIds=new Map(
-    (roleRows.results??[]).map(
-      (x:any)=>[String(x.code),Number(x.id)]
-    )
-  );
-
-  if(roleIds.has('GUEST')&&roleIds.has('YOUTH'))
-    await c.env.DB.prepare(`
-      INSERT OR IGNORE INTO position_base_roles(
-        position_id,base_position_id
-      ) VALUES(?,?)
-    `).bind(
-      roleIds.get('YOUTH'),
-      roleIds.get('GUEST')
-    ).run();
-
-  if(roleIds.has('GUEST')&&roleIds.has('ADULT'))
-    await c.env.DB.prepare(`
-      INSERT OR IGNORE INTO position_base_roles(
-        position_id,base_position_id
-      ) VALUES(?,?)
-    `).bind(
-      roleIds.get('ADULT'),
-      roleIds.get('GUEST')
-    ).run();
-
-  if(roleIds.has('YOUTH')&&roleIds.has('ADULT'))
-    await c.env.DB.prepare(`
-      INSERT OR IGNORE INTO position_base_roles(
-        position_id,base_position_id
-      ) VALUES(?,?)
-    `).bind(
-      roleIds.get('ADULT'),
-      roleIds.get('YOUTH')
-    ).run();
-
-  if(roleIds.has('GUEST')&&roleIds.has('ADULTL'))
-    await c.env.DB.prepare(`
-      INSERT OR IGNORE INTO position_base_roles(
-        position_id,base_position_id
-      ) VALUES(?,?)
-    `).bind(
-      roleIds.get('ADULTL'),
-      roleIds.get('GUEST')
-    ).run();
-
-  if(roleIds.has('YOUTH')&&roleIds.has('ADULTL'))
-    await c.env.DB.prepare(`
-      INSERT OR IGNORE INTO position_base_roles(
-        position_id,base_position_id
-      ) VALUES(?,?)
-    `).bind(
-      roleIds.get('ADULTL'),
-      roleIds.get('YOUTH')
-    ).run();
-
-  if(roleIds.has('ADULT')&&roleIds.has('ADULTL'))
-    await c.env.DB.prepare(`
-      INSERT OR IGNORE INTO position_base_roles(
-        position_id,base_position_id
-      ) VALUES(?,?)
-    `).bind(
-      roleIds.get('ADULTL'),
-      roleIds.get('ADULT')
-    ).run();
-
   await c.env.DB.prepare(`
     INSERT OR IGNORE INTO position_permissions(
       position_id,
@@ -359,6 +294,167 @@ async function ensurePermissionSchema(c: Context<AppEnv>) {
     SELECT ?,id
     FROM permission_titles
   `).bind(administrator.id).run();
+}
+
+async function userFromRequest(c: Context<AppEnv>): Promise<User | null> {
+  const token=getCookie(c,'troop690_session');
+
+  if(!token)
+    return null;
+
+  const tokenHash=await sha256(token);
+
+  const row=await c.env.DB.prepare(`
+    SELECT
+      s.account_id,
+      a.person_id,
+      a.username,
+      p.*
+    FROM sessions s
+    JOIN accounts a
+      ON a.id=s.account_id
+    LEFT JOIN people p
+      ON p.id=a.person_id
+    WHERE s.token_hash=?
+      AND s.expires_at>datetime('now')
+      AND a.active=1
+  `)
+    .bind(tokenHash)
+    .first<any>();
+
+  if(!row)
+    return null;
+
+  const positionRows=row.person_id?
+    await c.env.DB.prepare(`
+      SELECT id,name,code
+      FROM positions
+      WHERE name=CASE
+        WHEN ?=1 THEN 'Adult'
+        ELSE 'Youth'
+      END
+
+      UNION
+
+      SELECT id,name,code
+      FROM positions
+      WHERE name='Adult Leader'
+        AND ?=1
+
+      UNION
+
+      SELECT DISTINCT
+        pos.id,
+        pos.name,
+        pos.code
+      FROM positions pos
+      JOIN person_positions pp
+        ON pp.position_id=pos.id
+      WHERE pp.person_id=?
+    `)
+      .bind(
+        Number(row.adult),
+        Number(row.adult_leader),
+        Number(row.person_id)
+      )
+      .all<any>()
+    :
+    await c.env.DB.prepare(`
+      SELECT id,name,code
+      FROM positions
+      WHERE code='GUEST'
+    `)
+      .all<any>();
+
+  const startingIds=(positionRows.results??[])
+    .map((x:any)=>Number(x.id));
+
+  const seen=new Set<number>();
+  const queue=[...startingIds];
+  const roleTree:number[]=[];
+
+  while(queue.length){
+    const id=Number(queue.shift());
+
+    if(seen.has(id))
+      continue;
+
+    seen.add(id);
+    roleTree.push(id);
+
+    const bases=await c.env.DB.prepare(`
+      SELECT base_position_id
+      FROM position_base_roles
+      WHERE position_id=?
+    `)
+      .bind(id)
+      .all<any>();
+
+    for(const row of (bases.results??[])){
+      const baseId=Number(row.base_position_id);
+
+      if(!seen.has(baseId))
+        queue.push(baseId);
+    }
+  }
+
+  let isAdministrator=false;
+
+  if(roleTree.length){
+    const adminRow=await c.env.DB.prepare(`
+      SELECT 1
+      FROM positions
+      WHERE id IN(${roleTree.map(()=>'?').join(',')})
+        AND code='ADMIN'
+      LIMIT 1
+    `)
+      .bind(...roleTree)
+      .first<any>();
+
+    isAdministrator=!!adminRow;
+  }
+
+  let permissions:string[]=[];
+
+  if(isAdministrator){
+    const result=await c.env.DB.prepare(`
+      SELECT code
+      FROM permission_titles
+      WHERE code IS NOT NULL
+        AND code<>'ADMIN'
+    `)
+      .all<any>();
+
+    permissions=(result.results??[])
+      .map((x:any)=>String(x.code));
+  }else if(roleTree.length){
+    const result=await c.env.DB.prepare(`
+      SELECT DISTINCT p.code
+      FROM permission_titles p
+      JOIN position_permissions pp
+        ON pp.permission_id=p.id
+      WHERE pp.position_id IN(${roleTree.map(()=>'?').join(',')})
+        AND p.code IS NOT NULL
+        AND p.code<>'ADMIN'
+    `)
+      .bind(...roleTree)
+      .all<any>();
+
+    permissions=(result.results??[])
+      .map((x:any)=>String(x.code));
+  }
+
+  return {
+    accountId:Number(row.account_id),
+    personId:
+      row.person_id==null?
+        null:
+        Number(row.person_id),
+    username:String(row.username),
+    permissions:[...new Set(permissions)],
+    isAdministrator,
+    person:row
+  };
 }
 
 app.use('/api/*', async (c, next) => {
@@ -568,13 +664,6 @@ app.post('/api/bootstrap',async c=>{
       "INSERT OR IGNORE INTO person_positions(person_id,position_id) VALUES(?,?)"
     )
     .bind(pid,pos.id)
-    .run();
-
-  await c.env.DB
-    .prepare(
-      "INSERT OR IGNORE INTO position_permissions(position_id,permission_id) VALUES(?,?)"
-    )
-    .bind(pos.id,admin.id)
     .run();
 
   return json(c,{
@@ -2455,7 +2544,7 @@ app.put('/api/admin/positions/:id/permissions',async c=>{
       SELECT id,code
       FROM positions
       WHERE id IN(${baseIds.map(()=>'?').join(',')})
-        AND code IN('GUEST','YOUTH','ADULT','ADULTL')
+        AND code IN('GUEST','YOUTH','ADULT','ADULTL','ADMIN')
     `).bind(...baseIds).all<any>()
     :
     {results:[]};
@@ -2463,43 +2552,31 @@ app.put('/api/admin/positions/:id/permissions',async c=>{
   const validBaseCodes=(baseRows.results??[])
     .map((x:any)=>String(x.code));
 
-  const allowedRoleBases:Record<string,string[]>={
+  const allowedRoleBases:Record<string,string[]> = {
     GUEST:[],
     YOUTH:['GUEST'],
     ADULT:['GUEST','YOUTH'],
-    ADULTL:['GUEST','YOUTH','ADULT']
+    ADULTL:['GUEST','YOUTH','ADULT'],
+    ADMIN:[]
   };
 
   if(
-    String(pos.code) in allowedRoleBases
-    &&
-    !baseIds.every(id=>{
-      const row=(baseRows.results??[])
-        .find((x:any)=>Number(x.id)===id);
-
-      return !!row&&
-        allowedRoleBases[String(pos.code)]
-          .includes(String(row.code));
-    })
-  ){
-    return json(
-      c,
-      {error:'That base role cannot be assigned to this built-in role.'},
-      400
-    );
-  }
-
-  if(
-    ['GUEST','YOUTH','ADULT','ADULTL'].includes(
-      String(pos.code)
-    )
+    ['GUEST','YOUTH','ADULT','ADULTL','ADMIN']
+      .includes(String(pos.code))
   ){
     const allowed=allowedRoleBases[String(pos.code)];
 
-    if(validBaseCodes.some(code=>!allowed.includes(code))){
+    if(
+      validBaseCodes.some(
+        code=>!allowed.includes(code)
+      )
+    ){
       return json(
         c,
-        {error:'That base role cannot be assigned to this built-in role.'},
+        {
+          error:
+            'That base role cannot be assigned to this built-in role.'
+        },
         400
       );
     }
