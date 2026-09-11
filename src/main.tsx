@@ -1140,9 +1140,9 @@ function Administration({me}:{me:any}){
   }|null>(null);
 
   const showPermissionTip=(
-    e:React.MouseEvent<HTMLButtonElement>,
-    text:string
-  )=>{
+  e:React.SyntheticEvent<HTMLButtonElement>,
+  text:string
+)=>{
     const r=e.currentTarget.getBoundingClientRect();
 
     setPermissionTip({
