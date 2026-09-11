@@ -218,7 +218,10 @@ async function userFromRequest(
 }
 
 app.use('/api/*', async (c, next) => {
-  await ensurePermissionSchema(c);
+  if (c.req.path !== '/api/login' && c.req.path !== '/api/bootstrap') {
+    await ensurePermissionSchema(c);
+  }
+
   c.set('user', await userFromRequest(c));
   await next();
 });
