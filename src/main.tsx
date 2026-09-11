@@ -1483,6 +1483,18 @@ function Administration({me}:{me:any}){
             </tbody>
           </table>
         </div>
+                  {permissionTip&&
+            <div
+              className="permission-tooltip-popup"
+              style={{
+                left:permissionTip.x,
+                top:permissionTip.y
+              }}
+            >
+              <span className="permission-tooltip-arrow"/>
+              {permissionTip.text}
+            </div>
+          }
       </section>
     }
 
