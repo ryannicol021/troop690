@@ -5,7 +5,7 @@ import './styles.css';
 import {api,post,put} from './lib/api';
 
 const nav=[['/','Home','public'],['/eagles','Eagle Scouts','public'],['/calendar','Calendar','CAL'],['/photos','Photo Gallery','PHV'],['/documents','Documents','DOCV'],['/leadership','Leadership','public'],['/advancement','Advancement','public'],['/summer-camp','Summer Camp','public'],['/uniform','Scout Uniform','public'],['/contact','Contact Us','public']];
-const adminNav=[['/member-info','Member Info','MIV'],['/email','Email','EML'],['/administration','Administration','ADMIN']];
+const adminNav=[['/member-info','Member Info','MIV'],['/email','Email','EML'],['/administration','Administration','__ADMIN_ROLE__']];
 
 function App(){
   const [me,setMe]=useState<any>(null);
@@ -127,7 +127,7 @@ function RouterPage({
     '/documents':'DOCV',
     '/member-info':'MIV',
     '/email':'EML',
-    '/administration':'ADMIN'
+    '/administration':'__ADMIN_ROLE__'
   };
 
   const requiredPermission=
@@ -1398,7 +1398,7 @@ function Administration({me}:{me:any}){
       </section>
     }
 
-        {can('PMAP')&&
+      {can('PMAP')&&
       <section>
         <h2>Position-to-Permission Mapping</h2>
 
@@ -1408,40 +1408,54 @@ function Administration({me}:{me:any}){
               <tr>
                 <th>Position</th>
 
-                                {config.permissions.map((p:any)=>
-                  <th key={p.id} className="permission-grid-head">
+                {['GUEST','YOUTH','ADULT','ADULTL','ADMIN'].map(code=>{
+                  const role=config.positions.find(
+                    (p:any)=>p.code===code
+                  );
+
+                  return <th key={code}>
                     <button
                       type="button"
                       className="permission-code"
-                      onMouseEnter={e=>
-                        showPermissionTip(
-                          e,
-                          p.description||p.name
-                        )
+                      title={
+                        role?.name||
+                        code
                       }
-                      onMouseLeave={hidePermissionTip}
-                      onFocus={e=>
-                        showPermissionTip(
-                          e,
-                          p.description||p.name
-                        )
-                      }
-                      onBlur={hidePermissionTip}
-                      onClick={e=>{
-                        e.stopPropagation();
+                    >
+                      {code}
+                    </button>
+                  </th>
+                })}
 
-                        if(
-                          permissionTip?.text===
-                          (p.description||p.name)
-                        ){
-                          hidePermissionTip();
-                        }else{
-                          showPermissionTip(
-                            e,
-                            p.description||p.name
-                          );
-                        }
+                {config.permissions.map((p:any)=>
+                  <th key={p.id}>
+                    <button
+                      type="button"
+                      className="permission-code"
+                      onMouseEnter={e=>{
+                        const r=e.currentTarget.getBoundingClientRect();
+
+                        setPermissionTip({
+                          text:p.description||p.name,
+                          x:r.left+r.width/2,
+                          y:r.top-10
+                        });
                       }}
+                      onMouseLeave={()=>
+                        setPermissionTip(null)
+                      }
+                      onFocus={e=>{
+                        const r=e.currentTarget.getBoundingClientRect();
+
+                        setPermissionTip({
+                          text:p.description||p.name,
+                          x:r.left+r.width/2,
+                          y:r.top-10
+                        });
+                      }}
+                      onBlur={()=>
+                        setPermissionTip(null)
+                      }
                     >
                       {p.code}
                     </button>
@@ -1453,166 +1467,230 @@ function Administration({me}:{me:any}){
             </thead>
 
             <tbody>
-              {config.positions.map((p:any)=>
-                <tr key={p.id}>
+              {config.positions.map((p:any)=>{
+                const roleCodes=['GUEST','YOUTH','ADULT','ADULTL','ADMIN'];
+
+                const selectedBases=(
+                  p.base_position_ids||[]
+                );
+
+                const inherited=new Set<number>();
+
+                const addInherited=(roleId:number)=>{
+                  const role=config.positions.find(
+                    (x:any)=>x.id===roleId
+                  );
+
+                  if(!role)return;
+
+                  for(const id of role.permission_ids||[]){
+                    inherited.add(Number(id));
+                  }
+
+                  for(const baseId of role.base_position_ids||[]){
+                    addInherited(Number(baseId));
+                  }
+                };
+
+                for(const baseId of selectedBases){
+                  addInherited(Number(baseId));
+                }
+
+                const administratorSelected=
+                  p.base_position_ids?.some((id:number)=>
+                    config.positions.find(
+                      (x:any)=>x.id===id
+                    )?.code==='ADMIN'
+                  );
+
+                const effective=new Set<number>(
+                  administratorSelected?
+                    config.permissions.map((x:any)=>Number(x.id)):
+                    [
+                      ...(p.permission_ids||[]),
+                      ...Array.from(inherited)
+                    ]
+                );
+
+                const updateBase=(roleId:number)=>{
+                  const current=[
+                    ...(p.base_position_ids||[])
+                  ];
+
+                  const exists=current.includes(roleId);
+
+                  const next=exists?
+                    current.filter(
+                      (id:number)=>id!==roleId
+                    ):
+                    [...current,roleId];
+
+                  setConfig((d:any)=>({
+                    ...d,
+                    positions:d.positions.map((x:any)=>
+                      x.id===p.id?
+                        {
+                          ...x,
+                          base_position_ids:next
+                        }:
+                        x
+                    )
+                  }));
+                };
+
+                const toggleDirect=(permissionId:number)=>{
+                  if(inherited.has(permissionId)||
+                     administratorSelected)
+                    return;
+
+                  setConfig((d:any)=>({
+                    ...d,
+                    positions:d.positions.map((x:any)=>
+                      x.id===p.id?
+                        {
+                          ...x,
+                          permission_ids:
+                            x.permission_ids.includes(permissionId)?
+                              x.permission_ids.filter(
+                                (id:number)=>id!==permissionId
+                              ):
+                              [
+                                ...x.permission_ids,
+                                permissionId
+                              ]
+                        }:
+                        x
+                    )
+                  }));
+                };
+
+                const roleDisabled=(code:string)=>{
+                  if(p.code==='ADMIN')
+                    return true;
+
+                  if(p.code==='GUEST')
+                    return true;
+
+                  if(p.code==='YOUTH')
+                    return ['YOUTH','ADULT','ADULTL','ADMIN'].includes(code);
+
+                  if(p.code==='ADULT')
+                    return ['ADULT','ADULTL','ADMIN'].includes(code);
+
+                  if(p.code==='ADULTL')
+                    return ['ADULTL','ADMIN'].includes(code);
+
+                  return false;
+                };
+
+                const roleChecked=(code:string)=>{
+                  if(p.code===code)
+                    return true;
+
+                  if(p.code==='ADMIN')
+                    return code==='ADMIN';
+
+                  return selectedBases.some(
+                    (id:number)=>
+                      config.positions.find(
+                        (x:any)=>x.id===id
+                      )?.code===code
+                  );
+                };
+
+                return <tr key={p.id}>
                   <th>{p.name}</th>
 
-                  {config.permissions.map((perm:any)=>
-                    <td key={perm.id}>
+                  {roleCodes.map(code=>{
+                    const role=config.positions.find(
+                      (x:any)=>x.code===code
+                    );
+
+                    const disabled=roleDisabled(code);
+
+                    return <td
+                      key={code}
+                      className={
+                        disabled?
+                          'permission-locked':
+                          ''
+                      }
+                    >
                       <input
                         type="checkbox"
+                        checked={roleChecked(code)}
+                        disabled={disabled}
+                        aria-label={`${p.name}: ${role?.name||code}`}
+                        onChange={()=>{
+                          if(role)
+                            updateBase(role.id)
+                        }}
+                      />
+                    </td>
+                  })}
+
+                  {config.permissions.map((perm:any)=>{
+                    const locked=
+                      inherited.has(Number(perm.id))||
+                      administratorSelected||
+                      p.code==='ADMIN';
+
+                    return <td
+                      key={perm.id}
+                      className={
+                        locked?
+                          'permission-locked':
+                          ''
+                      }
+                    >
+                      <input
+                        type="checkbox"
+                        checked={effective.has(Number(perm.id))}
+                        disabled={locked}
                         aria-label={`${p.name}: ${perm.name}`}
-                        checked={p.permission_ids.includes(perm.id)}
                         onChange={()=>
-                          togglePermission(p.id,perm.id)
+                          toggleDirect(Number(perm.id))
                         }
                       />
                     </td>
-                  )}
+                  })}
 
                   <td>
                     <button
                       className="admin-action-button"
-                      onClick={()=>savePosition(p)}
+                      onClick={async()=>{
+                        await savePosition({
+                          ...p,
+                          permission_ids:
+                            administratorSelected?
+                              []:
+                              p.permission_ids,
+                          base_position_ids:
+                            p.base_position_ids||[]
+                        })
+                      }}
                     >
                       Save
                     </button>
                   </td>
                 </tr>
-              )}
+              })}
             </tbody>
           </table>
         </div>
-                  {permissionTip&&
-            <div
-              className="permission-tooltip-popup"
-              style={{
-                left:permissionTip.x,
-                top:permissionTip.y
-              }}
-            >
-              <span className="permission-tooltip-arrow"/>
-              {permissionTip.text}
-            </div>
-          }
-      </section>
-    }
 
-    {can('PERM')&&
-      <section>
-        <h2>Permission Editor</h2>
-
-        {config.permissions.map((p:any)=>
-          editingPermission===p.id?
-            <div className="admin-row" key={p.id}>
-              <div className="permission-edit">
-                <input
-                  value={p.name}
-                  onChange={e=>
-                    setConfig((d:any)=>({
-                      ...d,
-                      permissions:d.permissions.map((x:any)=>
-                        x.id===p.id?
-                          {...x,name:e.target.value}:
-                          x
-                      )
-                    }))
-                  }
-                />
-
-                <input
-                  value={p.description||''}
-                  onChange={e=>
-                    setConfig((d:any)=>({
-                      ...d,
-                      permissions:d.permissions.map((x:any)=>
-                        x.id===p.id?
-                          {...x,description:e.target.value}:
-                          x
-                      )
-                    }))
-                  }
-                />
-              </div>
-
-              <div className="button-row">
-                <button
-                  className="primary"
-                  onClick={()=>savePermission(p)}
-                >
-                  Save
-                </button>
-
-                <button
-                  onClick={()=>setEditingPermission(null)}
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>:
-            <div className="admin-row" key={p.id}>
-              <div>
-                <b>{p.code}</b>
-                <span>{p.name}</span>
-              </div>
-
-              <div className="button-row">
-                <button
-                  onClick={()=>setEditingPermission(p.id)}
-                >
-                  Edit
-                </button>
-
-                {!p.system&&
-                  <button onClick={()=>deletePermission(p.id)}>
-                    Delete
-                  </button>
-                }
-              </div>
-            </div>
-        )}
-
-        <form
-          className="permission-create"
-          onSubmit={createPermission}
-        >
-          <input
-            placeholder="Permission name"
-            value={newPermission.name}
-            onChange={e=>
-              setNewPermission({
-                ...newPermission,
-                name:e.target.value
-              })
-            }
-          />
-
-          <input
-            placeholder="Code"
-            value={newPermission.code}
-            onChange={e=>
-              setNewPermission({
-                ...newPermission,
-                code:e.target.value
-              })
-            }
-          />
-
-          <input
-            placeholder="Description"
-            value={newPermission.description}
-            onChange={e=>
-              setNewPermission({
-                ...newPermission,
-                description:e.target.value
-              })
-            }
-          />
-
-          <button className="primary">
-            Add Permission
-          </button>
-        </form>
+        {permissionTip&&
+          <div
+            className="permission-tooltip-popup"
+            style={{
+              left:permissionTip.x,
+              top:permissionTip.y
+            }}
+          >
+            <span className="permission-tooltip-arrow"/>
+            {permissionTip.text}
+          </div>
+        }
       </section>
     }
 
