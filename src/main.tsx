@@ -1376,7 +1376,7 @@ function Administration({me}:{me:any}){
       </section>
     }
 
-    {can('PMAP')&&
+        {can('PMAP')&&
       <section>
         <h2>Position-to-Permission Mapping</h2>
 
@@ -1387,12 +1387,22 @@ function Administration({me}:{me:any}){
                 <th>Position</th>
 
                 {config.permissions.map((p:any)=>
-                  <th key={p.id} title={p.name}>
-                    {p.code}
+                  <th key={p.id} className="permission-grid-head">
+                    <button
+                      type="button"
+                      className="permission-code"
+                      title={p.description||p.name}
+                    >
+                      {p.code}
+
+                      <span className="permission-tooltip">
+                        {p.description||p.name}
+                      </span>
+                    </button>
                   </th>
                 )}
 
-                <th></th>
+                <th>Options</th>
               </tr>
             </thead>
 
@@ -1415,7 +1425,10 @@ function Administration({me}:{me:any}){
                   )}
 
                   <td>
-                    <button onClick={()=>savePosition(p)}>
+                    <button
+                      className="admin-action-button"
+                      onClick={()=>savePosition(p)}
+                    >
                       Save
                     </button>
                   </td>
