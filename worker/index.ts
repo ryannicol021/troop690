@@ -218,11 +218,20 @@ async function userFromRequest(
 }
 
 app.use('/api/*', async (c, next) => {
-  if (c.req.path !== '/api/login' && c.req.path !== '/api/bootstrap') {
-    await ensurePermissionSchema(c);
+  try {
+    if (c.req.path !== '/api/login' && c.req.path !== '/api/bootstrap') {
+      await ensurePermissionSchema(c);
+    }
+  } catch {
+    // Ignore permission-schema errors here so they cannot break authentication.
   }
 
-  c.set('user', await userFromRequest(c));
+  try {
+    c.set('user', await userFromRequest(c));
+  } catch {
+    c.set('user', null);
+  }
+
   await next();
 });
 
