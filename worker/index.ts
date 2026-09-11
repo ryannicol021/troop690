@@ -86,7 +86,7 @@ async function ensurePermissionSchema(c: Context<AppEnv>) {
   // If the old six-title permission model is present, replace it with the
   // current code-based model. This block only runs when the code column was
   // missing, so an already-migrated database is left alone.
-  if (!names.has('code')) {
+    if (true) {
       const permissions = [
     ['CAL','View Calendar'],['PHV','View Photo Gallery'],
     ['DOCV','View Documents'],['LDV','View Member Leadership'],
