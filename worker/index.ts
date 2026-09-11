@@ -87,65 +87,91 @@ async function ensurePermissionSchema(c: Context<AppEnv>) {
   // current code-based model. This block only runs when the code column was
   // missing, so an already-migrated database is left alone.
   if (!names.has('code')) {
-    const permissions = [
-      ['CAL','View Calendar'],['PHV','View Photo Gallery'],
-      ['DOCV','View Documents'],['LDV','View Member Leadership'],
-      ['HSTV','View Leadership History'],['SET','Settings'],
-      ['MIV','View Member Info'],['MIE','Edit Member Info'],
-      ['MDEL','Delete Members'],['INV','Invite Accounts'],
-      ['ACCT','Manage Account Logins'],['EML','View Email'],
-      ['EMS','Send Email'],['EVT','Manage Calendar'],
-      ['ATTV','View Attendance'],['ATTM','Manage Attendance'],
-      ['SIGN','Sign Digital Permissions'],['PHOTO','Manage Photos'],
-      ['DOC','Manage Documents'],['EAGLE','Manage Eagle Scouts'],
-      ['LEAD','Manage Leadership'],['HIST','Manage Leadership History'],
-      ['ADV','Manage Advancement'],['CAMP','Manage Summer Camp'],
-      ['UNIF','Manage Uniform'],['HOME','Manage Homepage'],
-      ['CONT','Manage Contact'],['POS','Manage Positions'],
-      ['PMAP','Manage Position Permissions'],['PERM','Manage Permissions'],
-      ['ADMIN','Administration']
-    ];
+      const permissions = [
+    ['CAL','View Calendar'],['PHV','View Photo Gallery'],
+    ['DOCV','View Documents'],['LDV','View Member Leadership'],
+    ['HSTV','View Leadership History'],['SET','Settings'],
+    ['MIV','View Member Info'],['MIE','Edit Member Info'],
+    ['MDEL','Delete Members'],['INV','Invite Accounts'],
+    ['ACCT','Manage Account Logins'],['EML','View Email'],
+    ['EMS','Send Email'],['EVT','Manage Calendar'],
+    ['ATTV','View Attendance'],['ATTM','Manage Attendance'],
+    ['SIGN','Sign Digital Permissions'],['PHOTO','Manage Photos'],
+    ['DOC','Manage Documents'],['EAGLE','Manage Eagle Scouts'],
+    ['LEAD','Manage Leadership'],['HIST','Manage Leadership History'],
+    ['ADV','Manage Advancement'],['CAMP','Manage Summer Camp'],
+    ['UNIF','Manage Uniform'],['HOME','Manage Homepage'],
+    ['CONT','Manage Contact'],['POS','Manage Positions'],
+    ['PMAP','Manage Position Permissions'],['PERM','Manage Permissions'],
+    ['ADMIN','Administration']
+  ];
 
-        await c.env.DB.batch([
-      c.env.DB.prepare('DELETE FROM position_permissions'),
-      c.env.DB.prepare('DELETE FROM permission_titles')
-    ]);
+  await c.env.DB.batch(
+    permissions.map(([code,name]) =>
+      c.env.DB.prepare(`
+        INSERT OR IGNORE INTO permission_titles(
+          code,name,description,system
+        ) VALUES(?,?,?,1)
+      `).bind(code,name,'')
+    )
+  );
 
-    await c.env.DB.batch(
-      permissions.map(([code,name]) =>
-        c.env.DB.prepare(
-          'INSERT INTO permission_titles(code,name,description,system) VALUES(?,?,?,1)'
-        ).bind(code,name,'')
-      )
-    );
+  await c.env.DB.prepare(
+    "INSERT OR IGNORE INTO positions(name,category) VALUES('Guest','other')"
+  ).run();
 
-    // Give the built-in positions their initial permissions. Existing custom
-    // mappings are preserved because these are INSERT OR IGNORE operations.
- await c.env.DB.batch([
-  c.env.DB.prepare("INSERT OR IGNORE INTO positions(name,category) VALUES('Guest','other')"),
-  c.env.DB.prepare("INSERT OR IGNORE INTO positions(name,category) VALUES('Youth','youth')"),
-  c.env.DB.prepare("INSERT OR IGNORE INTO positions(name,category) VALUES('Adult','adult')"),
-  c.env.DB.prepare("INSERT OR IGNORE INTO positions(name,category) VALUES('Adult Leader','adult')")
-]);
+  await c.env.DB.prepare(
+    "INSERT OR IGNORE INTO positions(name,category) VALUES('Youth','youth')"
+  ).run();
 
-const defaults: Record<string,string[]> = {
-  Guest:[],
-  Youth:['CAL','PHV','DOCV','LDV','HSTV','SET','SIGN'],
-  Adult:['CAL','PHV','DOCV','LDV','HSTV','SET','SIGN'],
-  'Adult Leader':['CAL','PHV','DOCV','LDV','HSTV','SET','SIGN'],
-  Scoutmaster:['CAL','PHV','DOCV','LDV','HSTV','SET','MIV','MIE','MDEL','INV','ACCT','EML','EMS','EVT','ATTV','ATTM','SIGN','PHOTO','DOC','EAGLE','LEAD','HIST','ADV','CAMP','UNIF','HOME','CONT','POS','PMAP','PERM','ADMIN']
-};
+  await c.env.DB.prepare(
+    "INSERT OR IGNORE INTO positions(name,category) VALUES('Adult','adult')"
+  ).run();
 
-    for (const [position,codes] of Object.entries(defaults)) {
-      for (const code of codes) {
-        await c.env.DB.prepare(`
-          INSERT OR IGNORE INTO position_permissions(position_id,permission_id)
-          SELECT p.id,x.id
-          FROM positions p
-          JOIN permission_titles x ON x.code=?
-          WHERE p.name=?
-        `).bind(code,position).run();
-      }
+  const defaults: Record<string,string[]> = {
+    Youth:['CAL','PHV','DOCV','LDV','HSTV','SET','SIGN'],
+    Adult:['CAL','PHV','DOCV','LDV','HSTV','SET','SIGN'],
+    Scoutmaster:[
+      'CAL','PHV','DOCV','LDV','HSTV','SET',
+      'MIV','MIE','MDEL','INV','ACCT','EML','EMS',
+      'EVT','ATTV','ATTM','SIGN','PHOTO','DOC',
+      'EAGLE','LEAD','HIST','ADV','CAMP','UNIF',
+      'HOME','CONT','POS','PMAP','PERM','ADMIN'
+    ]
+  };
+
+  for (const [position,codes] of Object.entries(defaults)) {
+    for (const code of codes) {
+      await c.env.DB.prepare(`
+        INSERT OR IGNORE INTO position_permissions(
+          position_id,permission_id
+        )
+        SELECT p.id,x.id
+        FROM positions p
+        JOIN permission_titles x ON x.code=?
+        WHERE p.name=?
+      `).bind(code,position).run();
+    }
+  }
+
+  const adminPosition = await c.env.DB.prepare(
+    "SELECT id FROM positions WHERE name='Scoutmaster'"
+  ).first<any>();
+
+  const adminPermission = await c.env.DB.prepare(
+    "SELECT id FROM permission_titles WHERE code='ADMIN'"
+  ).first<any>();
+
+  if (adminPosition?.id && adminPermission?.id) {
+    await c.env.DB.prepare(`
+      INSERT OR IGNORE INTO position_permissions(
+        position_id,permission_id
+      ) VALUES(?,?)
+    `).bind(
+      adminPosition.id,
+      adminPermission.id
+    ).run();
+  }
     }
   }
 }
