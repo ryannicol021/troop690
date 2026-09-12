@@ -1235,12 +1235,27 @@ app.get('/api/admin/members',async c=>{
         a.username,
         a.active,
         a.invite_expires_at,
-        GROUP_CONCAT(DISTINCT pp.position_id) position_ids
+        GROUP_CONCAT(DISTINCT pp.position_id) position_ids,
+        GROUP_CONCAT(
+          DISTINCT CASE
+            WHEN pos.code IS NULL
+              OR pos.code NOT IN(
+                'GUEST',
+                'YOUTH',
+                'ADULT',
+                'ADULTL',
+                'ADMIN'
+              )
+            THEN pos.name
+          END
+        ) position_names
       FROM people p
       LEFT JOIN accounts a
         ON a.person_id=p.id
       LEFT JOIN person_positions pp
         ON pp.person_id=p.id
+      LEFT JOIN positions pos
+        ON pos.id=pp.position_id
       GROUP BY p.id,a.id
       ORDER BY
         p.archived,
@@ -1250,16 +1265,74 @@ app.get('/api/admin/members',async c=>{
     `)
     .all<any>();
 
+  const contactRows=await c.env.DB
+    .prepare(`
+      SELECT
+        fr.related_person_id child_id,
+        p.id parent_id,
+        p.first_name,
+        p.last_name,
+        p.phone
+      FROM family_relationships fr
+      JOIN people p
+        ON p.id=fr.person_id
+      WHERE fr.role IN('Parent','Guardian')
+      ORDER BY
+        p.first_name,
+        p.last_name
+    `)
+    .all<any>();
+
+  const contactsByChild=new Map<number,any[]>();
+
+  for(const row of (contactRows.results??[])){
+    const childId=Number(row.child_id);
+
+    if(!contactsByChild.has(childId))
+      contactsByChild.set(childId,[]);
+
+    contactsByChild.get(childId)!.push({
+      id:Number(row.parent_id),
+      first_name:String(row.first_name||''),
+      last_name:String(row.last_name||''),
+      phone:String(row.phone||'')
+    });
+  }
+
   return json(c,{
-    members:(rows.results??[]).map((x:any)=>({
-      ...x,
-      position_ids:String(
-        x.position_ids||''
-      )
-        .split(',')
-        .filter(Boolean)
-        .map(Number)
-    }))
+    members:(rows.results??[]).map((x:any)=>{
+      const contacts=
+        (
+          contactsByChild.get(Number(x.id))||
+          []
+        )
+        .sort(
+          (a:any,b:any)=>
+            `${a.first_name} ${a.last_name}`
+              .localeCompare(
+                `${b.first_name} ${b.last_name}`
+              )
+        )
+        .slice(0,2);
+
+      return {
+        ...x,
+        position_ids:String(
+          x.position_ids||''
+        )
+          .split(',')
+          .filter(Boolean)
+          .map(Number),
+
+        position_names:String(
+          x.position_names||''
+        )
+          .split(',')
+          .filter(Boolean),
+
+        emergency_contacts:contacts
+      };
+    })
   });
 });
 
@@ -1787,6 +1860,15 @@ app.post('/api/admin/members',async c=>{
   const adult=!!x.adult;
   const adultLeader=!!x.adult_leader;
 
+  const phoneDigits=
+    String(x.phone||'')
+      .replace(/\D/g,'');
+
+  const phone=
+    phoneDigits.length===10?
+      `(${phoneDigits.slice(0,3)}) ${phoneDigits.slice(3,6)}-${phoneDigits.slice(6)}`:
+      String(x.phone||'');
+
   const rank=String(x.rank||'');
 
   if(
@@ -1853,7 +1935,7 @@ app.post('/api/admin/members',async c=>{
       adultLeader?1:0,
       x.rank||'',
       x.dob||null,
-      x.phone||'',
+      phone,
       x.email||'',
       x.street||'',
       x.town||'',
@@ -2020,10 +2102,67 @@ app.put('/api/admin/members/:id',async c=>{
   }
 
   if(x.eagle_scout_archive){
+    const current=await c.env.DB
+      .prepare(`
+        SELECT
+          adult,
+          adult_leader,
+          eagle_scout_archive
+        FROM people
+        WHERE id=?
+      `)
+      .bind(id)
+      .first<any>();
+
+    if(!current){
+      return json(
+        c,
+        {error:'Member not found'},
+        404
+      );
+    }
+
+    if(
+      !Number(current.adult)||
+      !Number(current.adult_leader)
+    ){
+      return json(
+        c,
+        {
+          error:
+            'Only Adult Leaders can be moved to the Eagle Scout Archive.'
+        },
+        400
+      );
+    }
+
     await c.env.DB
-      .prepare(
-        'UPDATE accounts SET active=0 WHERE person_id=?'
-      )
+      .prepare(`
+        UPDATE people
+        SET
+          adult=1,
+          adult_leader=0,
+          eagle_scout_archive=1,
+          archived=1,
+          updated_at=CURRENT_TIMESTAMP
+        WHERE id=?
+      `)
+      .bind(id)
+      .run();
+
+    await c.env.DB
+      .prepare(`
+        DELETE FROM person_positions
+        WHERE person_id=?
+      `)
+      .bind(id)
+      .run();
+
+    await c.env.DB
+      .prepare(`
+        DELETE FROM accounts
+        WHERE person_id=?
+      `)
       .bind(id)
       .run();
   }
