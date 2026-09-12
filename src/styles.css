@@ -512,6 +512,77 @@ tbody tr:nth-child(even){
   border-bottom:0
 }
 
+.member-table-wrap{
+  width:100%;
+  max-height:420px;
+  overflow:auto;
+  border:1px solid var(--border);
+  background:#fff;
+  margin-bottom:22px
+}
+
+.member-table{
+  width:max-content;
+  min-width:100%;
+  border-collapse:collapse;
+  table-layout:auto
+}
+
+.member-table th,
+.member-table td{
+  padding:9px 10px;
+  border-bottom:1px solid var(--border);
+  vertical-align:top;
+  text-align:left;
+  white-space:nowrap
+}
+
+.member-table thead th{
+  position:sticky;
+  top:0;
+  z-index:3;
+  background:var(--khaki-light);
+  color:var(--navy)
+}
+
+.member-table tbody tr:nth-child(even){
+  background:#fcfbf8
+}
+
+.member-address-cell{
+  white-space:nowrap
+}
+
+.member-position-cell{
+  white-space:normal;
+  min-width:150px;
+  max-width:260px
+}
+
+.emergency-contact-cell{
+  min-width:125px;
+  white-space:nowrap
+}
+
+.emergency-contact{
+  margin-bottom:5px
+}
+
+.emergency-contact:last-child{
+  margin-bottom:0
+}
+
+.emergency-contact small{
+  display:block;
+  color:var(--muted);
+  margin-top:0
+}
+
+.emergency-contact.empty{
+  height:32px;
+  margin-bottom:0
+}
+
 .admin-action-row{
   display:flex;
   gap:6px;
