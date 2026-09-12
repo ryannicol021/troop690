@@ -1310,46 +1310,9 @@ function MemberEditor({
     }));
   };
 
-  const fieldType=(f:string)=>{
-    if(f==='dob'||
-       f==='join_date'||
-       f==='registration_expiration'||
-       f==='syt_expiration')
-      return 'date';
-
-    if(f==='email')
-      return 'email';
-
-    if(f==='phone')
-      return 'tel';
-
-    return 'text';
-  };
-
-  const textFields=[
-    'prefix',
-    'first_name',
-    'middle_name',
-    'last_name',
-    'suffix',
-    'rank',
-    'dob',
-    'phone',
-    'email',
-    'street',
-    'town',
-    'zip',
-    'join_date',
-    'cub_scout_pack',
-    'patrol',
-    'scouting_membership_id',
-    'registration_expiration',
-    'syt_expiration'
-  ];
-
   return <div className="modal">
     <form
-      className="modal-card form"
+      className="modal-card form member-editor"
       onSubmit={async e=>{
         e.preventDefault();
 
@@ -1393,48 +1356,304 @@ function MemberEditor({
         {isNew?'Add Person':'Edit Member'}
       </h2>
 
-      <div className="grid two">
-        {textFields.map(f=>
-          <label key={f}>
-            {f.replaceAll('_',' ')}
-            <input
-              type={fieldType(f)}
-              value={x[f]||''}
+      <div className="member-form-card">
+        <div className="member-name-grid">
+          <label>
+            Prefix
+            <select
+              value={x.prefix||''}
               onChange={e=>
                 setX({
                   ...x,
-                  [f]:e.target.value
+                  prefix:e.target.value
                 })
               }
-              required={
-                f==='first_name'||
-                f==='last_name'
+            >
+              <option value=""></option>
+              <option value="Rev.">Rev.</option>
+              <option value="Msgr.">Msgr.</option>
+            </select>
+          </label>
+
+          <label>
+            First Name
+            <input
+              value={x.first_name||''}
+              onChange={e=>
+                setX({
+                  ...x,
+                  first_name:e.target.value
+                })
+              }
+              required
+            />
+          </label>
+
+          <label>
+            Middle Name
+            <input
+              value={x.middle_name||''}
+              onChange={e=>
+                setX({
+                  ...x,
+                  middle_name:e.target.value
+                })
               }
             />
           </label>
-        )}
 
-        <label>
-          Gender
-          <select
-            value={x.gender||'Male'}
-            onChange={e=>
-              setX({
-                ...x,
-                gender:e.target.value
-              })
-            }
-          >
-            <option value="Male">Male</option>
-            <option value="Female">Female</option>
-          </select>
-        </label>
+          <label>
+            Last Name
+            <input
+              value={x.last_name||''}
+              onChange={e=>
+                setX({
+                  ...x,
+                  last_name:e.target.value
+                })
+              }
+              required
+            />
+          </label>
+
+          <label>
+            Suffix
+            <select
+              value={x.suffix||''}
+              onChange={e=>
+                setX({
+                  ...x,
+                  suffix:e.target.value
+                })
+              }
+            >
+              <option value=""></option>
+              <option value="Jr.">Jr.</option>
+              <option value="Sr.">Sr.</option>
+              <option value="I">I</option>
+              <option value="II">II</option>
+              <option value="III">III</option>
+              <option value="IV">IV</option>
+              <option value="V">V</option>
+              <option value="VI">VI</option>
+              <option value="VII">VII</option>
+              <option value="VIII">VIII</option>
+              <option value="IX">IX</option>
+              <option value="X">X</option>
+            </select>
+          </label>
+        </div>
       </div>
 
-      <section>
-        <h3>Member Type</h3>
+      <div className="member-form-card">
+        <div className="member-info-grid">
+          <label>
+            Gender
+            <select
+              value={x.gender||'Male'}
+              onChange={e=>
+                setX({
+                  ...x,
+                  gender:e.target.value
+                })
+              }
+            >
+              <option value=""></option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+            </select>
+          </label>
 
-        <div className="check-grid">
+          <label>
+            Date of Birth
+            <input
+              type="date"
+              value={x.dob||''}
+              onChange={e=>
+                setX({
+                  ...x,
+                  dob:e.target.value
+                })
+              }
+            />
+          </label>
+
+          <label>
+            Phone
+            <input
+              type="tel"
+              value={x.phone||''}
+              onChange={e=>
+                setX({
+                  ...x,
+                  phone:e.target.value
+                })
+              }
+            />
+          </label>
+
+          <label>
+            Email
+            <input
+              type="email"
+              value={x.email||''}
+              onChange={e=>
+                setX({
+                  ...x,
+                  email:e.target.value
+                })
+              }
+            />
+          </label>
+        </div>
+      </div>
+
+      <div className="member-form-card">
+        <div className="member-address-grid">
+          <label>
+            Street Address
+            <input
+              value={x.street||''}
+              onChange={e=>
+                setX({
+                  ...x,
+                  street:e.target.value
+                })
+              }
+            />
+          </label>
+
+          <label>
+            Town
+            <input
+              value={x.town||''}
+              onChange={e=>
+                setX({
+                  ...x,
+                  town:e.target.value
+                })
+              }
+            />
+          </label>
+
+          <label>
+            ZIP Code
+            <input
+              value={x.zip||''}
+              onChange={e=>
+                setX({
+                  ...x,
+                  zip:e.target.value
+                })
+              }
+            />
+          </label>
+        </div>
+      </div>
+
+      <div className="member-form-card">
+        <div className="member-scouting-grid">
+          <label>
+            Rank
+            <input
+              value={x.rank||''}
+              onChange={e=>
+                setX({
+                  ...x,
+                  rank:e.target.value
+                })
+              }
+            />
+          </label>
+
+          <label>
+            Join Date
+            <input
+              type="date"
+              value={x.join_date||''}
+              onChange={e=>
+                setX({
+                  ...x,
+                  join_date:e.target.value
+                })
+              }
+            />
+          </label>
+
+          <label>
+            Cub Scout Pack
+            <input
+              value={x.cub_scout_pack||''}
+              onChange={e=>
+                setX({
+                  ...x,
+                  cub_scout_pack:e.target.value
+                })
+              }
+            />
+          </label>
+
+          <label>
+            Patrol
+            <input
+              value={x.patrol||''}
+              onChange={e=>
+                setX({
+                  ...x,
+                  patrol:e.target.value
+                })
+              }
+            />
+          </label>
+
+          <label>
+            Scouting Membership ID
+            <input
+              value={x.scouting_membership_id||''}
+              onChange={e=>
+                setX({
+                  ...x,
+                  scouting_membership_id:
+                    e.target.value
+                })
+              }
+            />
+          </label>
+
+          <label>
+            Registration Expiration
+            <input
+              type="date"
+              value={x.registration_expiration||''}
+              onChange={e=>
+                setX({
+                  ...x,
+                  registration_expiration:
+                    e.target.value
+                })
+              }
+            />
+          </label>
+
+          <label>
+            SYT Expiration
+            <input
+              type="date"
+              value={x.syt_expiration||''}
+              onChange={e=>
+                setX({
+                  ...x,
+                  syt_expiration:
+                    e.target.value
+                })
+              }
+            />
+          </label>
+        </div>
+      </div>
+
+      <div className="member-form-card">
+        <div className="member-check-grid">
           <label className="checkbox-label">
             <input
               type="checkbox"
@@ -1468,12 +1687,10 @@ function MemberEditor({
             Adult Leader
           </label>
         </div>
-      </section>
+      </div>
 
-      <section>
-        <h3>Positions</h3>
-
-        <div className="check-grid">
+      <div className="member-form-card">
+        <div className="member-position-list">
           {positions.map(p=>
             <label
               key={p.id}
@@ -1494,12 +1711,10 @@ function MemberEditor({
             </label>
           )}
         </div>
-      </section>
+      </div>
 
-      <section>
-        <h3>Additional Information</h3>
-
-        <div className="check-grid">
+      <div className="member-form-card">
+        <div className="member-check-grid">
           <label className="checkbox-label">
             <input
               type="checkbox"
@@ -1512,7 +1727,7 @@ function MemberEditor({
                 })
               }
             />
-            Email default opt-out
+            Email Default Opt-Out
           </label>
 
           <label className="checkbox-label">
@@ -1526,7 +1741,7 @@ function MemberEditor({
                 })
               }
             />
-            Order of the Arrow member
+            Order of the Arrow Member
           </label>
 
           <label className="checkbox-label">
@@ -1541,10 +1756,10 @@ function MemberEditor({
                 })
               }
             />
-            Eagle Scout archive
+            Eagle Scout Archive
           </label>
         </div>
-      </section>
+      </div>
 
       {err&&
         <p className="error">{err}</p>
@@ -1565,7 +1780,6 @@ function MemberEditor({
     </form>
   </div>
 }
-
 function Email(){
   const [rows,setRows]=useState<any[]>([]);
   const [selected,setSelected]=useState<Record<number,boolean>>({});
