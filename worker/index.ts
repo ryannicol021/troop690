@@ -1261,6 +1261,220 @@ app.get('/api/admin/positions',async c=>{
   return json(c,{positions:rows.results});
 });
 
+app.post('/api/admin/positions',async c=>{
+  const d=admin(c,'POS');
+  if(d)return d;
+
+  const x=await c.req.json();
+
+  const name=String(
+    x.name||''
+  ).trim();
+
+  const category=
+    String(x.category||'')
+      .toLowerCase()==='youth'?
+        'youth':
+        String(x.category||'')
+          .toLowerCase()==='adult'?
+            'adult':
+            '';
+
+  if(!name){
+    return json(
+      c,
+      {error:'Position name is required'},
+      400
+    );
+  }
+
+  if(!category){
+    return json(
+      c,
+      {error:'Position type must be Youth or Adult'},
+      400
+    );
+  }
+
+  const exists=await c.env.DB.prepare(`
+    SELECT id
+    FROM positions
+    WHERE lower(name)=lower(?)
+    LIMIT 1
+  `)
+    .bind(name)
+    .first<any>();
+
+  if(exists){
+    return json(
+      c,
+      {error:'A position with that name already exists'},
+      409
+    );
+  }
+
+  const r=await c.env.DB.prepare(`
+    INSERT INTO positions(
+      name,
+      category,
+      code,
+      system
+    )
+    VALUES(?,?,NULL,0)
+  `)
+    .bind(
+      name,
+      category
+    )
+    .run();
+
+  return json(c,{
+    id:r.meta.last_row_id,
+    name,
+    category,
+    code:null,
+    system:0
+  });
+});
+
+app.put('/api/admin/positions/:id',async c=>{
+  const d=admin(c,'POS');
+  if(d)return d;
+
+  const id=Number(c.req.param('id'));
+  const x=await c.req.json();
+
+  const position=await c.env.DB.prepare(`
+    SELECT id,name,category,code,system
+    FROM positions
+    WHERE id=?
+  `)
+    .bind(id)
+    .first<any>();
+
+  if(!position){
+    return json(
+      c,
+      {error:'Position not found'},
+      404
+    );
+  }
+
+  if(Number(position.system)){
+    return json(
+      c,
+      {error:'Built-in positions cannot be renamed or changed'},
+      400
+    );
+  }
+
+  const name=String(
+    x.name||''
+  ).trim();
+
+  const category=
+    String(x.category||'')
+      .toLowerCase()==='youth'?
+        'youth':
+        String(x.category||'')
+          .toLowerCase()==='adult'?
+            'adult':
+            '';
+
+  if(!name){
+    return json(
+      c,
+      {error:'Position name is required'},
+      400
+    );
+  }
+
+  if(!category){
+    return json(
+      c,
+      {error:'Position type must be Youth or Adult'},
+      400
+    );
+  }
+
+  const exists=await c.env.DB.prepare(`
+    SELECT id
+    FROM positions
+    WHERE lower(name)=lower(?)
+      AND id<>?
+    LIMIT 1
+  `)
+    .bind(
+      name,
+      id
+    )
+    .first<any>();
+
+  if(exists){
+    return json(
+      c,
+      {error:'A position with that name already exists'},
+      409
+    );
+  }
+
+  await c.env.DB.prepare(`
+    UPDATE positions
+    SET
+      name=?,
+      category=?
+    WHERE id=?
+  `)
+    .bind(
+      name,
+      category,
+      id
+    )
+    .run();
+
+  return json(c,{ok:true});
+});
+
+app.delete('/api/admin/positions/:id',async c=>{
+  const d=admin(c,'POS');
+  if(d)return d;
+
+  const id=Number(c.req.param('id'));
+
+  const position=await c.env.DB.prepare(`
+    SELECT id,name,system
+    FROM positions
+    WHERE id=?
+  `)
+    .bind(id)
+    .first<any>();
+
+  if(!position){
+    return json(
+      c,
+      {error:'Position not found'},
+      404
+    );
+  }
+
+  if(Number(position.system)){
+    return json(
+      c,
+      {error:'Built-in positions cannot be deleted'},
+      400
+    );
+  }
+
+  await c.env.DB.prepare(`
+    DELETE FROM positions
+    WHERE id=?
+  `)
+    .bind(id)
+    .run();
+
+  return json(c,{ok:true});
+});
+
 app.post('/api/admin/members',async c=>{
   const d=admin(c,'MIE');
   if(d)return d;
