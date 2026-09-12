@@ -1741,6 +1741,19 @@ useEffect(()=>{
           return;
         }
 
+        if(
+          !isNew &&
+          x.eagle_scout_archive &&
+          !value?.eagle_scout_archive
+        ){
+          const confirmed=confirm(
+            'Are you sure you want to move this Adult Leader to the Eagle Scout Archive? Their login will be permanently deleted and they will no longer be an Adult Leader.'
+          );
+
+          if(!confirmed)
+            return;
+        }
+
         try{
           if(isNew){
             await post(
