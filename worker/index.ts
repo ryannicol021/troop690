@@ -1787,6 +1787,23 @@ app.post('/api/admin/members',async c=>{
   const adult=!!x.adult;
   const adultLeader=!!x.adult_leader;
 
+  const rank=String(x.rank||'');
+
+  if(
+    adult &&
+    rank &&
+    rank!=='Eagle Scout'
+  ){
+    return json(
+      c,
+      {
+        error:
+          'Adults may only have Eagle Scout as a rank.'
+      },
+      400
+    );
+  }
+
   if(adultLeader&&!adult){
     return json(
       c,
@@ -1884,8 +1901,18 @@ app.post('/api/admin/members',async c=>{
             'ADULTL'
           )
         )
+        AND (
+          (?=0 AND category='youth')
+          OR
+          (?=1 AND ?=1 AND category='adult')
+        )
       `)
-      .bind(...positionIds)
+      .bind(
+        ...positionIds,
+        adult?1:0,
+        adult?1:0,
+        adultLeader?1:0
+      )
       .all<any>();
 
     for(const p of (allowed.results??[])){
