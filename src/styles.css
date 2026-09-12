@@ -668,6 +668,51 @@ tbody tr:nth-child(even){
   }
 }
 
+.member-family-add{
+  display:grid;
+  gap:14px
+}
+
+.member-family-add-row{
+  display:grid;
+  grid-template-columns:
+    minmax(130px,.8fr)
+    minmax(220px,1.5fr)
+    auto;
+  gap:10px;
+  align-items:end
+}
+
+.member-family-list{
+  display:grid;
+  gap:6px;
+  padding-top:4px
+}
+
+.member-family-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding:8px 0;
+  border-bottom:1px solid var(--border)
+}
+
+.member-family-row:last-child{
+  border-bottom:0
+}
+
+@media(max-width:800px){
+  .member-family-add-row{
+    grid-template-columns:1fr
+  }
+
+  .member-family-row{
+    align-items:flex-start;
+    flex-direction:column
+  }
+}
+
 .public-only{
   min-height:150px
 }
