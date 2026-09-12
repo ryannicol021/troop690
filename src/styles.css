@@ -622,6 +622,11 @@ tbody tr:nth-child(even){
   gap:8px
 }
 
+.member-editor-positions{
+  max-height:300px;
+  overflow:auto
+}
+
 .checkbox-label{
   display:flex!important;
   grid-template-columns:none!important;
