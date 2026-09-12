@@ -1018,6 +1018,15 @@ function MemberInfo({me}:{me:any}){
     if(!date)
       return undefined;
   
+    return date<=todayString?
+      {color:'#CE1126'}:
+      undefined;
+  };
+  
+  const sytExpirationStyle=(date:any)=>{
+    if(!date)
+      return undefined;
+  
     if(date<=todayString)
       return {color:'#CE1126'};
   
@@ -1352,7 +1361,7 @@ function MemberInfo({me}:{me:any}){
                 {x.registration_expiration||''}
               </td>
               
-              <td style={expirationStyle(x.syt_expiration)}>
+              <td style={sytExpirationStyle(x.syt_expiration)}>
                 {x.syt_expiration||''}
               </td>
               <td className="member-position-cell">
