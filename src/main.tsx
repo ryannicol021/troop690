@@ -1088,7 +1088,7 @@ function MemberInfo({me}:{me:any}){
           className="emergency-contact"
           key={p.id||i}
         >
-          <div>{p.first_name} {p.last_name}</div>
+          <div>{p.first_name}</div>
           <small>
             {p.phone||''}
           </small>
