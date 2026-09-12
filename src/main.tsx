@@ -1140,6 +1140,11 @@ function Administration({me}:{me:any}){
   });
   const [editingAccount,setEditingAccount]=useState<number|null>(null);
   const [editingPermission,setEditingPermission]=useState<number|null>(null);
+  const [editingPosition,setEditingPosition]=useState<number|null>(null);
+  const [newPosition,setNewPosition]=useState({
+    name:'',
+    category:'adult'
+  });
   const [newPermission,setNewPermission]=useState({
     name:'',
     code:'',
@@ -1245,6 +1250,83 @@ function Administration({me}:{me:any}){
     }
   };
 
+  const createPosition=async(e:React.FormEvent)=>{
+    e.preventDefault();
+
+    try{
+      const r=await post(
+        '/admin/positions',
+        newPosition
+      );
+
+      setNewPosition({
+        name:'',
+        category:'adult'
+      });
+
+      await load();
+
+      setMsg(`Created ${r.name}`);
+      setTimeout(()=>setMsg(''),1800)
+    }catch(e:any){
+      setMsg(e.message);
+      setTimeout(()=>setMsg(''),2200)
+    }
+  };
+
+  const saveAvailablePosition=async(position:any)=>{
+    try{
+      await put(
+        '/admin/positions/'+position.id,
+        {
+          name:position.name,
+          category:position.category
+        }
+      );
+
+      setEditingPosition(null);
+      await load();
+
+      setMsg('Saved');
+      setTimeout(()=>setMsg(''),1800)
+    }catch(e:any){
+      setMsg(e.message);
+      setTimeout(()=>setMsg(''),2200)
+    }
+  };
+
+  const deleteAvailablePosition=async(id:number)=>{
+    if(!confirm(
+      'Are you sure you want to delete this position? This action cannot be undone.'
+    ))
+      return;
+
+    try{
+      const r=await fetch(
+        '/api/admin/positions/'+id,
+        {
+          method:'DELETE',
+          credentials:'include'
+        }
+      );
+
+      if(!r.ok){
+        const x=await r.json().catch(()=>({}));
+        setMsg(x.error||'Delete failed');
+        setTimeout(()=>setMsg(''),2200);
+        return;
+      }
+
+      await load();
+
+      setMsg('Deleted');
+      setTimeout(()=>setMsg(''),1800)
+    }catch(e:any){
+      setMsg(e.message);
+      setTimeout(()=>setMsg(''),2200)
+    }
+  };
+  
   const deletePermission=async(id:number)=>{
     if(!confirm('Delete this permission?'))
       return;
@@ -1707,6 +1789,182 @@ function Administration({me}:{me:any}){
       </section>
     }
 
+    {can('POS')&&
+      <section>
+        <h2>Available Positions</h2>
+
+        <form
+          className="form"
+          onSubmit={createPosition}
+          style={{
+            marginBottom:'16px'
+          }}
+        >
+          <div className="admin-inline-edit">
+            <input
+              value={newPosition.name}
+              placeholder="Position name"
+              onChange={e=>
+                setNewPosition({
+                  ...newPosition,
+                  name:e.target.value
+                })
+              }
+              required
+            />
+
+            <select
+              value={newPosition.category}
+              onChange={e=>
+                setNewPosition({
+                  ...newPosition,
+                  category:e.target.value
+                })
+              }
+            >
+              <option value="adult">Adult</option>
+              <option value="youth">Youth</option>
+            </select>
+
+            <button
+              className="primary admin-action-button"
+              type="submit"
+            >
+              Add Position
+            </button>
+          </div>
+        </form>
+
+        <div className="admin-table-wrap">
+          <table className="admin-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Type</th>
+                <th>Options</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {config.positions.map((p:any)=>
+                <tr key={p.id}>
+                  <td>
+                    {editingPosition===p.id?
+                      <input
+                        value={p.name}
+                        onChange={e=>
+                          setConfig((d:any)=>({
+                            ...d,
+                            positions:d.positions.map((x:any)=>
+                              x.id===p.id?
+                                {
+                                  ...x,
+                                  name:e.target.value
+                                }:
+                                x
+                            )
+                          }))
+                        }
+                      />
+                      :
+                      <b>{p.name}</b>
+                    }
+                  </td>
+
+                  <td>
+                    {editingPosition===p.id?
+                      <select
+                        value={p.category}
+                        onChange={e=>
+                          setConfig((d:any)=>({
+                            ...d,
+                            positions:d.positions.map((x:any)=>
+                              x.id===p.id?
+                                {
+                                  ...x,
+                                  category:e.target.value
+                                }:
+                                x
+                            )
+                          }))
+                        }
+                      >
+                        <option value="adult">Adult</option>
+                        <option value="youth">Youth</option>
+                      </select>
+                      :
+                      (
+                        p.category==='youth'?
+                          'Youth':
+                          p.category==='adult'?
+                            'Adult':
+                            'Other'
+                      )
+                    }
+                  </td>
+
+                  <td>
+                    {Number(p.system)?
+                      <span className="muted">
+                        Built-in
+                      </span>
+                      :
+                      <div className="admin-action-row">
+                        {editingPosition===p.id?
+                          <>
+                            <button
+                              className="primary admin-action-button"
+                              onClick={()=>
+                                saveAvailablePosition(p)
+                              }
+                            >
+                              Save
+                            </button>
+
+                            <button
+                              className="admin-action-button"
+                              onClick={()=>{
+                                setEditingPosition(null);
+                                load().catch(e=>
+                                  setMsg(e.message)
+                                );
+                              }}
+                            >
+                              Cancel
+                            </button>
+                          </>
+                          :
+                          <>
+                            <button
+                              className="admin-action-button"
+                              onClick={()=>
+                                setEditingPosition(p.id)
+                              }
+                            >
+                              Edit
+                            </button>
+
+                            <button
+                              className="admin-action-button"
+                              onClick={()=>
+                                deleteAvailablePosition(p.id)
+                              }
+                            >
+                              Delete
+                            </button>
+                          </>
+                        }
+                      </div>
+                    }
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    }
+    
     {msg&&<div className="toast">{msg}</div>}
 
   </Page>
