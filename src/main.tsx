@@ -169,7 +169,8 @@ function RouterPage({
   if(p==='/summer-camp')return <SummerCamp/>;
   if(p==='/uniform')return <Uniform/>;
   if(p==='/contact')return <Contact me={me}/>;
-  if(p==='/member-info')return <MemberInfo/>;
+  if(p==='/member-info')
+  return <MemberInfo me={me}/>;
   if(p==='/email')return <Email/>;
   if(p==='/administration')return <Administration me={me}/>;
 
@@ -921,25 +922,114 @@ function Contact({me}:{me:any}){
   </Page>
 }
 
-function MemberInfo(){
+function MemberInfo({me}:{me:any}){
   const [rows,setRows]=useState<any[]>([]);
   const [edit,setEdit]=useState<any|null>(null);
+  const [adding,setAdding]=useState(false);
+  const [accountLink,setAccountLink]=useState<any|null>(null);
+  const [msg,setMsg]=useState('');
+  const [error,setError]=useState('');
+
+  const canEdit=
+    !!me?.permissions?.includes('MIE');
+
+  const canInvite=
+    !!me?.permissions?.includes('INV');
+
+  const canDelete=
+    !!me?.permissions?.includes('MDEL');
+
+  const load=async()=>{
+    try{
+      const x=await api('/admin/members');
+      setRows(x.members||[]);
+    }catch(e:any){
+      setError(e.message);
+    }
+  };
 
   useEffect(()=>{
-    api('/admin/members').then(x=>setRows(x.members))
+    load();
   },[]);
+
+  const positionText=(x:any)=>{
+    const base=x.adult?
+      (x.adult_leader?'Adult Leader':'Adult'):
+      'Youth';
+
+    const extra=(x.position_names||[])
+      .filter(Boolean);
+
+    return [
+      base,
+      ...extra
+    ].join(', ');
+  };
+
+  const accountStatus=(x:any)=>{
+    if(x.active)
+      return 'Active';
+
+    if(x.invite_expires_at)
+      return 'Link Pending';
+
+    return 'No Account';
+  };
+
+  const createLink=async(x:any)=>{
+    try{
+      const r=await post(
+        '/admin/invite/'+x.id,
+        {}
+      );
+
+      setAccountLink({
+        name:`${x.first_name} ${x.last_name}`,
+        username:r.username,
+        url:r.inviteUrl
+      });
+    }catch(e:any){
+      setMsg(e.message);
+      setTimeout(()=>setMsg(''),2200);
+    }
+  };
 
   return <Page
     title="Member Info"
     actions={
       <div className="button-row">
-        <a className="button" href="/api/admin/quick-text.csv">Quick Text</a>
-        <a className="button" href="/api/admin/emergency-contacts.csv">
+        {canEdit&&
+          <button
+            className="primary"
+            onClick={()=>{
+              setError('');
+              setAdding(true);
+            }}
+          >
+            Add Person
+          </button>
+        }
+
+        <a
+          className="button"
+          href="/api/admin/quick-text.csv"
+        >
+          Quick Text
+        </a>
+
+        <a
+          className="button"
+          href="/api/admin/emergency-contacts.csv"
+        >
           Emergency Contacts
         </a>
       </div>
     }
   >
+    {error&&
+      <p className="error">{error}</p>
+    }
+
     <div className="table-wrap">
       <table>
         <thead>
@@ -951,36 +1041,105 @@ function MemberInfo(){
             <th>Phone</th>
             <th>Email</th>
             <th>Address</th>
-            <th>Username</th>
-            <th></th>
+            <th>Account</th>
+            <th>Options</th>
           </tr>
         </thead>
 
         <tbody>
           {rows.map(x=>
             <tr key={x.id}>
-              <td>{x.last_name}, {x.first_name}</td>
-              <td></td>
-              <td>{x.rank}</td>
-              <td>{x.dob||''}</td>
-              <td>{x.phone}</td>
-              <td>{x.email}</td>
               <td>
-                {[x.street,x.town,x.zip].filter(Boolean).join(', ')}
+                {x.last_name}, {x.first_name}
               </td>
-              <td>{x.username||''}</td>
 
               <td>
-                <button onClick={()=>setEdit(x)}>Edit</button>
+                {positionText(x)}
+              </td>
 
-                {!x.username&&
-                  <button onClick={async()=>{
-                    const r=await post('/admin/invite/'+x.id,{});
-                    prompt('Send this invitation link',r.inviteUrl)
-                  }}>
-                    Invite
-                  </button>
+              <td>{x.rank||''}</td>
+
+              <td>{x.dob||''}</td>
+
+              <td>{x.phone||''}</td>
+
+              <td>{x.email||''}</td>
+
+              <td>
+                {[x.street,x.town,x.zip]
+                  .filter(Boolean)
+                  .join(', ')}
+              </td>
+
+              <td>
+                <div>
+                  {accountStatus(x)}
+                </div>
+
+                {x.username&&
+                  <small>
+                    {x.username}
+                  </small>
                 }
+              </td>
+
+              <td>
+                <div className="admin-action-row">
+                  {canEdit&&
+                    <button
+                      className="admin-action-button"
+                      onClick={()=>setEdit(x)}
+                    >
+                      Edit
+                    </button>
+                  }
+
+                  {canInvite&&!x.active&&
+                    <button
+                      className="admin-action-button"
+                      onClick={()=>createLink(x)}
+                    >
+                      {x.invite_expires_at?
+                        'Regenerate Link':
+                        'Create Account Link'}
+                    </button>
+                  }
+
+                  {canDelete&&
+                    <button
+                      className="admin-action-button"
+                      onClick={async()=>{
+                        if(!confirm(
+                          'Are you sure you want to delete this member? This will also delete the associated account and cannot be undone.'
+                        ))
+                          return;
+
+                        try{
+                          await api(
+                            '/admin/members/'+x.id,
+                            {method:'DELETE'}
+                          );
+
+                          await load();
+
+                          setMsg('Deleted');
+                          setTimeout(
+                            ()=>setMsg(''),
+                            1800
+                          );
+                        }catch(e:any){
+                          setMsg(e.message);
+                          setTimeout(
+                            ()=>setMsg(''),
+                            2200
+                          );
+                        }
+                      }}
+                    >
+                      Delete
+                    </button>
+                  }
+                </div>
               </td>
             </tr>
           )}
@@ -988,15 +1147,99 @@ function MemberInfo(){
       </table>
     </div>
 
-    {edit&&
+    {(edit||adding)&&
       <MemberEditor
-        value={edit}
-        onClose={()=>setEdit(null)}
+        value={adding?null:edit}
+        onClose={()=>{
+          setEdit(null);
+          setAdding(false);
+        }}
         onSaved={async()=>{
           setEdit(null);
-          setRows((await api('/admin/members')).members)
+          setAdding(false);
+          await load();
+
+          setMsg('Saved');
+          setTimeout(
+            ()=>setMsg(''),
+            1800
+          );
         }}
       />
+    }
+
+    {accountLink&&
+      <div className="modal">
+        <div className="modal-card">
+          <h2>Account Link</h2>
+
+          <p>
+            This does not send an email or text message.
+            Copy the link below and give it to the member
+            manually.
+          </p>
+
+          <label className="form">
+            Username
+            <input
+              value={accountLink.username}
+              readOnly
+            />
+          </label>
+
+          <label className="form">
+            Account Link
+            <input
+              value={accountLink.url}
+              readOnly
+            />
+          </label>
+
+          <div className="button-row">
+            <button
+              className="primary"
+              onClick={async()=>{
+                try{
+                  await navigator.clipboard.writeText(
+                    accountLink.url
+                  );
+
+                  setMsg('Link copied');
+                  setTimeout(
+                    ()=>setMsg(''),
+                    1800
+                  );
+                }catch{
+                  setMsg(
+                    'Unable to copy the link. You can select it manually.'
+                  );
+
+                  setTimeout(
+                    ()=>setMsg(''),
+                    2200
+                  );
+                }
+              }}
+            >
+              Copy Link
+            </button>
+
+            <button
+              onClick={()=>
+                setAccountLink(null)
+              }
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    }
+
+    {msg&&
+      <div className="toast">
+        {msg}
+      </div>
     }
   </Page>
 }
@@ -1006,26 +1249,96 @@ function MemberEditor({
   onClose,
   onSaved
 }:{
-  value:any,
+  value:any|null,
   onClose:()=>void,
   onSaved:()=>void
 }){
-  const [x,setX]=useState({...value});
+  const isNew=!value?.id;
 
-  const fields=[
+  const empty={
+    prefix:'',
+    first_name:'',
+    middle_name:'',
+    last_name:'',
+    suffix:'',
+    gender:'Male',
+    adult:false,
+    adult_leader:false,
+    rank:'',
+    dob:'',
+    phone:'',
+    email:'',
+    street:'',
+    town:'',
+    zip:'',
+    join_date:'',
+    cub_scout_pack:'',
+    patrol:'',
+    scouting_membership_id:'',
+    registration_expiration:'',
+    syt_expiration:'',
+    email_default_opt_out:false,
+    oa_member:false,
+    eagle_scout_archive:false,
+    archived:false,
+    position_ids:[]
+  };
+
+  const [x,setX]=useState({
+    ...empty,
+    ...(value||{})
+  });
+
+  const [positions,setPositions]=useState<any[]>([]);
+  const [err,setErr]=useState('');
+
+  useEffect(()=>{
+    api('/admin/member-positions')
+      .then(r=>setPositions(r.positions||[]))
+      .catch((e:any)=>setErr(e.message));
+  },[]);
+
+  const togglePosition=(id:number)=>{
+    setX((v:any)=>({
+      ...v,
+      position_ids:
+        v.position_ids.includes(id)?
+          v.position_ids.filter(
+            (x:number)=>x!==id
+          ):
+          [...v.position_ids,id]
+    }));
+  };
+
+  const fieldType=(f:string)=>{
+    if(f==='dob'||
+       f==='join_date'||
+       f==='registration_expiration'||
+       f==='syt_expiration')
+      return 'date';
+
+    if(f==='email')
+      return 'email';
+
+    if(f==='phone')
+      return 'tel';
+
+    return 'text';
+  };
+
+  const textFields=[
     'prefix',
     'first_name',
     'middle_name',
     'last_name',
     'suffix',
-    'gender',
+    'rank',
     'dob',
     'phone',
     'email',
     'street',
     'town',
     'zip',
-    'rank',
     'join_date',
     'cub_scout_pack',
     'patrol',
@@ -1039,27 +1352,215 @@ function MemberEditor({
       className="modal-card form"
       onSubmit={async e=>{
         e.preventDefault();
-        await put('/admin/members/'+x.id,x);
-        onSaved()
+
+        if(
+          !String(x.first_name||'').trim()||
+          !String(x.last_name||'').trim()
+        ){
+          setErr(
+            'First name and last name are required.'
+          );
+          return;
+        }
+
+        if(x.adult_leader&&!x.adult){
+          setErr(
+            'Adult Leader requires Adult.'
+          );
+          return;
+        }
+
+        try{
+          if(isNew){
+            await post(
+              '/admin/members',
+              x
+            );
+          }else{
+            await put(
+              '/admin/members/'+x.id,
+              x
+            );
+          }
+
+          onSaved();
+        }catch(e:any){
+          setErr(e.message)
+        }
       }}
     >
-      <h2>Edit Member</h2>
+      <h2>
+        {isNew?'Add Person':'Edit Member'}
+      </h2>
 
       <div className="grid two">
-        {fields.map(f=>
+        {textFields.map(f=>
           <label key={f}>
             {f.replaceAll('_',' ')}
             <input
+              type={fieldType(f)}
               value={x[f]||''}
-              onChange={e=>setX({...x,[f]:e.target.value})}
+              onChange={e=>
+                setX({
+                  ...x,
+                  [f]:e.target.value
+                })
+              }
+              required={
+                f==='first_name'||
+                f==='last_name'
+              }
             />
           </label>
         )}
+
+        <label>
+          Gender
+          <select
+            value={x.gender||'Male'}
+            onChange={e=>
+              setX({
+                ...x,
+                gender:e.target.value
+              })
+            }
+          >
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+          </select>
+        </label>
       </div>
 
+      <section>
+        <h3>Member Type</h3>
+
+        <div className="check-grid">
+          <label className="checkbox-label">
+            <input
+              type="checkbox"
+              checked={!!x.adult}
+              onChange={e=>
+                setX({
+                  ...x,
+                  adult:e.target.checked,
+                  adult_leader:
+                    e.target.checked?
+                      x.adult_leader:
+                      false
+                })
+              }
+            />
+            Adult
+          </label>
+
+          <label className="checkbox-label">
+            <input
+              type="checkbox"
+              checked={!!x.adult_leader}
+              disabled={!x.adult}
+              onChange={e=>
+                setX({
+                  ...x,
+                  adult_leader:e.target.checked
+                })
+              }
+            />
+            Adult Leader
+          </label>
+        </div>
+      </section>
+
+      <section>
+        <h3>Positions</h3>
+
+        <div className="check-grid">
+          {positions.map(p=>
+            <label
+              key={p.id}
+              className="checkbox-label"
+            >
+              <input
+                type="checkbox"
+                checked={x.position_ids.includes(
+                  Number(p.id)
+                )}
+                onChange={()=>
+                  togglePosition(
+                    Number(p.id)
+                  )
+                }
+              />
+              {p.name}
+            </label>
+          )}
+        </div>
+      </section>
+
+      <section>
+        <h3>Additional Information</h3>
+
+        <div className="check-grid">
+          <label className="checkbox-label">
+            <input
+              type="checkbox"
+              checked={!!x.email_default_opt_out}
+              onChange={e=>
+                setX({
+                  ...x,
+                  email_default_opt_out:
+                    e.target.checked
+                })
+              }
+            />
+            Email default opt-out
+          </label>
+
+          <label className="checkbox-label">
+            <input
+              type="checkbox"
+              checked={!!x.oa_member}
+              onChange={e=>
+                setX({
+                  ...x,
+                  oa_member:e.target.checked
+                })
+              }
+            />
+            Order of the Arrow member
+          </label>
+
+          <label className="checkbox-label">
+            <input
+              type="checkbox"
+              checked={!!x.eagle_scout_archive}
+              onChange={e=>
+                setX({
+                  ...x,
+                  eagle_scout_archive:
+                    e.target.checked
+                })
+              }
+            />
+            Eagle Scout archive
+          </label>
+        </div>
+      </section>
+
+      {err&&
+        <p className="error">{err}</p>
+      }
+
       <div className="button-row">
-        <button className="primary">Save</button>
-        <button type="button" onClick={onClose}>Cancel</button>
+        <button className="primary">
+          {isNew?'Add Person':'Save'}
+        </button>
+
+        <button
+          type="button"
+          onClick={onClose}
+        >
+          Cancel
+        </button>
       </div>
     </form>
   </div>
