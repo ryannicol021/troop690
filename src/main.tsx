@@ -1290,14 +1290,6 @@ function MemberEditor({
   });
 
   const [positions,setPositions]=useState<any[]>([]);
-  const [familyPeople,setFamilyPeople]=useState<any[]>([]);
-  const [family,setFamily]=useState<any>({
-    parents:[],
-    siblings:[]
-  });
-
-  const [familyTarget,setFamilyTarget]=useState('');
-  const [familyRole,setFamilyRole]=useState('Parent');
   const [err,setErr]=useState('');
 
   useEffect(()=>{
@@ -1305,30 +1297,6 @@ function MemberEditor({
       .then(r=>setPositions(r.positions||[]))
       .catch((e:any)=>setErr(e.message));
   },[]);
-
-  useEffect(()=>{
-    api('/admin/members')
-      .then(r=>{
-        setFamilyPeople(
-          (r.members||[])
-            .filter(
-              (p:any)=>
-                Number(p.id)!==
-                Number(value?.id)
-            )
-        );
-      })
-      .catch((e:any)=>setErr(e.message));
-  },[value?.id]);
-
-  useEffect(()=>{
-    if(!value?.id)
-      return;
-
-    api('/admin/family-relationships/'+value.id)
-      .then(r=>setFamily(r))
-      .catch((e:any)=>setErr(e.message));
-  },[value?.id]);
 
   const togglePosition=(id:number)=>{
     setX((v:any)=>({
@@ -1341,6 +1309,66 @@ function MemberEditor({
           [...v.position_ids,id]
     }));
   };
+
+  const setAdult=(checked:boolean)=>{
+    if(!checked){
+      setX((v:any)=>({
+        ...v,
+        adult:false,
+        adult_leader:false,
+        rank:'',
+        cub_scout_pack:'',
+        patrol:'',
+        position_ids:[]
+      }));
+
+      return;
+    }
+
+    setX((v:any)=>({
+      ...v,
+      adult:true,
+      adult_leader:false,
+      rank:
+        v.rank==='Eagle Scout'?
+          v.rank:
+          '',
+      cub_scout_pack:'',
+      patrol:'',
+      position_ids:[]
+    }));
+  };
+
+  const setAdultLeader=(checked:boolean)=>{
+    setX((v:any)=>({
+      ...v,
+      adult_leader:checked,
+      position_ids:[]
+    }));
+  };
+
+  const youthRanks=[
+    'Scout',
+    'Tenderfoot',
+    'Second Class',
+    'First Class',
+    'Star',
+    'Life',
+    'Eagle Scout'
+  ];
+
+  const adultRanks=[
+    'Eagle Scout'
+  ];
+
+  const availablePositions=positions.filter(
+    (p:any)=>
+      x.adult?
+        x.adult_leader?
+          p.category==='adult':
+          false:
+        p.category==='youth'
+  );
 
   return <div className="modal">
     <form
@@ -1361,6 +1389,17 @@ function MemberEditor({
         if(x.adult_leader&&!x.adult){
           setErr(
             'Adult Leader requires Adult.'
+          );
+          return;
+        }
+
+        if(
+          x.adult &&
+          x.rank &&
+          x.rank!=='Eagle Scout'
+        ){
+          setErr(
+            'Adults may only have Eagle Scout as a rank.'
           );
           return;
         }
@@ -1389,6 +1428,38 @@ function MemberEditor({
       </h2>
 
       <div className="member-form-card">
+        <div className="member-check-grid">
+          <label className="checkbox-label">
+            <input
+              type="checkbox"
+              checked={!!x.adult}
+              onChange={e=>
+                setAdult(
+                  e.target.checked
+                )
+              }
+            />
+            Adult
+          </label>
+
+          {x.adult&&
+            <label className="checkbox-label">
+              <input
+                type="checkbox"
+                checked={!!x.adult_leader}
+                onChange={e=>
+                  setAdultLeader(
+                    e.target.checked
+                  )
+                }
+              />
+              Adult Leader
+            </label>
+          }
+        </div>
+      </div>
+
+      <div className="member-form-card">
         <div className="member-name-grid">
           <label>
             Prefix
@@ -1403,7 +1474,7 @@ function MemberEditor({
             >
               <option value=""></option>
               <option value="Rev.">Rev.</option>
-              <option value="Rev. Msgr.">Rev. Msgr.</option>
+              <option value="Msgr.">Msgr.</option>
             </select>
           </label>
 
@@ -1482,7 +1553,7 @@ function MemberEditor({
           <label>
             Gender
             <select
-              value={x.gender||'Male'}
+              value={x.gender||''}
               onChange={e=>
                 setX({
                   ...x,
@@ -1587,7 +1658,7 @@ function MemberEditor({
         <div className="member-scouting-grid">
           <label>
             Rank
-            <input
+            <select
               value={x.rank||''}
               onChange={e=>
                 setX({
@@ -1595,7 +1666,21 @@ function MemberEditor({
                   rank:e.target.value
                 })
               }
-            />
+            >
+              <option value=""></option>
+
+              {(x.adult?
+                adultRanks:
+                youthRanks
+              ).map(r=>
+                <option
+                  key={r}
+                  value={r}
+                >
+                  {r}
+                </option>
+              )}
+            </select>
           </label>
 
           <label>
@@ -1612,31 +1697,35 @@ function MemberEditor({
             />
           </label>
 
-          <label>
-            Cub Scout Pack
-            <input
-              value={x.cub_scout_pack||''}
-              onChange={e=>
-                setX({
-                  ...x,
-                  cub_scout_pack:e.target.value
-                })
-              }
-            />
-          </label>
+          {!x.adult&&
+            <label>
+              Cub Scout Pack
+              <input
+                value={x.cub_scout_pack||''}
+                onChange={e=>
+                  setX({
+                    ...x,
+                    cub_scout_pack:e.target.value
+                  })
+                }
+              />
+            </label>
+          }
 
-          <label>
-            Patrol
-            <input
-              value={x.patrol||''}
-              onChange={e=>
-                setX({
-                  ...x,
-                  patrol:e.target.value
-                })
-              }
-            />
-          </label>
+          {!x.adult&&
+            <label>
+              Patrol
+              <input
+                value={x.patrol||''}
+                onChange={e=>
+                  setX({
+                    ...x,
+                    patrol:e.target.value
+                  })
+                }
+              />
+            </label>
+          }
 
           <label>
             Scouting Membership ID
@@ -1684,275 +1773,32 @@ function MemberEditor({
         </div>
       </div>
 
-      <div className="member-form-card">
-        <div className="member-check-grid">
-          <label className="checkbox-label">
-            <input
-              type="checkbox"
-              checked={!!x.adult}
-              onChange={e=>
-                setX({
-                  ...x,
-                  adult:e.target.checked,
-                  adult_leader:
-                    e.target.checked?
-                      x.adult_leader:
-                      false
-                })
-              }
-            />
-            Adult
-          </label>
-
-          <label className="checkbox-label">
-            <input
-              type="checkbox"
-              checked={!!x.adult_leader}
-              disabled={!x.adult}
-              onChange={e=>
-                setX({
-                  ...x,
-                  adult_leader:e.target.checked
-                })
-              }
-            />
-            Adult Leader
-          </label>
-        </div>
-      </div>
-
-      <div className="member-form-card">
-        <div className="member-position-list">
-          {positions.map(p=>
-            <label
-              key={p.id}
-              className="checkbox-label"
-            >
-              <input
-                type="checkbox"
-                checked={x.position_ids.includes(
-                  Number(p.id)
-                )}
-                onChange={()=>
-                  togglePosition(
-                    Number(p.id)
-                  )
-                }
-              />
-              {p.name}
-            </label>
-          )}
-        </div>
-      </div>
-
-            {(
-        x.adult||
-        !x.adult
-      )&&
+      {availablePositions.length>0&&
         <div className="member-form-card">
-          <div className="member-family-add">
-            <div className="member-family-add-row">
-              <select
-                value={familyRole}
-                onChange={e=>
-                  setFamilyRole(e.target.value)
-                }
+          <div className="member-position-list">
+            {availablePositions.map(p=>
+              <label
+                key={p.id}
+                className="checkbox-label"
               >
-                <option value="Parent">
-                  Parent
-                </option>
-                <option value="Guardian">
-                  Guardian
-                </option>
-                <option value="Sibling">
-                  Sibling
-                </option>
-              </select>
-
-              <select
-                value={familyTarget}
-                onChange={e=>
-                  setFamilyTarget(e.target.value)
-                }
-              >
-                <option value="">
-                  Select family member
-                </option>
-
-                {familyPeople
-                  .filter((p:any)=>{
-                    if(familyRole==='Sibling')
-                      return true;
-
-                    return x.adult?
-                      !p.adult:
-                      p.adult;
-                  })
-                  .map((p:any)=>
-                    <option
-                      key={p.id}
-                      value={p.id}
-                    >
-                      {p.last_name}, {p.first_name}
-                    </option>
-                  )
-                }
-              </select>
-
-              {!isNew&&
-                <button
-                  type="button"
-                  className="admin-action-button"
-                  onClick={async()=>{
-                    if(!familyTarget)
-                      return;
-
-                    try{
-                      await post(
-                        '/admin/family-relationships',
-                        {
-                          personId:
-                            x.adult?
-                              x.id:
-                              Number(familyTarget),
-                          relatedPersonId:
-                            x.adult?
-                              Number(familyTarget):
-                              x.id,
-                          role:familyRole
-                        }
-                      );
-
-                      const r=
-                        await api(
-                          '/admin/family-relationships/'+
-                          x.id
-                        );
-
-                      setFamily(r);
-                      setFamilyTarget('');
-
-                      setErr('');
-                    }catch(e:any){
-                      setErr(e.message)
-                    }
-                  }}
-                >
-                  Add
-                </button>
-              }
-            </div>
-
-            {isNew&&
-              <p className="muted">
-                Save this person first, then family
-                relationships can be added.
-              </p>
-            }
-
-            {family.parents.length>0&&
-              <div className="member-family-list">
-                <strong>Parents / Guardians</strong>
-
-                {family.parents.map((p:any)=>
-                  <div
-                    className="member-family-row"
-                    key={p.id}
-                  >
-                    <span>
-                      {p.last_name}, {p.first_name}
-                    </span>
-
-                    <button
-                      type="button"
-                      className="admin-action-button"
-                      onClick={async()=>{
-                        await fetch(
-                          '/api/admin/family-relationships',
-                          {
-                            method:'DELETE',
-                            credentials:'include',
-                            headers:{
-                              'Content-Type':
-                                'application/json'
-                            },
-                            body:JSON.stringify({
-                              personId:p.id,
-                              relatedPersonId:x.id,
-                              role:'Parent'
-                            })
-                          }
-                        );
-
-                        const r=
-                          await api(
-                            '/admin/family-relationships/'+
-                            x.id
-                          );
-
-                        setFamily(r);
-                      }}
-                    >
-                      Remove
-                    </button>
-                  </div>
-                )}
-              </div>
-            }
-
-            {family.siblings.length>0&&
-              <div className="member-family-list">
-                <strong>Siblings</strong>
-
-                {family.siblings.map((p:any)=>
-                  <div
-                    className="member-family-row"
-                    key={p.id}
-                  >
-                    <span>
-                      {p.last_name}, {p.first_name}
-                    </span>
-
-                    <button
-                      type="button"
-                      className="admin-action-button"
-                      onClick={async()=>{
-                        await fetch(
-                          '/api/admin/family-relationships',
-                          {
-                            method:'DELETE',
-                            credentials:'include',
-                            headers:{
-                              'Content-Type':
-                                'application/json'
-                            },
-                            body:JSON.stringify({
-                              personId:x.id,
-                              relatedPersonId:p.id,
-                              role:'Sibling'
-                            })
-                          }
-                        );
-
-                        const r=
-                          await api(
-                            '/admin/family-relationships/'+
-                            x.id
-                          );
-
-                        setFamily(r);
-                      }}
-                    >
-                      Remove
-                    </button>
-                  </div>
-                )}
-              </div>
-            }
+                <input
+                  type="checkbox"
+                  checked={x.position_ids.includes(
+                    Number(p.id)
+                  )}
+                  onChange={()=>
+                    togglePosition(
+                      Number(p.id)
+                    )
+                  }
+                />
+                {p.name}
+              </label>
+            )}
           </div>
         </div>
       }
-      
+
       <div className="member-form-card">
         <div className="member-check-grid">
           <label className="checkbox-label">
@@ -2020,6 +1866,7 @@ function MemberEditor({
     </form>
   </div>
 }
+
 function Email(){
   const [rows,setRows]=useState<any[]>([]);
   const [selected,setSelected]=useState<Record<number,boolean>>({});
