@@ -588,6 +588,86 @@ tbody tr:nth-child(even){
   border-radius:3px
 }
 
+.member-editor{
+  gap:14px
+}
+
+.member-form-card{
+  background:#fff;
+  border:1px solid var(--border);
+  border-radius:3px;
+  padding:14px
+}
+
+.member-name-grid{
+  display:grid;
+  grid-template-columns:
+    minmax(90px,.8fr)
+    minmax(150px,1.5fr)
+    minmax(150px,1.5fr)
+    minmax(150px,1.5fr)
+    minmax(90px,.8fr);
+  gap:12px
+}
+
+.member-info-grid{
+  display:grid;
+  grid-template-columns:
+    minmax(120px,1fr)
+    minmax(150px,1fr)
+    minmax(150px,1fr)
+    minmax(220px,1.5fr);
+  gap:12px
+}
+
+.member-address-grid{
+  display:grid;
+  grid-template-columns:
+    2fr 1fr .7fr;
+  gap:12px
+}
+
+.member-scouting-grid{
+  display:grid;
+  grid-template-columns:
+    repeat(3,minmax(0,1fr));
+  gap:12px
+}
+
+.member-check-grid{
+  display:flex;
+  flex-wrap:wrap;
+  gap:14px 24px
+}
+
+.member-position-list{
+  display:grid;
+  grid-template-columns:
+    repeat(3,minmax(0,1fr));
+  gap:8px 18px;
+  max-height:220px;
+  overflow:auto
+}
+
+.member-form-card label{
+  display:grid;
+  gap:6px;
+  font-weight:600
+}
+
+@media(max-width:800px){
+  .member-name-grid,
+  .member-info-grid,
+  .member-address-grid,
+  .member-scouting-grid{
+    grid-template-columns:1fr
+  }
+
+  .member-position-list{
+    grid-template-columns:1fr
+  }
+}
+
 .public-only{
   min-height:150px
 }
