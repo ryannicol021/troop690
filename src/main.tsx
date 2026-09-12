@@ -952,21 +952,10 @@ function MemberInfo({me}:{me:any}){
     load();
   },[]);
 
-  const positionText=(x:any)=>{
-    const base=x.adult?
-      (x.adult_leader?'Adult Leader':'Adult'):
-      'Youth';
-
-    const extra=(x.position_names||[])
-      .filter(Boolean);
-
-    return [
-      base,
-      ...extra
-    ].join(', ');
-  };
-
   const accountStatus=(x:any)=>{
+    if(x.archived)
+      return 'Archived';
+
     if(x.active)
       return 'Active';
 
@@ -974,6 +963,82 @@ function MemberInfo({me}:{me:any}){
       return 'Link Pending';
 
     return 'No Account';
+  };
+
+  const address=(x:any)=>{
+    const street=
+      String(x.street||'').trim();
+
+    const town=
+      String(x.town||'').trim();
+
+    const zip=
+      String(x.zip||'').trim();
+
+    const line1=
+      street?
+        `${street},`:
+        '';
+
+    const line2=[
+      town?
+        `${town},`:
+        '',
+      zip
+    ]
+      .filter(Boolean)
+      .join(' NY ');
+
+    return <>
+      {line1&&
+        <div>{line1}</div>
+      }
+
+      {line2&&
+        <div>
+          {town?`${town}, NY`:''}
+          {town&&zip?' ':''}
+          {zip}
+        </div>
+      }
+    </>;
+  };
+
+  const nameCell=(x:any)=>{
+    return <>
+      <div>{x.first_name||''}</div>
+      <div>{x.middle_name||''}</div>
+      <div>{x.last_name||''}</div>
+    </>;
+  };
+
+  const positions=(x:any)=>{
+    return (
+      x.position_names||[]
+    ).join(', ');
+  };
+
+  const emergencyContacts=(x:any)=>{
+    const contacts=
+      x.emergency_contacts||[];
+
+    return <div className="emergency-contact-cell">
+      {contacts.map((p:any,i:number)=>
+        <div
+          className="emergency-contact"
+          key={p.id||i}
+        >
+          <div>{p.first_name} {p.last_name}</div>
+          <small>
+            {p.phone||''}
+          </small>
+        </div>
+      )}
+
+      {contacts.length===1&&
+        <div className="emergency-contact empty"/>
+      }
+    </div>;
   };
 
   const createLink=async(x:any)=>{
@@ -984,15 +1049,345 @@ function MemberInfo({me}:{me:any}){
       );
 
       setAccountLink({
-        name:`${x.first_name} ${x.last_name}`,
         username:r.username,
         url:r.inviteUrl
       });
     }catch(e:any){
       setMsg(e.message);
-      setTimeout(()=>setMsg(''),2200);
+      setTimeout(
+        ()=>setMsg(''),
+        2200
+      );
     }
   };
+
+  const renderAccount=(x:any)=>{
+    return <>
+      <div>{accountStatus(x)}</div>
+
+      {x.username&&
+        !x.archived&&
+        <small>
+          {x.username}
+        </small>
+      }
+    </>;
+  };
+
+  const renderOptions=(x:any)=>{
+    return <div className="admin-action-row">
+      {canEdit&&
+        <button
+          className="admin-action-button"
+          onClick={()=>setEdit(x)}
+        >
+          Edit
+        </button>
+      }
+
+      {canInvite&&
+       !x.active&&
+       !x.archived&&
+        <button
+          className="admin-action-button"
+          onClick={()=>
+            createLink(x)
+          }
+        >
+          Link
+        </button>
+      }
+
+      {canDelete&&
+        <button
+          className="admin-action-button"
+          onClick={async()=>{
+            if(!confirm(
+              'Are you sure you want to delete this member? This will also delete the associated account and cannot be undone.'
+            ))
+              return;
+
+            try{
+              await api(
+                '/admin/members/'+x.id,
+                {method:'DELETE'}
+              );
+
+              await load();
+
+              setMsg('Deleted');
+              setTimeout(
+                ()=>setMsg(''),
+                1800
+              );
+            }catch(e:any){
+              setMsg(e.message);
+              setTimeout(
+                ()=>setMsg(''),
+                2200
+              );
+            }
+          }}
+        >
+          Delete
+        </button>
+      }
+    </div>;
+  };
+
+  const youth=
+    rows.filter(
+      x=>!Number(x.archived)&&!Number(x.adult)
+    );
+
+  const adults=
+    rows.filter(
+      x=>
+        !Number(x.archived)&&
+        Number(x.adult)&&
+        !Number(x.adult_leader)
+    );
+
+  const leaders=
+    rows.filter(
+      x=>
+        !Number(x.archived)&&
+        Number(x.adult)&&
+        Number(x.adult_leader)
+    );
+
+  const archived=
+    rows.filter(
+      x=>
+        Number(x.archived)&&
+        Number(x.eagle_scout_archive)
+    );
+
+  const youthTable=(
+    <div className="member-table-wrap">
+      <table className="member-table">
+        <thead>
+          <tr>
+            <th>First</th>
+            <th>Middle</th>
+            <th>Last</th>
+            <th>Suffix</th>
+            <th>Gender</th>
+            <th>DOB</th>
+            <th>Phone</th>
+            <th>Email</th>
+            <th>Address</th>
+            <th>Rank</th>
+            <th>Join</th>
+            <th>Pack</th>
+            <th>Patrol</th>
+            <th>ID</th>
+            <th>Registration</th>
+            <th>Position</th>
+            <th>OA</th>
+            <th>Emergency Contacts</th>
+            <th>Account</th>
+            <th>Options</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {youth.map(x=>
+            <tr key={x.id}>
+              <td>{x.first_name||''}</td>
+              <td>{x.middle_name||''}</td>
+              <td>{x.last_name||''}</td>
+              <td>{x.suffix||''}</td>
+              <td>{x.gender||''}</td>
+              <td>{x.dob||''}</td>
+              <td>{x.phone||''}</td>
+              <td>{x.email||''}</td>
+              <td className="member-address-cell">
+                {address(x)}
+              </td>
+              <td>{x.rank||''}</td>
+              <td>{x.join_date||''}</td>
+              <td>{x.cub_scout_pack||''}</td>
+              <td>{x.patrol||''}</td>
+              <td>{x.scouting_membership_id||''}</td>
+              <td>{x.registration_expiration||''}</td>
+              <td className="member-position-cell">
+                {positions(x)}
+              </td>
+              <td>
+                {x.oa_member?'Yes':''}
+              </td>
+              <td>
+                {emergencyContacts(x)}
+              </td>
+              <td>
+                {renderAccount(x)}
+              </td>
+              <td>
+                {renderOptions(x)}
+              </td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+    </div>);
+
+  const adultTable=(
+    <div className="member-table-wrap">
+      <table className="member-table">
+        <thead>
+          <tr>
+            <th>First</th>
+            <th>Middle</th>
+            <th>Last</th>
+            <th>Suffix</th>
+            <th>Gender</th>
+            <th>DOB</th>
+            <th>Phone</th>
+            <th>Email</th>
+            <th>Address</th>
+            <th>Emergency Contacts</th>
+            <th>Account</th>
+            <th>Options</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {adults.map(x=>
+            <tr key={x.id}>
+              <td>{x.first_name||''}</td>
+              <td>{x.middle_name||''}</td>
+              <td>{x.last_name||''}</td>
+              <td>{x.suffix||''}</td>
+              <td>{x.gender||''}</td>
+              <td>{x.dob||''}</td>
+              <td>{x.phone||''}</td>
+              <td>{x.email||''}</td>
+              <td className="member-address-cell">
+                {address(x)}
+              </td>
+              <td>{emergencyContacts(x)}</td>
+              <td>{renderAccount(x)}</td>
+              <td>{renderOptions(x)}</td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+    </div>);
+
+  const leaderTable=(
+    <div className="member-table-wrap">
+      <table className="member-table">
+        <thead>
+          <tr>
+            <th>Prefix</th>
+            <th>First</th>
+            <th>Middle</th>
+            <th>Last</th>
+            <th>Suffix</th>
+            <th>Gender</th>
+            <th>DOB</th>
+            <th>Phone</th>
+            <th>Email</th>
+            <th>Address</th>
+            <th>Rank</th>
+            <th>Join</th>
+            <th>ID</th>
+            <th>Registration</th>
+            <th>SYT</th>
+            <th>Position</th>
+            <th>OA</th>
+            <th>Emergency Contacts</th>
+            <th>Account</th>
+            <th>Options</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {leaders.map(x=>
+            <tr key={x.id}>
+              <td>{x.prefix||''}</td>
+              <td>{x.first_name||''}</td>
+              <td>{x.middle_name||''}</td>
+              <td>{x.last_name||''}</td>
+              <td>{x.suffix||''}</td>
+              <td>{x.gender||''}</td>
+              <td>{x.dob||''}</td>
+              <td>{x.phone||''}</td>
+              <td>{x.email||''}</td>
+              <td className="member-address-cell">
+                {address(x)}
+              </td>
+              <td>{x.rank||''}</td>
+              <td>{x.join_date||''}</td>
+              <td>{x.scouting_membership_id||''}</td>
+              <td>{x.registration_expiration||''}</td>
+              <td>{x.syt_expiration||''}</td>
+              <td className="member-position-cell">
+                {positions(x)}
+              </td>
+              <td>
+                {x.oa_member?'Yes':''}
+              </td>
+              <td>{emergencyContacts(x)}</td>
+              <td>{renderAccount(x)}</td>
+              <td>{renderOptions(x)}</td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+    </div>);
+
+  const archiveTable=(
+    <div className="member-table-wrap">
+      <table className="member-table">
+        <thead>
+          <tr>
+            <th>First</th>
+            <th>Middle</th>
+            <th>Last</th>
+            <th>Suffix</th>
+            <th>Gender</th>
+            <th>DOB</th>
+            <th>Phone</th>
+            <th>Email</th>
+            <th>Address</th>
+            <th>Rank</th>
+            <th>Join</th>
+            <th>OA Member</th>
+            <th>Emergency Contacts</th>
+            <th>Account</th>
+            <th>Options</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {archived.map(x=>
+            <tr key={x.id}>
+              <td>{x.first_name||''}</td>
+              <td>{x.middle_name||''}</td>
+              <td>{x.last_name||''}</td>
+              <td>{x.suffix||''}</td>
+              <td>{x.gender||''}</td>
+              <td>{x.dob||''}</td>
+              <td>{x.phone||''}</td>
+              <td>{x.email||''}</td>
+              <td className="member-address-cell">
+                {address(x)}
+              </td>
+              <td>{x.rank||''}</td>
+              <td>{x.join_date||''}</td>
+              <td>
+                {x.oa_member?'Yes':''}
+              </td>
+              <td>{emergencyContacts(x)}</td>
+              <td>{renderAccount(x)}</td>
+              <td>{renderOptions(x)}</td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+    </div>);
 
   return <Page
     title="Member Info"
@@ -1030,122 +1425,25 @@ function MemberInfo({me}:{me:any}){
       <p className="error">{error}</p>
     }
 
-    <div className="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Position</th>
-            <th>Rank</th>
-            <th>Date of birth</th>
-            <th>Phone</th>
-            <th>Email</th>
-            <th>Address</th>
-            <th>Account</th>
-            <th>Options</th>
-          </tr>
-        </thead>
+    <section>
+      <h2>Youth</h2>
+      {youthTable}
+    </section>
 
-        <tbody>
-          {rows.map(x=>
-            <tr key={x.id}>
-              <td>
-                {x.last_name}, {x.first_name}
-              </td>
+    <section>
+      <h2>Adults</h2>
+      {adultTable}
+    </section>
 
-              <td>
-                {positionText(x)}
-              </td>
+    <section>
+      <h2>Adult Leaders</h2>
+      {leaderTable}
+    </section>
 
-              <td>{x.rank||''}</td>
-
-              <td>{x.dob||''}</td>
-
-              <td>{x.phone||''}</td>
-
-              <td>{x.email||''}</td>
-
-              <td>
-                {[x.street,x.town,x.zip]
-                  .filter(Boolean)
-                  .join(', ')}
-              </td>
-
-              <td>
-                <div>
-                  {accountStatus(x)}
-                </div>
-
-                {x.username&&
-                  <small>
-                    {x.username}
-                  </small>
-                }
-              </td>
-
-              <td>
-                <div className="admin-action-row">
-                  {canEdit&&
-                    <button
-                      className="admin-action-button"
-                      onClick={()=>setEdit(x)}
-                    >
-                      Edit
-                    </button>
-                  }
-
-                  {canInvite&&!x.active&&
-                    <button
-                      className="admin-action-button"
-                      onClick={()=>createLink(x)}
-                    >
-                      {x.invite_expires_at?
-                        'Regenerate Link':
-                        'Create Account Link'}
-                    </button>
-                  }
-
-                  {canDelete&&
-                    <button
-                      className="admin-action-button"
-                      onClick={async()=>{
-                        if(!confirm(
-                          'Are you sure you want to delete this member? This will also delete the associated account and cannot be undone.'
-                        ))
-                          return;
-
-                        try{
-                          await api(
-                            '/admin/members/'+x.id,
-                            {method:'DELETE'}
-                          );
-
-                          await load();
-
-                          setMsg('Deleted');
-                          setTimeout(
-                            ()=>setMsg(''),
-                            1800
-                          );
-                        }catch(e:any){
-                          setMsg(e.message);
-                          setTimeout(
-                            ()=>setMsg(''),
-                            2200
-                          );
-                        }
-                      }}
-                    >
-                      Delete
-                    </button>
-                  }
-                </div>
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
-    </div>
+    <section>
+      <h2>Archived Eagle Scouts</h2>
+      {archiveTable}
+    </section>
 
     {(edit||adding)&&
       <MemberEditor
@@ -1198,6 +1496,7 @@ function MemberInfo({me}:{me:any}){
           <div className="button-row">
             <button
               className="primary"
+              type="button"
               onClick={async()=>{
                 try{
                   await navigator.clipboard.writeText(
@@ -1225,6 +1524,7 @@ function MemberInfo({me}:{me:any}){
             </button>
 
             <button
+              type="button"
               onClick={()=>
                 setAccountLink(null)
               }
@@ -2066,7 +2366,7 @@ useEffect(()=>{
             />
             Order of the Arrow Member
           </label>
-
+        {x.adult&&x.adult_leader&&
           <label className="checkbox-label">
             <input
               type="checkbox"
@@ -2081,6 +2381,7 @@ useEffect(()=>{
             />
             Eagle Scout Archive
           </label>
+        }
         </div>
       </div>
 
