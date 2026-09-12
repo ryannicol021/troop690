@@ -1007,9 +1007,9 @@ function MemberInfo({me}:{me:any}){
   const today=new Date();
   const todayString=
     `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
-
+  
   const expirationStyle=(date:any)=>{
-    return date && date>=todayString?
+    return date && date<=todayString?
       {color:'#CE1126'}:
       undefined;
   };
@@ -1224,7 +1224,9 @@ function MemberInfo({me}:{me:any}){
                 {x.registration_expiration||''}
               </td>
               <td className="member-position-cell">
-                {positions(x)}
+                <div className="member-position-content">
+                  {positions(x)}
+                </div>
               </td>
               <td>
                 {x.oa_member?'Yes':''}
@@ -1341,7 +1343,9 @@ function MemberInfo({me}:{me:any}){
                 {x.syt_expiration||''}
               </td>
               <td className="member-position-cell">
-                {positions(x)}
+                <div className="member-position-content">
+                  {positions(x)}
+                </div>
               </td>
               <td>
                 {x.oa_member?'Yes':''}
