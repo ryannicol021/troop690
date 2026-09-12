@@ -1004,6 +1004,16 @@ function MemberInfo({me}:{me:any}){
     </>;
   };
 
+  const today=new Date();
+  const todayString=
+    `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+
+  const expirationStyle=(date:any)=>{
+    return date && date>=todayString?
+      {color:'#CE1126'}:
+      undefined;
+  };
+
   const nameCell=(x:any)=>{
     return <>
       <div>{x.first_name||''}</div>
@@ -1210,7 +1220,9 @@ function MemberInfo({me}:{me:any}){
               <td>{x.cub_scout_pack||''}</td>
               <td>{x.patrol||''}</td>
               <td>{x.scouting_membership_id||''}</td>
-              <td>{x.registration_expiration||''}</td>
+              <td style={expirationStyle(x.registration_expiration)}>
+                {x.registration_expiration||''}
+              </td>
               <td className="member-position-cell">
                 {positions(x)}
               </td>
@@ -1321,8 +1333,13 @@ function MemberInfo({me}:{me:any}){
               <td>{x.rank||''}</td>
               <td>{x.join_date||''}</td>
               <td>{x.scouting_membership_id||''}</td>
-              <td>{x.registration_expiration||''}</td>
-              <td>{x.syt_expiration||''}</td>
+              <td style={expirationStyle(x.registration_expiration)}>
+                {x.registration_expiration||''}
+              </td>
+              
+              <td style={expirationStyle(x.syt_expiration)}>
+                {x.syt_expiration||''}
+              </td>
               <td className="member-position-cell">
                 {positions(x)}
               </td>
