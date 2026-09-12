@@ -1290,6 +1290,14 @@ function MemberEditor({
   });
 
   const [positions,setPositions]=useState<any[]>([]);
+  const [familyPeople,setFamilyPeople]=useState<any[]>([]);
+  const [family,setFamily]=useState<any>({
+    parents:[],
+    siblings:[]
+  });
+
+  const [familyTarget,setFamilyTarget]=useState('');
+  const [familyRole,setFamilyRole]=useState('Parent');
   const [err,setErr]=useState('');
 
   useEffect(()=>{
@@ -1297,6 +1305,30 @@ function MemberEditor({
       .then(r=>setPositions(r.positions||[]))
       .catch((e:any)=>setErr(e.message));
   },[]);
+
+  useEffect(()=>{
+    api('/admin/members')
+      .then(r=>{
+        setFamilyPeople(
+          (r.members||[])
+            .filter(
+              (p:any)=>
+                Number(p.id)!==
+                Number(value?.id)
+            )
+        );
+      })
+      .catch((e:any)=>setErr(e.message));
+  },[value?.id]);
+
+  useEffect(()=>{
+    if(!value?.id)
+      return;
+
+    api('/admin/family-relationships/'+value.id)
+      .then(r=>setFamily(r))
+      .catch((e:any)=>setErr(e.message));
+  },[value?.id]);
 
   const togglePosition=(id:number)=>{
     setX((v:any)=>({
@@ -1713,6 +1745,214 @@ function MemberEditor({
         </div>
       </div>
 
+            {(
+        x.adult||
+        !x.adult
+      )&&
+        <div className="member-form-card">
+          <div className="member-family-add">
+            <div className="member-family-add-row">
+              <select
+                value={familyRole}
+                onChange={e=>
+                  setFamilyRole(e.target.value)
+                }
+              >
+                <option value="Parent">
+                  Parent
+                </option>
+                <option value="Guardian">
+                  Guardian
+                </option>
+                <option value="Sibling">
+                  Sibling
+                </option>
+              </select>
+
+              <select
+                value={familyTarget}
+                onChange={e=>
+                  setFamilyTarget(e.target.value)
+                }
+              >
+                <option value="">
+                  Select family member
+                </option>
+
+                {familyPeople
+                  .filter((p:any)=>{
+                    if(familyRole==='Sibling')
+                      return true;
+
+                    return x.adult?
+                      !p.adult:
+                      p.adult;
+                  })
+                  .map((p:any)=>
+                    <option
+                      key={p.id}
+                      value={p.id}
+                    >
+                      {p.last_name}, {p.first_name}
+                    </option>
+                  )
+                }
+              </select>
+
+              {!isNew&&
+                <button
+                  type="button"
+                  className="admin-action-button"
+                  onClick={async()=>{
+                    if(!familyTarget)
+                      return;
+
+                    try{
+                      await post(
+                        '/admin/family-relationships',
+                        {
+                          personId:
+                            x.adult?
+                              x.id:
+                              Number(familyTarget),
+                          relatedPersonId:
+                            x.adult?
+                              Number(familyTarget):
+                              x.id,
+                          role:familyRole
+                        }
+                      );
+
+                      const r=
+                        await api(
+                          '/admin/family-relationships/'+
+                          x.id
+                        );
+
+                      setFamily(r);
+                      setFamilyTarget('');
+
+                      setErr('');
+                    }catch(e:any){
+                      setErr(e.message)
+                    }
+                  }}
+                >
+                  Add
+                </button>
+              }
+            </div>
+
+            {isNew&&
+              <p className="muted">
+                Save this person first, then family
+                relationships can be added.
+              </p>
+            }
+
+            {family.parents.length>0&&
+              <div className="member-family-list">
+                <strong>Parents / Guardians</strong>
+
+                {family.parents.map((p:any)=>
+                  <div
+                    className="member-family-row"
+                    key={p.id}
+                  >
+                    <span>
+                      {p.last_name}, {p.first_name}
+                    </span>
+
+                    <button
+                      type="button"
+                      className="admin-action-button"
+                      onClick={async()=>{
+                        await fetch(
+                          '/api/admin/family-relationships',
+                          {
+                            method:'DELETE',
+                            credentials:'include',
+                            headers:{
+                              'Content-Type':
+                                'application/json'
+                            },
+                            body:JSON.stringify({
+                              personId:p.id,
+                              relatedPersonId:x.id,
+                              role:'Parent'
+                            })
+                          }
+                        );
+
+                        const r=
+                          await api(
+                            '/admin/family-relationships/'+
+                            x.id
+                          );
+
+                        setFamily(r);
+                      }}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                )}
+              </div>
+            }
+
+            {family.siblings.length>0&&
+              <div className="member-family-list">
+                <strong>Siblings</strong>
+
+                {family.siblings.map((p:any)=>
+                  <div
+                    className="member-family-row"
+                    key={p.id}
+                  >
+                    <span>
+                      {p.last_name}, {p.first_name}
+                    </span>
+
+                    <button
+                      type="button"
+                      className="admin-action-button"
+                      onClick={async()=>{
+                        await fetch(
+                          '/api/admin/family-relationships',
+                          {
+                            method:'DELETE',
+                            credentials:'include',
+                            headers:{
+                              'Content-Type':
+                                'application/json'
+                            },
+                            body:JSON.stringify({
+                              personId:x.id,
+                              relatedPersonId:p.id,
+                              role:'Sibling'
+                            })
+                          }
+                        );
+
+                        const r=
+                          await api(
+                            '/admin/family-relationships/'+
+                            x.id
+                          );
+
+                        setFamily(r);
+                      }}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                )}
+              </div>
+            }
+          </div>
+        </div>
+      }
+      
       <div className="member-form-card">
         <div className="member-check-grid">
           <label className="checkbox-label">
