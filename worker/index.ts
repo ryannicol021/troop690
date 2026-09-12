@@ -1233,10 +1233,15 @@ app.get('/api/admin/members',async c=>{
       SELECT
         p.*,
         a.username,
-        a.active
+        a.active,
+        a.invite_expires_at,
+        GROUP_CONCAT(DISTINCT pp.position_id) position_ids
       FROM people p
       LEFT JOIN accounts a
         ON a.person_id=p.id
+      LEFT JOIN person_positions pp
+        ON pp.person_id=p.id
+      GROUP BY p.id,a.id
       ORDER BY
         p.archived,
         p.adult,
@@ -1245,7 +1250,17 @@ app.get('/api/admin/members',async c=>{
     `)
     .all<any>();
 
-  return json(c,{members:rows.results});
+  return json(c,{
+    members:(rows.results??[]).map((x:any)=>({
+      ...x,
+      position_ids:String(
+        x.position_ids||''
+      )
+        .split(',')
+        .filter(Boolean)
+        .map(Number)
+    }))
+  });
 });
 
 app.get('/api/admin/positions',async c=>{
@@ -1259,6 +1274,41 @@ app.get('/api/admin/positions',async c=>{
     .all<any>();
 
   return json(c,{positions:rows.results});
+});
+
+app.get('/api/admin/member-positions',async c=>{
+  const d=admin(c,'MIE');
+  if(d)return d;
+
+  const rows=await c.env.DB
+    .prepare(`
+      SELECT
+        id,
+        name,
+        category,
+        code,
+        system
+      FROM positions
+      WHERE code IS NULL
+         OR code NOT IN(
+           'GUEST',
+           'YOUTH',
+           'ADULT',
+           'ADULTL'
+         )
+      ORDER BY
+        CASE category
+          WHEN 'youth' THEN 0
+          WHEN 'adult' THEN 1
+          ELSE 2
+        END,
+        name
+    `)
+    .all<any>();
+
+  return json(c,{
+    positions:rows.results??[]
+  });
 });
 
 app.post('/api/admin/positions',async c=>{
@@ -1481,12 +1531,27 @@ app.post('/api/admin/members',async c=>{
 
   const x=await c.req.json();
 
-  if(x.adult_leader&&!x.adult)
+  const firstName=String(x.first_name||'').trim();
+  const lastName=String(x.last_name||'').trim();
+
+  if(!firstName||!lastName){
+    return json(
+      c,
+      {error:'First name and last name are required'},
+      400
+    );
+  }
+
+  const adult=!!x.adult;
+  const adultLeader=!!x.adult_leader;
+
+  if(adultLeader&&!adult){
     return json(
       c,
       {error:'Adult Leader requires Adult'},
       400
     );
+  }
 
   const r=await c.env.DB
     .prepare(`
@@ -1520,13 +1585,13 @@ app.post('/api/admin/members',async c=>{
     `)
     .bind(
       x.prefix||'',
-      x.first_name,
+      firstName,
       x.middle_name||'',
-      x.last_name,
+      lastName,
       x.suffix||'',
-      x.gender,
-      x.adult?1:0,
-      x.adult_leader?1:0,
+      x.gender||'Male',
+      adult?1:0,
+      adultLeader?1:0,
       x.rank||'',
       x.dob||null,
       x.phone||'',
@@ -1546,9 +1611,55 @@ app.post('/api/admin/members',async c=>{
     )
     .run();
 
-  return json(c,{
-    id:r.meta.last_row_id
-  });
+  const id=Number(r.meta.last_row_id);
+
+  const positionIds=[
+    ...new Set(
+      (
+        Array.isArray(x.position_ids)?
+          x.position_ids:
+          []
+      )
+      .map(Number)
+      .filter(Number.isInteger)
+    )
+  ];
+
+  if(positionIds.length){
+    const allowed=await c.env.DB
+      .prepare(`
+        SELECT id
+        FROM positions
+        WHERE id IN(
+          ${positionIds.map(()=>'?').join(',')}
+        )
+        AND (
+          code IS NULL
+          OR code NOT IN(
+            'GUEST',
+            'YOUTH',
+            'ADULT',
+            'ADULTL'
+          )
+        )
+      `)
+      .bind(...positionIds)
+      .all<any>();
+
+    for(const p of (allowed.results??[])){
+      await c.env.DB.prepare(`
+        INSERT OR IGNORE INTO person_positions(
+          person_id,
+          position_id
+        )
+        VALUES(?,?)
+      `)
+        .bind(id,Number(p.id))
+        .run();
+    }
+  }
+
+  return json(c,{id});
 });
 
 app.put('/api/admin/members/:id',async c=>{
@@ -1557,6 +1668,27 @@ app.put('/api/admin/members/:id',async c=>{
 
   const id=Number(c.req.param('id'));
   const x=await c.req.json();
+
+  const adult=
+    'adult' in x?
+      !!x.adult:
+      undefined;
+
+  const adultLeader=
+    'adult_leader' in x?
+      !!x.adult_leader:
+      undefined;
+
+  if(
+    adultLeader===true &&
+    adult===false
+  ){
+    return json(
+      c,
+      {error:'Adult Leader requires Adult'},
+      400
+    );
+  }
 
   const cols=[
     'prefix',
@@ -1586,47 +1718,23 @@ app.put('/api/admin/members/:id',async c=>{
     'archived'
   ];
 
-  const vals=cols.map(k=>
-    k in x?
-      (typeof x[k]==='boolean'?Number(x[k]):x[k]):
-      undefined
-  );
+  const sets:string[]=[];
+  const bind:any[]=[];
 
-  const sets=cols.filter(
-    (k,i)=>vals[i]!==undefined
-  );
+  for(const k of cols){
+    if(!(k in x))
+      continue;
 
-  const bind=sets.map(k=>
-    x[k]===true?
-      1:
-      x[k]===false?
-        0:
+    sets.push(k);
+
+    bind.push(
+      typeof x[k]==='boolean'?
+        Number(x[k]):
         x[k]
-  );
-
-  if(x.eagle_scout_archive){
-    await c.env.DB
-      .prepare(`
-        UPDATE people
-        SET
-          adult=1,
-          archived=1,
-          eagle_scout_archive=1,
-          updated_at=CURRENT_TIMESTAMP
-        WHERE id=?
-      `)
-      .bind(id)
-      .run();
-
-    await c.env.DB
-      .prepare(
-        'UPDATE accounts SET active=0 WHERE person_id=?'
-      )
-      .bind(id)
-      .run();
+    );
   }
 
-  if(sets.length)
+  if(sets.length){
     await c.env.DB
       .prepare(`
         UPDATE people
@@ -1640,6 +1748,70 @@ app.put('/api/admin/members/:id',async c=>{
         id
       )
       .run();
+  }
+
+  if(x.eagle_scout_archive){
+    await c.env.DB
+      .prepare(
+        'UPDATE accounts SET active=0 WHERE person_id=?'
+      )
+      .bind(id)
+      .run();
+  }
+
+  if(Array.isArray(x.position_ids)){
+    const ids=[
+      ...new Set(
+        x.position_ids
+          .map(Number)
+          .filter(Number.isInteger)
+      )
+    ];
+
+    await c.env.DB.prepare(`
+      DELETE FROM person_positions
+      WHERE person_id=?
+    `)
+      .bind(id)
+      .run();
+
+    if(ids.length){
+      const allowed=await c.env.DB
+        .prepare(`
+          SELECT id
+          FROM positions
+          WHERE id IN(
+            ${ids.map(()=>'?').join(',')}
+          )
+          AND (
+            code IS NULL
+            OR code NOT IN(
+              'GUEST',
+              'YOUTH',
+              'ADULT',
+              'ADULTL'
+            )
+          )
+        `)
+        .bind(...ids)
+        .all<any>();
+
+      for(const p of (allowed.results??[])){
+        await c.env.DB.prepare(`
+          INSERT OR IGNORE INTO person_positions(
+            person_id,
+            position_id
+          )
+          VALUES(?,?)
+        `)
+          .bind(
+            id,
+            Number(p.id)
+          )
+          .run();
+      }
+    }
+  }
 
   return json(c,{ok:true});
 });
@@ -1649,6 +1821,13 @@ app.delete('/api/admin/members/:id',async c=>{
   if(d)return d;
 
   const id=Number(c.req.param('id'));
+
+  await c.env.DB
+    .prepare(
+      'DELETE FROM accounts WHERE person_id=?'
+    )
+    .bind(id)
+    .run();
 
   await c.env.DB
     .prepare(
@@ -1667,20 +1846,49 @@ app.post('/api/admin/invite/:id',async c=>{
   const id=Number(c.req.param('id'));
 
   const p=await c.env.DB
-    .prepare(
-      'SELECT * FROM people WHERE id=?'
-    )
+    .prepare(`
+      SELECT *
+      FROM people
+      WHERE id=?
+    `)
     .bind(id)
     .first<any>();
 
   if(!p)
-    return json(c,{error:'Not found'},404);
+    return json(
+      c,
+      {error:'Member not found'},
+      404
+    );
+
+  const existing=await c.env.DB
+    .prepare(`
+      SELECT
+        id,
+        active
+      FROM accounts
+      WHERE person_id=?
+      LIMIT 1
+    `)
+    .bind(id)
+    .first<any>();
+
+  if(existing?.active){
+    return json(
+      c,
+      {error:'This member already has an active account.'},
+      409
+    );
+  }
 
   const base=
-    (p.first_name+p.last_name)
+    (
+      String(p.first_name||'')+
+      String(p.last_name||'')
+    )
       .replace(/[^A-Za-z0-9]/g,'');
 
-  let u=base;
+  let u=base||'member';
   let n=0;
 
   while(
@@ -1690,10 +1898,12 @@ app.post('/api/admin/invite/:id',async c=>{
       )
       .bind(u)
       .first()
-  )
+  ){
     u=base+(++n);
+  }
 
   const token=b64(random(36));
+
   const exp=new Date(
     Date.now()+72*3600000
   ).toISOString();
