@@ -749,6 +749,15 @@ footer a:hover{
   border-bottom:0
 }
 
+.permission-grid tbody tr:hover th,
+.permission-grid tbody tr:hover td{
+  background:inherit
+}
+
+.permission-grid tbody tr:hover .permission-locked{
+  background:rgba(0,63,135,.08)!important
+}
+
 .permission-code{
   position:relative;
   border:0;
