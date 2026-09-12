@@ -339,10 +339,6 @@ section>h2{
   border-bottom:0
 }
 
-.list-row:hover{
-  background:var(--khaki-light)
-}
-
 .muted{
   color:var(--muted)
 }
@@ -408,10 +404,6 @@ th{
 
 tbody tr:nth-child(even){
   background:#fcfbf8
-}
-
-tbody tr:hover{
-  background:#f4f0e8
 }
 
 .search{
@@ -747,15 +739,6 @@ footer a:hover{
 .permission-grid tbody tr:last-child th,
 .permission-grid tbody tr:last-child td{
   border-bottom:0
-}
-
-.permission-grid tbody tr:hover th,
-.permission-grid tbody tr:hover td{
-  background:inherit
-}
-
-.permission-grid tbody tr:hover .permission-locked{
-  background:rgba(0,63,135,.08)!important
 }
 
 .permission-code{
