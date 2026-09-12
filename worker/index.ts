@@ -2041,6 +2041,17 @@ app.put('/api/admin/members/:id',async c=>{
     );
   }
 
+  if('phone' in x){
+    const digits=
+      String(x.phone||'')
+        .replace(/\D/g,'');
+
+    x.phone=
+      digits.length===10?
+        `(${digits.slice(0,3)}) ${digits.slice(3,6)}-${digits.slice(6)}`:
+        String(x.phone||'');
+  }
+  
   const cols=[
     'prefix',
     'first_name',
