@@ -1008,10 +1008,23 @@ function MemberInfo({me}:{me:any}){
   const todayString=
     `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
   
+  const thirtyDays=new Date(today);
+  thirtyDays.setDate(thirtyDays.getDate()+30);
+  
+  const thirtyDaysString=
+    `${thirtyDays.getFullYear()}-${String(thirtyDays.getMonth()+1).padStart(2,'0')}-${String(thirtyDays.getDate()).padStart(2,'0')}`;
+  
   const expirationStyle=(date:any)=>{
-    return date && date<=todayString?
-      {color:'#CE1126'}:
-      undefined;
+    if(!date)
+      return undefined;
+  
+    if(date<=todayString)
+      return {color:'#CE1126'};
+  
+    if(date<=thirtyDaysString)
+      return {color:'#C49A00'};
+  
+    return undefined;
   };
 
   const nameCell=(x:any)=>{
