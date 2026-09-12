@@ -2075,6 +2075,7 @@ useEffect(()=>{
         </div>
       </div>
 
+      {!x.adult || x.adult_leader ? (
       <div className="member-form-card">
         <div className="member-scouting-grid">
           <label>
@@ -2193,6 +2194,7 @@ useEffect(()=>{
           </label>
         </div>
       </div>
+      ) : null}
 
       {availablePositions.length>0&&
         <div className="member-form-card">
@@ -2437,19 +2439,21 @@ useEffect(()=>{
             Email Default Opt-Out
           </label>
 
-          <label className="checkbox-label">
-            <input
-              type="checkbox"
-              checked={!!x.oa_member}
-              onChange={e=>
-                setX({
-                  ...x,
-                  oa_member:e.target.checked
-                })
-              }
-            />
-            Order of the Arrow Member
-          </label>
+          {(!x.adult || x.adult_leader) &&
+            <label className="checkbox-label">
+              <input
+                type="checkbox"
+                checked={!!x.oa_member}
+                onChange={e=>
+                  setX({
+                    ...x,
+                    oa_member:e.target.checked
+                  })
+                }
+              />
+              Order of the Arrow Member
+            </label>
+          }
         {x.adult&&x.adult_leader&&
           <label className="checkbox-label">
             <input
