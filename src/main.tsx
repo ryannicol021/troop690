@@ -2180,20 +2180,21 @@ useEffect(()=>{
             />
           </label>
 
-          <label>
-            SYT Expiration
-            <input
-              type="date"
-              value={x.syt_expiration||''}
-              onChange={e=>
-                setX({
-                  ...x,
-                  syt_expiration:
-                    e.target.value
-                })
-              }
-            />
-          </label>
+          {!!x.adult && !!x.adult_leader &&
+  <label>
+    SYT Expiration
+    <input
+      type="date"
+      value={x.syt_expiration||''}
+      onChange={e=>
+        setX({
+          ...x,
+          syt_expiration:e.target.value
+        })
+      }
+    />
+  </label>
+}
         </div>
       </div>
       ) : null}
