@@ -1399,7 +1399,6 @@ function MemberInfo({me}:{me:any}){
             <th>Join</th>
             <th>OA Member</th>
             <th>Emergency Contacts</th>
-            <th>Account</th>
             <th>Options</th>
           </tr>
         </thead>
@@ -1424,7 +1423,6 @@ function MemberInfo({me}:{me:any}){
                 {x.oa_member?'Yes':''}
               </td>
               <td>{emergencyContacts(x)}</td>
-              <td>{renderAccount(x)}</td>
               <td>{renderOptions(x)}</td>
             </tr>
           )}
