@@ -1667,7 +1667,7 @@ function MemberEditor({
     siblings:[]
   });
   const [familyTarget,setFamilyTarget]=useState('');
-  const [familyRole,setFamilyRole]=useState('Parent');
+  const [familyRole,setFamilyRole]=useState('');
   const [err,setErr]=useState('');
 
   useEffect(()=>{
@@ -1882,22 +1882,24 @@ useEffect(()=>{
 
       <div className="member-form-card">
         <div className="member-name-grid">
-          <label>
-            Prefix
-            <select
-              value={x.prefix||''}
-              onChange={e=>
-                setX({
-                  ...x,
-                  prefix:e.target.value
-                })
-              }
-            >
-              <option value=""></option>
-              <option value="Rev.">Rev.</option>
-              <option value="Msgr.">Msgr.</option>
-            </select>
-          </label>
+          {x.adult&&x.adult_leader&&
+            <label>
+              Prefix
+              <select
+                value={x.prefix||''}
+                onChange={e=>
+                  setX({
+                    ...x,
+                    prefix:e.target.value
+                  })
+                }
+              >
+                <option value=""></option>
+                <option value="Rev.">Rev.</option>
+                <option value="Msgr.">Msgr.</option>
+              </select>
+            </label>
+          }
 
           <label>
             First Name
@@ -2232,14 +2234,14 @@ useEffect(()=>{
                   setFamilyRole(e.target.value)
                 }
               >
+                <option value="">
+                  Select relationship
+                </option>
                 <option value="Parent">
                   Parent
                 </option>
                 <option value="Guardian">
                   Guardian
-                </option>
-                <option value="Sibling">
-                  Sibling
                 </option>
               </select>
 
@@ -2255,12 +2257,9 @@ useEffect(()=>{
 
                 {familyPeople
                   .filter((p:any)=>{
-                    if(familyRole==='Sibling')
-                      return true;
-
                     if(x.adult)
                       return !p.adult;
-
+                  
                     return p.adult;
                   })
                   .map((p:any)=>
