@@ -1311,6 +1311,248 @@ app.get('/api/admin/member-positions',async c=>{
   });
 });
 
+app.get('/api/admin/family-relationships/:id',async c=>{
+  const d=admin(c,'MIV');
+  if(d)return d;
+
+  const id=Number(c.req.param('id'));
+
+  const parentRows=await c.env.DB
+    .prepare(`
+      SELECT
+        fr.person_id,
+        fr.related_person_id,
+        fr.role,
+        p.first_name,
+        p.middle_name,
+        p.last_name,
+        p.adult
+      FROM family_relationships fr
+      JOIN people p
+        ON p.id=fr.person_id
+      WHERE fr.related_person_id=?
+        AND fr.role IN('Parent','Guardian')
+      ORDER BY
+        p.last_name,
+        p.first_name
+    `)
+    .bind(id)
+    .all<any>();
+
+  const siblingRows=await c.env.DB
+    .prepare(`
+      SELECT
+        fr.person_id,
+        fr.related_person_id,
+        fr.role,
+        p.first_name,
+        p.middle_name,
+        p.last_name,
+        p.adult
+      FROM family_relationships fr
+      JOIN people p
+        ON p.id=fr.related_person_id
+      WHERE fr.person_id=?
+        AND fr.role='Sibling'
+
+      UNION
+
+      SELECT
+        fr.person_id,
+        fr.related_person_id,
+        fr.role,
+        p.first_name,
+        p.middle_name,
+        p.last_name,
+        p.adult
+      FROM family_relationships fr
+      JOIN people p
+        ON p.id=fr.person_id
+      WHERE fr.related_person_id=?
+        AND fr.role='Sibling'
+    `)
+    .bind(id,id)
+    .all<any>();
+
+  return json(c,{
+    parents:(parentRows.results??[]).map((x:any)=>({
+      id:Number(x.person_id),
+      first_name:x.first_name,
+      middle_name:x.middle_name,
+      last_name:x.last_name,
+      adult:Number(x.adult)
+    })),
+    siblings:(siblingRows.results??[]).map((x:any)=>({
+      id:
+        Number(x.person_id)===id?
+          Number(x.related_person_id):
+          Number(x.person_id),
+      first_name:x.first_name,
+      middle_name:x.middle_name,
+      last_name:x.last_name,
+      adult:Number(x.adult)
+    }))
+  });
+});
+
+app.post('/api/admin/family-relationships',async c=>{
+  const d=admin(c,'MIE');
+  if(d)return d;
+
+  const x=await c.req.json();
+
+  const personId=Number(x.personId);
+  const relatedId=Number(x.relatedPersonId);
+  const role=String(x.role||'');
+
+  if(
+    !Number.isInteger(personId)||
+    !Number.isInteger(relatedId)||
+    personId===relatedId
+  ){
+    return json(
+      c,
+      {error:'Invalid family relationship'},
+      400
+    );
+  }
+
+  if(!['Parent','Guardian','Sibling'].includes(role)){
+    return json(
+      c,
+      {error:'Invalid family relationship type'},
+      400
+    );
+  }
+
+  const people=await c.env.DB
+    .prepare(`
+      SELECT id,adult
+      FROM people
+      WHERE id IN(?,?)
+    `)
+    .bind(personId,relatedId)
+    .all<any>();
+
+  if((people.results??[]).length!==2){
+    return json(
+      c,
+      {error:'One or both people were not found'},
+      404
+    );
+  }
+
+  const person=
+    (people.results??[])
+      .find((p:any)=>Number(p.id)===personId);
+
+  const related=
+    (people.results??[])
+      .find((p:any)=>Number(p.id)===relatedId);
+
+  if(role!=='Sibling'){
+    if(!Number(person?.adult)){
+      return json(
+        c,
+        {error:'Only an adult can be a Parent or Guardian'},
+        400
+      );
+    }
+
+    if(Number(related?.adult)){
+      return json(
+        c,
+        {error:'A Parent or Guardian relationship must connect to a youth member'},
+        400
+      );
+    }
+  }
+
+  await c.env.DB.prepare(`
+    INSERT OR IGNORE INTO family_relationships(
+      person_id,
+      related_person_id,
+      role
+    )
+    VALUES(?,?,?)
+  `)
+    .bind(
+      personId,
+      relatedId,
+      role
+    )
+    .run();
+
+  if(role==='Sibling'){
+    await c.env.DB.prepare(`
+      INSERT OR IGNORE INTO family_relationships(
+        person_id,
+        related_person_id,
+        role
+      )
+      VALUES(?,?,?)
+    `)
+      .bind(
+        relatedId,
+        personId,
+        'Sibling'
+      )
+      .run();
+  }
+
+  return json(c,{ok:true});
+});
+
+app.delete('/api/admin/family-relationships',async c=>{
+  const d=admin(c,'MIE');
+  if(d)return d;
+
+  const x=await c.req.json();
+
+  const personId=Number(x.personId);
+  const relatedId=Number(x.relatedPersonId);
+  const role=String(x.role||'');
+
+  if(!Number.isInteger(personId)||
+     !Number.isInteger(relatedId)||
+     !['Parent','Guardian','Sibling'].includes(role)){
+    return json(
+      c,
+      {error:'Invalid family relationship'},
+      400
+    );
+  }
+
+  await c.env.DB.prepare(`
+    DELETE FROM family_relationships
+    WHERE person_id=?
+      AND related_person_id=?
+      AND role=?
+  `)
+    .bind(
+      personId,
+      relatedId,
+      role
+    )
+    .run();
+
+  if(role==='Sibling'){
+    await c.env.DB.prepare(`
+      DELETE FROM family_relationships
+      WHERE person_id=?
+        AND related_person_id=?
+        AND role='Sibling'
+    `)
+      .bind(
+        relatedId,
+        personId
+      )
+      .run();
+  }
+
+  return json(c,{ok:true});
+});
+
 app.post('/api/admin/positions',async c=>{
   const d=admin(c,'POS');
   if(d)return d;
