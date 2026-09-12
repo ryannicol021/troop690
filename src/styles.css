@@ -554,9 +554,18 @@ tbody tr:nth-child(even){
 }
 
 .member-position-cell{
+  width:220px;
+  max-width:220px;
+  overflow:hidden;
+  vertical-align:top;
+}
+
+.member-position-content{
+  width:220px;
+  max-width:220px;
   white-space:normal;
-  min-width:150px;
-  max-width:260px
+  word-break:normal;
+  overflow-wrap:normal;
 }
 
 .emergency-contact-cell{
