@@ -1882,7 +1882,7 @@ useEffect(()=>{
 
       <div className="member-form-card">
         <div className="member-name-grid">
-          {x.adult&&x.adult_leader&&
+          {!!x.adult && !!x.adult_leader &&
             <label>
               Prefix
               <select
