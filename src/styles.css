@@ -533,6 +533,12 @@ tbody tr:nth-child(even){
   min-width:180px
 }
 
+.admin-inline-edit select{
+  min-width:130px;
+  min-height:34px;
+  padding:5px 10px;
+}
+
 .toast{
   position:fixed;
   left:50%;
