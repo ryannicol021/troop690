@@ -1863,7 +1863,7 @@ useEffect(()=>{
             Adult
           </label>
 
-          {x.adult&&
+          {!!x.adult&&
             <label className="checkbox-label">
               <input
                 type="checkbox"
@@ -2453,7 +2453,7 @@ useEffect(()=>{
               Order of the Arrow Member
             </label>
           }
-        {x.adult&&x.adult_leader&&
+        {(!x.adult || x.adult_leader)&&
           <label className="checkbox-label">
             <input
               type="checkbox"
