@@ -1036,6 +1036,34 @@ function MemberInfo({me}:{me:any}){
     return undefined;
   };
 
+  const dobStyle=(dob:any)=>{
+    if(!dob)
+      return undefined;
+  
+    const birth=new Date(dob+'T00:00:00');
+    const today=new Date();
+  
+    let age=today.getFullYear()-birth.getFullYear();
+  
+    const birthdayPassed=
+      today.getMonth()>birth.getMonth()||
+      (
+        today.getMonth()===birth.getMonth()&&
+        today.getDate()>=birth.getDate()
+      );
+  
+    if(!birthdayPassed)
+      age--;
+  
+    if(age>=20)
+      return {color:'#CE1126'};
+  
+    if(age>=18)
+      return {color:'#C49A00'};
+  
+    return undefined;
+  };
+  
   const nameCell=(x:any)=>{
     return <>
       <div>{x.first_name||''}</div>
@@ -1231,7 +1259,9 @@ function MemberInfo({me}:{me:any}){
               <td>{x.last_name||''}</td>
               <td>{x.suffix||''}</td>
               <td>{x.gender||''}</td>
-              <td>{x.dob||''}</td>
+              <td style={dobStyle(x.dob)}>
+                {x.dob||''}
+              </td>
               <td>{x.phone||''}</td>
               <td>{x.email||''}</td>
               <td className="member-address-cell">
