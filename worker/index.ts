@@ -457,6 +457,191 @@ async function userFromRequest(c: Context<AppEnv>): Promise<User | null> {
   };
 }
 
+async function ensureFamilySchema(c: Context<AppEnv>) {
+  await c.env.DB.prepare(`
+    CREATE TABLE IF NOT EXISTS family_units(
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT UNIQUE,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )
+  `).run();
+
+  await c.env.DB.prepare(`
+    CREATE TABLE IF NOT EXISTS family_members(
+      family_id INTEGER NOT NULL,
+      person_id INTEGER NOT NULL UNIQUE,
+      PRIMARY KEY(family_id,person_id),
+      FOREIGN KEY(family_id)
+        REFERENCES family_units(id)
+        ON DELETE CASCADE,
+      FOREIGN KEY(person_id)
+        REFERENCES people(id)
+        ON DELETE CASCADE
+    )
+  `).run();
+
+  await c.env.DB.prepare(`
+    CREATE TABLE IF NOT EXISTS family_individuals(
+      person_id INTEGER PRIMARY KEY,
+      FOREIGN KEY(person_id)
+        REFERENCES people(id)
+        ON DELETE CASCADE
+    )
+  `).run();
+
+  await c.env.DB.prepare(`
+    CREATE TABLE IF NOT EXISTS family_schema_meta(
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL
+    )
+  `).run();
+
+  const migrated=await c.env.DB
+    .prepare(
+      "SELECT value FROM family_schema_meta WHERE key='relationship_migration'"
+    )
+    .first<any>();
+
+  if(migrated?.value==='done')
+    return;
+
+  const people=await c.env.DB
+    .prepare(`
+      SELECT id,first_name,last_name
+      FROM people
+    `)
+    .all<any>();
+
+  const byId=new Map<number,any>();
+
+  for(const person of people.results??[])
+    byId.set(
+      Number(person.id),
+      person
+    );
+
+  const relationships=await c.env.DB
+    .prepare(`
+      SELECT person_id,related_person_id
+      FROM family_relationships
+      WHERE role IN('Parent','Guardian','Sibling')
+    `)
+    .all<any>();
+
+  const adjacency=new Map<number,Set<number>>();
+
+  const connect=(a:number,b:number)=>{
+    if(!adjacency.has(a))
+      adjacency.set(a,new Set());
+
+    if(!adjacency.has(b))
+      adjacency.set(b,new Set());
+
+    adjacency.get(a)!.add(b);
+    adjacency.get(b)!.add(a);
+  };
+
+  for(const row of relationships.results??[])
+    connect(
+      Number(row.person_id),
+      Number(row.related_person_id)
+    );
+
+  const visited=new Set<number>();
+
+  const uniqueName=async(base:string)=>{
+    const clean=base.trim()||'Family';
+    let name=clean;
+    let n=1;
+
+    while(await c.env.DB.prepare(
+      'SELECT id FROM family_units WHERE name=?'
+    ).bind(name).first()){
+      n++;
+      name=`${clean} (${n})`;
+    }
+
+    return name;
+  };
+
+  for(const start of adjacency.keys()){
+    if(visited.has(start))
+      continue;
+
+    const stack=[start];
+    const component:number[]=[];
+
+    while(stack.length){
+      const id=stack.pop()!;
+
+      if(visited.has(id))
+        continue;
+
+      visited.add(id);
+      component.push(id);
+
+      for(const next of adjacency.get(id)??[])
+        if(!visited.has(next))
+          stack.push(next);
+    }
+
+    if(component.length<2)
+      continue;
+
+    component.sort((a,b)=>{
+      const pa=byId.get(a)??{};
+      const pb=byId.get(b)??{};
+
+      return String(
+        pa.last_name||''
+      ).localeCompare(
+        String(pb.last_name||'')
+      )||
+      String(
+        pa.first_name||''
+      ).localeCompare(
+        String(pb.first_name||'')
+      );
+    });
+
+    const first=byId.get(
+      component[0]
+    )??{};
+
+    const name=await uniqueName(
+      String(first.last_name||'Family')
+    );
+
+    const family=await c.env.DB
+      .prepare(
+        'INSERT INTO family_units(name) VALUES(?) RETURNING id'
+      )
+      .bind(name)
+      .first<any>();
+
+    const familyId=Number(family?.id);
+
+    for(const personId of component){
+      await c.env.DB.prepare(`
+        INSERT OR IGNORE INTO family_members(
+          family_id,
+          person_id
+        )
+        VALUES(?,?)
+      `)
+        .bind(
+          familyId,
+          personId
+        )
+        .run();
+    }
+  }
+
+  await c.env.DB.prepare(
+    "INSERT OR REPLACE INTO family_schema_meta(key,value) VALUES('relationship_migration','done')"
+  ).run();
+}
+
 app.use('/api/*', async (c, next) => {
   try {
     if (c.req.path !== '/api/login' && c.req.path !== '/api/bootstrap') {
