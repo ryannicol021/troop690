@@ -2535,6 +2535,7 @@ app.get('/api/admin/families',async c=>{
       FROM family_individuals fi
       JOIN people p
         ON p.id=fi.person_id
+        AND p.archived=0
       ORDER BY
         p.last_name,
         p.first_name,
@@ -2797,7 +2798,7 @@ async function familiesResponse(c:any){
       FROM family_units fu
       LEFT JOIN family_members fm
         ON fm.family_id=fu.id
-      JOIN people p
+      LEFT JOIN people p
         ON p.id=fm.person_id
         AND p.archived=0
       ORDER BY
@@ -3502,6 +3503,46 @@ app.put('/api/admin/members/:id',async c=>{
         `)
         .bind(id)
         .run();
+    }
+  }
+
+  if(
+    before &&
+    'eagle_scout_archive' in x &&
+    x.eagle_scout_archive===false
+  ){
+    const currentArchive=await c.env.DB
+      .prepare(`
+        SELECT
+          eagle_scout_archive
+        FROM people
+        WHERE id=?
+      `)
+      .bind(id)
+      .first<any>();
+
+    if(Number(currentArchive?.eagle_scout_archive)===1){
+      await c.env.DB.prepare(`
+        UPDATE people
+        SET
+          adult=1,
+          adult_leader=0,
+          eagle_scout_archive=0,
+          archived=0,
+          updated_at=CURRENT_TIMESTAMP
+        WHERE id=?
+      `)
+        .bind(id)
+        .run();
+
+      await c.env.DB.prepare(`
+        DELETE FROM person_positions
+        WHERE person_id=?
+      `)
+        .bind(id)
+        .run();
+
+      x.position_ids=[];
     }
   }
   
