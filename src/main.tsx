@@ -867,13 +867,13 @@ const eventsForDay=(date:Date)=>
 
     <div className="calendar-grid">
       {[
-        'Sunday',
-        'Monday',
-        'Tuesday',
-        'Wednesday',
-        'Thursday',
-        'Friday',
-        'Saturday'
+        'Sun',
+        'Mon',
+        'Tue',
+        'Wed',
+        'Thu',
+        'Fri',
+        'Sat'
       ].map(day=>
         <div
           className="calendar-weekday"
