@@ -929,7 +929,7 @@ function MemberInfo({me}:{me:any}){
   const [accountLink,setAccountLink]=useState<any|null>(null);
   const [msg,setMsg]=useState('');
   const [error,setError]=useState('');
-  const [memberTab,setMemberTab]=useState<'members'|'families'>('members');
+  const [memberTab,setMemberTab]=useState<'members'|'families'|'patrols'>('members');
 
   const canEdit=
     !!me?.permissions?.includes('MIE');
@@ -1513,6 +1513,14 @@ function MemberInfo({me}:{me:any}){
       >
         Families
       </button>
+
+      <button
+        type="button"
+        className={memberTab==='patrols'?'active':''}
+        onClick={()=>setMemberTab('patrols')}
+      >
+        Patrols
+      </button>
     </div>
 
     {memberTab==='members'?
@@ -1537,7 +1545,9 @@ function MemberInfo({me}:{me:any}){
           {archiveTable}
         </section>
       </>:
-      <Families canEdit={canEdit}/>
+      memberTab==='families'?
+        <Families canEdit={canEdit}/>:
+        <Patrols canEdit={canEdit}/>
     }
 
     {(edit||adding)&&
@@ -1909,6 +1919,349 @@ function Families({canEdit}:{canEdit:boolean}){
       </section>
     )}
   </div>;
+}
+
+function patrolPosition=(x:any)=>{
+  const names=x.position_names||[];
+
+  return names.filter(
+    (p:string)=>
+      p==='Senior Patrol Leader'||
+      p==='Assistant Senior Patrol Leader'||
+      p==='Patrol Leader'||
+      p==='Assistant Patrol Leader'
+  ).join(', ');
+};
+
+function patrolPriority=(x:any)=>{
+  const names=x.position_names||[];
+
+  if(names.includes('Patrol Leader'))
+    return 0;
+
+  if(names.includes('Assistant Patrol Leader'))
+    return 1;
+
+  return 2;
+};
+
+function patrolSort(a:any,b:any){
+  return patrolPriority(a)-patrolPriority(b)||
+    String(a.last_name||'').localeCompare(
+      String(b.last_name||'')
+    )||
+    String(a.first_name||'').localeCompare(
+      String(b.first_name||'')
+    )||
+    String(a.middle_name||'').localeCompare(
+      String(b.middle_name||'')
+    );
+}
+
+function Patrols({canEdit}:{canEdit:boolean}){
+  const [data,setData]=useState<any>({
+    unassigned:[],
+    individuals:[],
+    patrols:[]
+  });
+
+  const [dragged,setDragged]=useState<number|null>(null);
+  const [error,setError]=useState('');
+  const [renameId,setRenameId]=useState<number|null>(null);
+  const [renameValue,setRenameValue]=useState('');
+
+  const load=async()=>{
+    try{
+      const r=await api('/admin/patrols');
+
+      setData(r);
+      setError('');
+    }catch(e:any){
+      setError(e.message);
+    }
+  };
+
+  useEffect(()=>{
+    load();
+  },[]);
+
+  const move=async(
+    personId:number,
+    target:string
+  )=>{
+    try{
+      const r=await post(
+        '/admin/patrols/move',
+        {
+          personId,
+          target
+        }
+      );
+
+      setData(r);
+      setDragged(null);
+      setError('');
+    }catch(e:any){
+      setError(e.message);
+      setDragged(null);
+    }
+  };
+
+  const createPatrol=async()=>{
+    try{
+      const r=await post(
+        '/admin/patrols',
+        {}
+      );
+
+      setData(r);
+      setError('');
+    }catch(e:any){
+      setError(e.message);
+    }
+  };
+
+  const beginDrag=(e:any,id:number)=>{
+    if(!canEdit)
+      return;
+
+    e.dataTransfer.effectAllowed='move';
+
+    e.dataTransfer.setData(
+      'text/plain',
+      String(id)
+    );
+
+    setDragged(id);
+  };
+
+  const drop=async(
+    e:any,
+    target:string
+  )=>{
+    e.preventDefault();
+
+    if(!canEdit)
+      return;
+
+    const id=Number(
+      e.dataTransfer.getData(
+        'text/plain'
+      )
+    );
+
+    if(!Number.isInteger(id))
+      return;
+
+    await move(id,target);
+  };
+
+  const startRename=(p:any)=>{
+    setRenameId(Number(p.id));
+    setRenameValue(String(p.name||''));
+  };
+
+  const saveRename=async(id:number)=>{
+    const name=renameValue.trim();
+
+    if(!name)
+      return;
+
+    try{
+      const r=await put(
+        '/admin/patrols/'+id,
+        {name}
+      );
+
+      setData(r);
+      setRenameId(null);
+      setRenameValue('');
+      setError('');
+    }catch(e:any){
+      setError(e.message);
+    }
+  };
+
+  const table=(
+    members:any[],
+    target:string
+  )=>{
+    const sortedMembers=[
+      ...members
+    ].sort(patrolSort);
+
+    return (
+      <div
+        className="family-table-wrap"
+        onDragOver={e=>{
+          if(canEdit&&dragged!==null)
+            e.preventDefault();
+        }}
+        onDrop={e=>
+          drop(
+            e,
+            target
+          )
+        }
+      >
+        <table className="family-member-table patrol-member-table">
+          <thead>
+            <tr>
+              <th>First</th>
+              <th>Middle</th>
+              <th>Last</th>
+              <th>Rank</th>
+              <th>Position</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {sortedMembers.map((p:any)=>
+              <tr key={p.id}>
+                <td>
+                  <span
+                    className={
+                      canEdit?
+                        'family-drag-handle':
+                        'family-drag-handle disabled'
+                    }
+                    draggable={canEdit}
+                    onDragStart={e=>
+                      beginDrag(
+                        e,
+                        Number(p.id)
+                      )
+                    }
+                    onDragEnd={()=>
+                      setDragged(null)
+                    }
+                  >
+                    ☰
+                  </span>
+
+                  {p.first_name||''}
+                </td>
+
+                <td>{p.middle_name||''}</td>
+                <td>{p.last_name||''}</td>
+                <td>{p.rank||''}</td>
+                <td>{patrolPosition(p)}</td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    );
+  };
+
+  return (
+    <div
+      className={
+        dragged!==null?
+          'families-page is-dragging':
+          'families-page'
+      }
+    >
+      {error&&
+        <p className="error">{error}</p>
+      }
+
+      <section className="family-section family-drop-section">
+        <h2>Unassigned Youth</h2>
+
+        {table(
+          data.unassigned||[],
+          'unassigned'
+        )}
+      </section>
+
+      <section className="family-section family-drop-section">
+        <h2>Individual Youth</h2>
+
+        {table(
+          data.individuals||[],
+          'individual'
+        )}
+      </section>
+
+      {canEdit&&
+        <button
+          type="button"
+          className="new-family-placeholder"
+          onClick={createPatrol}
+        >
+          + New Patrol
+        </button>
+      }
+
+      {(data.patrols||[]).map((p:any)=>
+        <section
+          className="family-section family-drop-section"
+          key={p.id}
+        >
+          <div className="family-section-head">
+            {renameId===Number(p.id)?
+              <>
+                <input
+                  value={renameValue}
+                  onChange={e=>
+                    setRenameValue(
+                      e.target.value
+                    )
+                  }
+                  onKeyDown={e=>{
+                    if(e.key==='Enter')
+                      saveRename(
+                        Number(p.id)
+                      );
+
+                    if(e.key==='Escape'){
+                      setRenameId(null);
+                      setRenameValue('');
+                    }
+                  }}
+                  autoFocus
+                />
+
+                <button
+                  type="button"
+                  className="family-edit-button"
+                  onClick={()=>
+                    saveRename(
+                      Number(p.id)
+                    )
+                  }
+                >
+                  Save
+                </button>
+              </>:
+              <>
+                <h2>{p.name}</h2>
+
+                {canEdit&&
+                  <button
+                    type="button"
+                    className="family-edit-button"
+                    title="Rename patrol"
+                    onClick={()=>
+                      startRename(p)
+                    }
+                  >
+                    ✎
+                  </button>
+                }
+              </>
+            }
+          </div>
+
+          {table(
+            p.members||[],
+            String(p.id)
+          )}
+        </section>
+      )}
+    </div>
+  );
 }
 
 function MemberEditor({
@@ -2406,21 +2759,6 @@ function MemberEditor({
                   setX({
                     ...x,
                     cub_scout_pack:e.target.value
-                  })
-                }
-              />
-            </label>
-          }
-
-          {!x.adult&&
-            <label>
-              Patrol
-              <input
-                value={x.patrol||''}
-                onChange={e=>
-                  setX({
-                    ...x,
-                    patrol:e.target.value
                   })
                 }
               />
