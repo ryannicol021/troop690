@@ -3374,22 +3374,6 @@ app.put('/api/admin/members/:id',async c=>{
     'archived'
   ];
 
-  const sets:string[]=[];
-  const bind:any[]=[];
-
-  for(const k of cols){
-    if(!(k in x))
-      continue;
-
-    sets.push(k);
-
-    bind.push(
-      typeof x[k]==='boolean'?
-        Number(x[k]):
-        x[k]
-    );
-  }
-
   const unarchiving=
     Number(before?.eagle_scout_archive)===1 &&
     'eagle_scout_archive' in x &&
@@ -3425,6 +3409,22 @@ app.put('/api/admin/members/:id',async c=>{
     )
       .bind(id)
       .run();
+  }
+  
+  const sets:string[]=[];
+  const bind:any[]=[];
+
+  for(const k of cols){
+    if(!(k in x))
+      continue;
+
+    sets.push(k);
+
+    bind.push(
+      typeof x[k]==='boolean'?
+        Number(x[k]):
+        x[k]
+    );
   }
   
   if(sets.length){
