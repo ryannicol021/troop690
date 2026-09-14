@@ -480,10 +480,19 @@ tbody tr:nth-child(even){
 }
 
 .calendar-event{
-  padding:4px 5px;
-  border-radius:2px;
-  color:#fff;
   overflow:hidden
+}
+
+.calendar-event-bar{
+  padding:4px 6px;
+  border:1px solid currentColor;
+  border-radius:4px;
+  background:transparent
+}
+
+.calendar-event-timed{
+  padding:1px 0;
+  background:transparent
 }
 
 .calendar-event-title{
@@ -499,8 +508,14 @@ tbody tr:nth-child(even){
   margin-top:2px;
   font-size:.68rem;
   line-height:1.15;
-  opacity:.92;
   white-space:nowrap
+}
+
+.calendar-event-bar .calendar-event-title,
+.calendar-event-bar .calendar-event-time,
+.calendar-event-timed .calendar-event-title,
+.calendar-event-timed .calendar-event-time{
+  color:currentColor
 }
 
 .calendar-event-ceremony{
