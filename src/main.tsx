@@ -1491,7 +1491,6 @@ Troop 690`;
             <th>Phone</th>
             <th>Email</th>
             <th>Address</th>
-            <th>Emergency Contacts</th>
             <th>Account</th>
             <th>Options</th>
           </tr>
@@ -1511,7 +1510,6 @@ Troop 690`;
               <td className="member-address-cell">
                 {address(x)}
               </td>
-              <td>{emergencyContacts(x)}</td>
               <td>{renderAccount(x)}</td>
               <td>{renderOptions(x)}</td>
             </tr>
@@ -1542,7 +1540,6 @@ Troop 690`;
             <th>SYT</th>
             <th>Position</th>
             <th>OA</th>
-            <th>Emergency Contacts</th>
             <th>Account</th>
             <th>Options</th>
           </tr>
@@ -1581,7 +1578,6 @@ Troop 690`;
               <td>
                 {x.oa_member?'Yes':''}
               </td>
-              <td>{emergencyContacts(x)}</td>
               <td>{renderAccount(x)}</td>
               <td>{renderOptions(x)}</td>
             </tr>
@@ -1606,8 +1602,7 @@ Troop 690`;
             <th>Address</th>
             <th>Rank</th>
             <th>Join</th>
-            <th>OA Member</th>
-            <th>Emergency Contacts</th>
+            <th>OA</th>
             <th>Options</th>
           </tr>
         </thead>
@@ -1631,7 +1626,6 @@ Troop 690`;
               <td>
                 {x.oa_member?'Yes':''}
               </td>
-              <td>{emergencyContacts(x)}</td>
               <td>{renderOptions(x)}</td>
             </tr>
           )}
