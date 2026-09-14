@@ -646,6 +646,7 @@ app.use('/api/*', async (c, next) => {
   try {
     if (c.req.path !== '/api/login' && c.req.path !== '/api/bootstrap') {
       await ensurePermissionSchema(c);
+      await ensureFamilySchema(c);
     }
   } catch {
     // Ignore permission-schema errors here so they cannot break authentication.
@@ -1049,21 +1050,75 @@ app.post('/api/events/:id/attendance',async c=>{
     const rel=await c.env.DB
       .prepare(`
         SELECT 1
-        FROM family_relationships
+        FROM family_members a
+        JOIN family_members b
+          ON b.family_id=a.family_id
+        JOIN people caller
+          ON caller.id=a.person_id
+        JOIN people target_person
+          ON target_person.id=b.person_id
         WHERE
-          person_id=?
-          AND related_person_id=?
-          AND role IN ('Parent','Guardian')
+          a.person_id=?
+          AND b.person_id=?
+          AND caller.adult=1
+          AND target_person.adult=0
       `)
-      .bind(u.personId,target)
+      .bind(
+        u.personId,
+        target
+      )
       .first();
 
     if(!rel)
       return json(
         c,
-        {error:'Not a connected family member'},
+        {
+          error:
+            'Only a parent can manage a youth member in their family'
+        },
         403
       );
+  }
+
+  if(target===u.personId){
+    const caller=await c.env.DB
+      .prepare(
+        'SELECT adult FROM people WHERE id=?'
+      )
+      .bind(u.personId)
+      .first<any>();
+
+    if(!Number(caller?.adult)){
+      const existing=await c.env.DB
+        .prepare(`
+          SELECT marked_by
+          FROM event_attendance
+          WHERE event_id=?
+            AND person_id=?
+        `)
+        .bind(id,target)
+        .first<any>();
+
+      if(existing?.marked_by){
+        const marker=await c.env.DB
+          .prepare(
+            'SELECT adult FROM people WHERE id=?'
+          )
+          .bind(existing.marked_by)
+          .first<any>();
+
+        if(Number(marker?.adult)){
+          return json(
+            c,
+            {
+              error:
+                'A parent has already set this attendance.'
+            },
+            403
+          );
+        }
+      }
+    }
   }
 
   await c.env.DB
@@ -1453,15 +1508,23 @@ app.get('/api/admin/members',async c=>{
   const contactRows=await c.env.DB
     .prepare(`
       SELECT
-        fr.related_person_id child_id,
+        fmChild.person_id child_id,
         p.id parent_id,
         p.first_name,
         p.last_name,
         p.phone
-      FROM family_relationships fr
+      FROM family_members fmChild
+      JOIN family_members fmParent
+        ON fmParent.family_id=fmChild.family_id
       JOIN people p
-        ON p.id=fr.person_id
-      WHERE fr.role IN('Parent','Guardian')
+        ON p.id=fmParent.person_id
+      WHERE
+        fmChild.person_id IN(
+          SELECT id
+          FROM people
+          WHERE adult=0
+        )
+        AND p.adult=1
       ORDER BY
         p.first_name,
         p.last_name
@@ -1569,246 +1632,425 @@ app.get('/api/admin/member-positions',async c=>{
   });
 });
 
-app.get('/api/admin/family-relationships/:id',async c=>{
+app.get('/api/admin/families',async c=>{
   const d=admin(c,'MIV');
   if(d)return d;
 
-  const id=Number(c.req.param('id'));
-
-  const parentRows=await c.env.DB
+  const familyRows=await c.env.DB
     .prepare(`
       SELECT
-        fr.person_id,
-        fr.related_person_id,
-        fr.role,
+        fu.id family_id,
+        fu.name family_name,
+        p.id person_id,
         p.first_name,
         p.middle_name,
         p.last_name,
-        p.adult
-      FROM family_relationships fr
+        p.adult,
+        p.adult_leader
+      FROM family_units fu
+      LEFT JOIN family_members fm
+        ON fm.family_id=fu.id
+      LEFT JOIN people p
+        ON p.id=fm.person_id
+      ORDER BY
+        fu.id,
+        p.last_name,
+        p.first_name,
+        p.middle_name
+    `)
+    .all<any>();
+
+  const unassigned=await c.env.DB
+    .prepare(`
+      SELECT
+        id,
+        first_name,
+        middle_name,
+        last_name,
+        adult,
+        adult_leader
+      FROM people p
+      WHERE NOT EXISTS(
+        SELECT 1
+        FROM family_members fm
+        WHERE fm.person_id=p.id
+      )
+      AND NOT EXISTS(
+        SELECT 1
+        FROM family_individuals fi
+        WHERE fi.person_id=p.id
+      )
+      ORDER BY
+        last_name,
+        first_name,
+        middle_name
+    `)
+    .all<any>();
+
+  const individuals=await c.env.DB
+    .prepare(`
+      SELECT
+        p.id,
+        p.first_name,
+        p.middle_name,
+        p.last_name,
+        p.adult,
+        p.adult_leader
+      FROM family_individuals fi
       JOIN people p
-        ON p.id=fr.person_id
-      WHERE fr.related_person_id=?
-        AND fr.role IN('Parent','Guardian')
+        ON p.id=fi.person_id
       ORDER BY
         p.last_name,
-        p.first_name
+        p.first_name,
+        p.middle_name
     `)
-    .bind(id)
     .all<any>();
 
-  const siblingRows=await c.env.DB
-    .prepare(`
-      SELECT
-        fr.person_id,
-        fr.related_person_id,
-        fr.role,
-        p.first_name,
-        p.middle_name,
-        p.last_name,
-        p.adult
-      FROM family_relationships fr
-      JOIN people p
-        ON p.id=fr.related_person_id
-      WHERE fr.person_id=?
-        AND fr.role='Sibling'
+  const families:any[]=[];
+  const byFamily=new Map<number,any>();
 
-      UNION
+  for(const row of familyRows.results??[]){
+    const id=Number(row.family_id);
 
-      SELECT
-        fr.person_id,
-        fr.related_person_id,
-        fr.role,
-        p.first_name,
-        p.middle_name,
-        p.last_name,
-        p.adult
-      FROM family_relationships fr
-      JOIN people p
-        ON p.id=fr.person_id
-      WHERE fr.related_person_id=?
-        AND fr.role='Sibling'
-    `)
-    .bind(id,id)
-    .all<any>();
+    if(!byFamily.has(id)){
+      const family={
+        id,
+        name:row.family_name||null,
+        members:[]
+      };
+
+      byFamily.set(id,family);
+      families.push(family);
+    }
+
+    if(row.person_id!=null){
+      byFamily.get(id).members.push({
+        id:Number(row.person_id),
+        first_name:row.first_name,
+        middle_name:row.middle_name,
+        last_name:row.last_name,
+        adult:Number(row.adult),
+        adult_leader:Number(row.adult_leader)
+      });
+    }
+  }
 
   return json(c,{
-    parents:(parentRows.results??[]).map((x:any)=>({
-      id:Number(x.person_id),
-      first_name:x.first_name,
-      middle_name:x.middle_name,
-      last_name:x.last_name,
-      adult:Number(x.adult)
-    })),
-    siblings:(siblingRows.results??[]).map((x:any)=>({
-      id:
-        Number(x.person_id)===id?
-          Number(x.related_person_id):
-          Number(x.person_id),
-      first_name:x.first_name,
-      middle_name:x.middle_name,
-      last_name:x.last_name,
-      adult:Number(x.adult)
-    }))
+    unassigned:unassigned.results??[],
+    individuals:individuals.results??[],
+    families
   });
 });
 
-app.post('/api/admin/family-relationships',async c=>{
+app.post('/api/admin/families',async c=>{
   const d=admin(c,'MIE');
   if(d)return d;
 
-  const x=await c.req.json();
+  await c.env.DB.prepare(
+    'INSERT INTO family_units(name) VALUES(NULL)'
+  ).run();
 
-  const personId=Number(x.personId);
-  const relatedId=Number(x.relatedPersonId);
-  const role=String(x.role||'');
-
-  if(
-    !Number.isInteger(personId)||
-    !Number.isInteger(relatedId)||
-    personId===relatedId
-  ){
-    return json(
-      c,
-      {error:'Invalid family relationship'},
-      400
-    );
-  }
-
-  if(!['Parent','Guardian','Sibling'].includes(role)){
-    return json(
-      c,
-      {error:'Invalid family relationship type'},
-      400
-    );
-  }
-
-  const people=await c.env.DB
-    .prepare(`
-      SELECT id,adult
-      FROM people
-      WHERE id IN(?,?)
-    `)
-    .bind(personId,relatedId)
-    .all<any>();
-
-  if((people.results??[]).length!==2){
-    return json(
-      c,
-      {error:'One or both people were not found'},
-      404
-    );
-  }
-
-  const person=
-    (people.results??[])
-      .find((p:any)=>Number(p.id)===personId);
-
-  const related=
-    (people.results??[])
-      .find((p:any)=>Number(p.id)===relatedId);
-
-  if(role!=='Sibling'){
-    if(!Number(person?.adult)){
-      return json(
-        c,
-        {error:'Only an adult can be a Parent or Guardian'},
-        400
-      );
-    }
-
-    if(Number(related?.adult)){
-      return json(
-        c,
-        {error:'A Parent or Guardian relationship must connect to a youth member'},
-        400
-      );
-    }
-  }
-
-  await c.env.DB.prepare(`
-    INSERT OR IGNORE INTO family_relationships(
-      person_id,
-      related_person_id,
-      role
-    )
-    VALUES(?,?,?)
-  `)
-    .bind(
-      personId,
-      relatedId,
-      role
-    )
-    .run();
-
-  if(role==='Sibling'){
-    await c.env.DB.prepare(`
-      INSERT OR IGNORE INTO family_relationships(
-        person_id,
-        related_person_id,
-        role
-      )
-      VALUES(?,?,?)
-    `)
-      .bind(
-        relatedId,
-        personId,
-        'Sibling'
-      )
-      .run();
-  }
-
-  return json(c,{ok:true});
+  return familiesResponse(c);
 });
 
-app.delete('/api/admin/family-relationships',async c=>{
+app.put('/api/admin/families/:id',async c=>{
+  const d=admin(c,'MIE');
+  if(d)return d;
+
+  const id=Number(c.req.param('id'));
+  const x=await c.req.json();
+  const name=String(x.name||'').trim();
+
+  if(!Number.isInteger(id)||!name)
+    return json(c,{error:'Invalid family name'},400);
+
+  const duplicate=await c.env.DB
+    .prepare(`
+      SELECT id
+      FROM family_units
+      WHERE name=?
+        AND id<>?
+    `)
+    .bind(name,id)
+    .first();
+
+  if(duplicate)
+    return json(
+      c,
+      {error:'A family with that name already exists.'},
+      409
+    );
+
+  const family=await c.env.DB
+    .prepare(
+      'SELECT id FROM family_units WHERE id=?'
+    )
+    .bind(id)
+    .first();
+
+  if(!family)
+    return json(
+      c,
+      {error:'Family not found'},
+      404
+    );
+
+  await c.env.DB.prepare(`
+    UPDATE family_units
+    SET name=?
+    WHERE id=?
+  `)
+    .bind(name,id)
+    .run();
+
+  return familiesResponse(c);
+});
+
+app.post('/api/admin/families/assign',async c=>{
   const d=admin(c,'MIE');
   if(d)return d;
 
   const x=await c.req.json();
 
   const personId=Number(x.personId);
-  const relatedId=Number(x.relatedPersonId);
-  const role=String(x.role||'');
+  const familyId=
+    x.familyId==null?
+      null:
+      Number(x.familyId);
+  const individual=!!x.individual;
 
-  if(!Number.isInteger(personId)||
-     !Number.isInteger(relatedId)||
-     !['Parent','Guardian','Sibling'].includes(role)){
+  if(!Number.isInteger(personId))
     return json(
       c,
-      {error:'Invalid family relationship'},
+      {error:'Invalid member'},
       400
     );
+
+  const person=await c.env.DB
+    .prepare(
+      'SELECT id,last_name FROM people WHERE id=?'
+    )
+    .bind(personId)
+    .first<any>();
+
+  if(!person)
+    return json(
+      c,
+      {error:'Member not found'},
+      404
+    );
+
+  if(
+    individual&&
+    familyId!==null
+  )
+    return json(
+      c,
+      {error:'Invalid family assignment'},
+      400
+    );
+
+  if(familyId!==null){
+    const family=await c.env.DB
+      .prepare(`
+        SELECT id,name
+        FROM family_units
+        WHERE id=?
+      `)
+      .bind(familyId)
+      .first<any>();
+
+    if(!family)
+      return json(
+        c,
+        {error:'Family not found'},
+        404
+      );
+
+    if(!family.name){
+      const base=
+        String(
+          person.last_name||
+          'Family'
+        ).trim()||
+        'Family';
+
+      let name=base;
+      let n=1;
+
+      while(await c.env.DB.prepare(`
+        SELECT id
+        FROM family_units
+        WHERE name=?
+          AND id<>?
+      `)
+        .bind(name,familyId)
+        .first()
+      ){
+        n++;
+        name=`${base} (${n})`;
+      }
+
+      await c.env.DB.prepare(`
+        UPDATE family_units
+        SET name=?
+        WHERE id=?
+      `)
+        .bind(name,familyId)
+        .run();
+    }
   }
 
-  await c.env.DB.prepare(`
-    DELETE FROM family_relationships
-    WHERE person_id=?
-      AND related_person_id=?
-      AND role=?
-  `)
-    .bind(
-      personId,
-      relatedId,
-      role
-    )
+  await c.env.DB.prepare(
+    'DELETE FROM family_members WHERE person_id=?'
+  )
+    .bind(personId)
     .run();
 
-  if(role==='Sibling'){
+  await c.env.DB.prepare(
+    'DELETE FROM family_individuals WHERE person_id=?'
+  )
+    .bind(personId)
+    .run();
+
+  if(familyId!==null){
     await c.env.DB.prepare(`
-      DELETE FROM family_relationships
-      WHERE person_id=?
-        AND related_person_id=?
-        AND role='Sibling'
+      INSERT OR REPLACE INTO family_members(
+        family_id,
+        person_id
+      )
+      VALUES(?,?)
     `)
       .bind(
-        relatedId,
+        familyId,
         personId
       )
       .run();
+  }else if(individual){
+    await c.env.DB.prepare(
+      'INSERT OR IGNORE INTO family_individuals(person_id) VALUES(?)'
+    )
+      .bind(personId)
+      .run();
   }
 
-  return json(c,{ok:true});
+  await c.env.DB.prepare(`
+    DELETE FROM family_units
+    WHERE NOT EXISTS(
+      SELECT 1
+      FROM family_members fm
+      WHERE fm.family_id=family_units.id
+    )
+  `).run();
+
+  return familiesResponse(c);
+});
+
+async function familiesResponse(c:any){
+  const familyRows=await c.env.DB
+    .prepare(`
+      SELECT
+        fu.id family_id,
+        fu.name family_name,
+        p.id person_id,
+        p.first_name,
+        p.middle_name,
+        p.last_name,
+        p.adult,
+        p.adult_leader
+      FROM family_units fu
+      LEFT JOIN family_members fm
+        ON fm.family_id=fu.id
+      LEFT JOIN people p
+        ON p.id=fm.person_id
+      ORDER BY
+        fu.id,
+        p.last_name,
+        p.first_name,
+        p.middle_name
+    `)
+    .all<any>();
+
+  const unassigned=await c.env.DB
+    .prepare(`
+      SELECT
+        id,
+        first_name,
+        middle_name,
+        last_name,
+        adult,
+        adult_leader
+      FROM people p
+      WHERE NOT EXISTS(
+        SELECT 1
+        FROM family_members fm
+        WHERE fm.person_id=p.id
+      )
+      AND NOT EXISTS(
+        SELECT 1
+        FROM family_individuals fi
+        WHERE fi.person_id=p.id
+      )
+      ORDER BY
+        last_name,
+        first_name,
+        middle_name
+    `)
+    .all<any>();
+
+  const individuals=await c.env.DB
+    .prepare(`
+      SELECT
+        p.id,
+        p.first_name,
+        p.middle_name,
+        p.last_name,
+        p.adult,
+        p.adult_leader
+      FROM family_individuals fi
+      JOIN people p
+        ON p.id=fi.person_id
+      ORDER BY
+        p.last_name,
+        p.first_name,
+        p.middle_name
+    `)
+    .all<any>();
+
+  const families:any[]=[];
+  const byFamily=new Map<number,any>();
+
+  for(const row of familyRows.results??[]){
+    const id=Number(row.family_id);
+
+    if(!byFamily.has(id)){
+      const family={
+        id,
+        name:row.family_name||null,
+        members:[]
+      };
+
+      byFamily.set(id,family);
+      families.push(family);
+    }
+
+    if(row.person_id!=null){
+      byFamily.get(id).members.push({
+        id:Number(row.person_id),
+        first_name:row.first_name,
+        middle_name:row.middle_name,
+        last_name:row.last_name,
+        adult:Number(row.adult),
+        adult_leader:Number(row.adult_leader)
+      });
+    }
+  }
+
+  return json(c,{
+    unassigned:unassigned.results??[],
+    individuals:individuals.results??[],
+    families
+  });
 });
 
 app.post('/api/admin/positions',async c=>{
@@ -2205,6 +2447,13 @@ app.put('/api/admin/members/:id',async c=>{
   const id=Number(c.req.param('id'));
   const x=await c.req.json();
 
+  const before=await c.env.DB
+    .prepare(
+      'SELECT adult FROM people WHERE id=?'
+    )
+    .bind(id)
+    .first<any>();
+
   const adult=
     'adult' in x?
       !!x.adult:
@@ -2297,6 +2546,33 @@ app.put('/api/admin/members/:id',async c=>{
       .run();
   }
 
+  if(
+    before&&
+    adult!==undefined&&
+    Number(before.adult)!==Number(adult)
+  ){
+    await c.env.DB.prepare(
+      'DELETE FROM family_members WHERE person_id=?'
+    )
+      .bind(id)
+      .run();
+
+    await c.env.DB.prepare(
+      'DELETE FROM family_individuals WHERE person_id=?'
+    )
+      .bind(id)
+      .run();
+
+    await c.env.DB.prepare(`
+      DELETE FROM family_units
+      WHERE NOT EXISTS(
+        SELECT 1
+        FROM family_members fm
+        WHERE fm.family_id=family_units.id
+      )
+    `).run();
+  }
+  
   if(x.eagle_scout_archive){
     const current=await c.env.DB
       .prepare(`
@@ -2425,6 +2701,27 @@ app.delete('/api/admin/members/:id',async c=>{
   if(d)return d;
 
   const id=Number(c.req.param('id'));
+
+  await c.env.DB.prepare(
+    'DELETE FROM family_members WHERE person_id=?'
+  )
+    .bind(id)
+    .run();
+
+  await c.env.DB.prepare(
+    'DELETE FROM family_individuals WHERE person_id=?'
+  )
+    .bind(id)
+    .run();
+
+  await c.env.DB.prepare(`
+    DELETE FROM family_units
+    WHERE NOT EXISTS(
+      SELECT 1
+      FROM family_members fm
+      WHERE fm.family_id=family_units.id
+    )
+  `).run();
 
   await c.env.DB
     .prepare(
@@ -2669,27 +2966,23 @@ app.get('/api/admin/emergency-contacts.csv',async c=>{
     const rs=await c.env.DB
       .prepare(`
         SELECT
-          p.*,
-          fr.role
-        FROM family_relationships fr
+          p.*
+        FROM family_members child
+        JOIN family_members parent
+          ON parent.family_id=child.family_id
         JOIN people p
-          ON p.id=fr.related_person_id
+          ON p.id=parent.person_id
         WHERE
-          fr.person_id=?
-          AND fr.role IN ('Parent','Guardian')
+          child.person_id=?
+          AND p.adult=1
+        ORDER BY
+          p.last_name,
+          p.first_name
       `)
       .bind(s.id)
       .all<any>();
 
-    const list=(rs.results??[])
-      .sort((a,b)=>{
-        const rank=(x:any)=>
-          x.role==='Parent'?0:1;
-
-        return rank(a)-rank(b)||
-          a.last_name.localeCompare(b.last_name)||
-          a.first_name.localeCompare(b.first_name);
-      });
+    const list=(rs.results??[]);
 
     const a=list[0];
     const b=list[1];
@@ -3141,11 +3434,18 @@ app.post('/api/permissions/sign',async c=>{
   const rel=await c.env.DB
     .prepare(`
       SELECT 1
-      FROM family_relationships
+      FROM family_members a
+      JOIN family_members b
+        ON b.family_id=a.family_id
+      JOIN people caller
+        ON caller.id=a.person_id
+      JOIN people scout
+        ON scout.id=b.person_id
       WHERE
-        person_id=?
-        AND related_person_id=?
-        AND role IN ('Parent','Guardian')
+        a.person_id=?
+        AND b.person_id=?
+        AND caller.adult=1
+        AND scout.adult=0
     `)
     .bind(
       u.personId,
