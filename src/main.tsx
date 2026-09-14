@@ -161,7 +161,8 @@ function RouterPage({
   if(p==='/settings')return <Settings me={me}/>;
   if(p==='/eagles')return <Eagles/>;
 if(p==='/calendar')return <Calendar/>;
-if(p.startsWith('/calendar/'))return <CalendarEvent id={p.split('/')[2]}/>;
+if(p.startsWith('/calendar/'))
+  return <CalendarEvent id={p.split('/')[2]} me={me}/>;
   if(p==='/photos')return <Photos/>;
   if(p.startsWith('/photos/'))return <PhotoAlbum id={p.split('/')[2]}/>;
   if(p==='/documents')return <Documents/>;
@@ -932,7 +933,13 @@ const eventsForDay=(date:Date)=>
   </Page>
 }
 
-function CalendarEvent({id}:{id:string}){
+function CalendarEvent({
+  id,
+  me
+}:{
+  id:string,
+  me:any
+}){
   const [d,setD]=useState<any>();
   const nav=useNavigate();
 
@@ -950,8 +957,8 @@ function CalendarEvent({id}:{id:string}){
 
   const e=d.event;
 
-  const canEdit=
-    !!window.__ME__?.permissions?.includes('EVT');
+const canEdit=
+  !!me?.permissions?.includes('EVT');
 
   return <Page
     title={e.title}
