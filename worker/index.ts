@@ -3322,6 +3322,37 @@ app.put('/api/admin/members/:id',async c=>{
   }
 
   if(
+    isSiteAdministrator &&
+    Array.isArray(x.position_ids)
+  ){
+    const adminPosition=await c.env.DB
+      .prepare(`
+        SELECT id
+        FROM positions
+        WHERE code='ADMIN'
+        LIMIT 1
+      `)
+      .first<any>();
+
+    const keepsAdministrator=
+      adminPosition?.id!=null &&
+      x.position_ids
+        .map(Number)
+        .includes(Number(adminPosition.id));
+
+    if(!keepsAdministrator){
+      return json(
+        c,
+        {
+          error:
+            'The Site Administrator must retain Administrator permissions.'
+        },
+        400
+      );
+    }
+  }
+  
+  if(
     before&&
     adult!==undefined&&
     Number(before.adult)!==Number(adult)
@@ -3381,6 +3412,17 @@ app.put('/api/admin/members/:id',async c=>{
       );
     }
 
+    if(isSiteAdministrator){
+      return json(
+        c,
+        {
+          error:
+            'The Site Administrator cannot be moved to the Eagle Scout Archive.'
+        },
+        400
+      );
+    }
+    
     if(
       !Number(current.adult)||
       !Number(current.adult_leader)
@@ -3488,6 +3530,25 @@ app.delete('/api/admin/members/:id',async c=>{
   if(d)return d;
 
   const id=Number(c.req.param('id'));
+
+  const siteAdministrator=await c.env.DB
+    .prepare(`
+      SELECT person_id
+      FROM site_administrator
+      WHERE id=1
+    `)
+    .first<any>();
+
+  if(Number(siteAdministrator?.person_id)===id){
+    return json(
+      c,
+      {
+        error:
+          'The Site Administrator cannot be deleted. Select another Site Administrator first.'
+      },
+      400
+    );
+  }
 
   await c.env.DB.prepare(
     'DELETE FROM family_members WHERE person_id=?'
