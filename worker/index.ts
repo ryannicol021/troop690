@@ -3496,14 +3496,14 @@ app.put('/api/admin/members/:id',async c=>{
     }
     
     if(
-      !Number(current.adult)||
+      Number(current.adult) &&
       !Number(current.adult_leader)
     ){
       return json(
         c,
         {
           error:
-            'Only Adult Leaders can be moved to the Eagle Scout Archive.'
+            'Only Youth or Adult Leaders can be moved to the Eagle Scout Archive.'
         },
         400
       );
