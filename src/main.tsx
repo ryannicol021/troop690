@@ -3069,7 +3069,9 @@ function MemberEditor({
               Order of the Arrow Member
             </label>
           }
-        {(!x.adult || x.adult_leader || isArchivedEagle)&&
+          {(!isNew&&
+            (!x.adult || x.adult_leader || isArchivedEagle)
+          )&&
           <label className="checkbox-label">
             <input
               type="checkbox"
