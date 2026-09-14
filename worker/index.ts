@@ -3228,6 +3228,17 @@ app.put('/api/admin/members/:id',async c=>{
       !!x.adult_leader:
       undefined;
 
+  const siteAdministrator=await c.env.DB
+    .prepare(`
+      SELECT person_id
+      FROM site_administrator
+      WHERE id=1
+    `)
+    .first<any>();
+
+  const isSiteAdministrator=
+    Number(siteAdministrator?.person_id)===id;
+
   if(
     adultLeader===true &&
     adult===false
