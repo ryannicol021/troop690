@@ -1649,19 +1649,87 @@ Troop 690`;
           </button>
         }
 
-        <a
+        <button
+          type="button"
           className="button"
-          href="/api/admin/quick-text.csv"
+          onClick={async()=>{
+            try{
+              const r=await fetch(
+                '/api/admin/quick-text.csv',
+                {credentials:'include'}
+              );
+
+              if(!r.ok){
+                const text=await r.text();
+                throw new Error(
+                  text||`HTTP ${r.status}`
+                );
+              }
+
+              const blob=await r.blob();
+              const url=URL.createObjectURL(blob);
+              const a=document.createElement('a');
+
+              a.href=url;
+              a.download='troop690-quick-text.csv';
+              document.body.appendChild(a);
+              a.click();
+              a.remove();
+
+              URL.revokeObjectURL(url);
+            }catch(e:any){
+              setMsg(e.message);
+              setTimeout(
+                ()=>setMsg(''),
+                2200
+              );
+            }
+          }}
         >
           Quick Text
-        </a>
+        </button>
 
-        <a
+        <button
+          type="button"
           className="button"
-          href="/api/admin/emergency-contacts.csv"
+          onClick={async()=>{
+            try{
+              const r=await fetch(
+                '/api/admin/emergency-contacts.csv',
+                {credentials:'include'}
+              );
+
+              if(!r.ok){
+                const text=await r.text();
+                throw new Error(
+                  text||`HTTP ${r.status}`
+                );
+              }
+
+              const blob=await r.blob();
+              const url=URL.createObjectURL(blob);
+              const a=document.createElement('a');
+
+              a.href=url;
+              a.download=
+                'troop690-emergency-contacts.csv';
+
+              document.body.appendChild(a);
+              a.click();
+              a.remove();
+
+              URL.revokeObjectURL(url);
+            }catch(e:any){
+              setMsg(e.message);
+              setTimeout(
+                ()=>setMsg(''),
+                2200
+              );
+            }
+          }}
         >
           Emergency Contacts
-        </a>
+        </button>
       </div>
     }
   >
