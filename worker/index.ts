@@ -2178,7 +2178,7 @@ async function patrolResponse(c:any){
       FROM patrol_units
       ORDER BY name
     `)
-    .all<any>();
+    .all();
 
   const positions=await c.env.DB
     .prepare(`
@@ -2198,7 +2198,7 @@ async function patrolResponse(c:any){
       )
       GROUP BY pp.person_id
     `)
-    .all<any>();
+    .all();
 
   const positionMap=new Map<number,string[]>();
 
@@ -2250,7 +2250,7 @@ async function patrolResponse(c:any){
         p.adult=0
         AND p.archived=0
     `)
-    .all<any>();
+    .all();
 
   const individualRows=await c.env.DB
     .prepare(`
@@ -2271,7 +2271,7 @@ async function patrolResponse(c:any){
         p.first_name,
         p.middle_name
     `)
-    .all<any>();
+    .all();
 
   const individualIds=new Set(
     (individualRows.results??[])
