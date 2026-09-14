@@ -906,15 +906,16 @@ const eventsForDay=(date:Date)=>
               const info=
                 eventInfo(e,cell.date);
             
-              return <div
-                className={
-                  eventTypeClass(e.event_type) +
-                  (info.bar?
-                    ' calendar-event-bar':
-                    ' calendar-event-timed')
-                }
-                key={e.id}
-              >
+              return <a
+  href={'/calendar/'+e.id}
+  className={
+    eventTypeClass(e.event_type) +
+    (info.bar?
+      ' calendar-event-bar':
+      ' calendar-event-timed')
+  }
+  key={e.id}
+>
                 <div className="calendar-event-title">
                   {e.title}
                 </div>
@@ -922,7 +923,7 @@ const eventsForDay=(date:Date)=>
                 <div className="calendar-event-time">
                   {info.text}
                 </div>
-              </div>;
+              </a>;
             })}
           </div>
         </div>;
