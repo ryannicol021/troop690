@@ -700,6 +700,13 @@ tbody tr:nth-child(even){
   gap:12px
 }
 
+.member-info-grid input,
+.member-info-grid select{
+  width:100%;
+  min-width:0;
+  box-sizing:border-box
+}
+
 .member-address-grid{
   display:grid;
   grid-template-columns:
