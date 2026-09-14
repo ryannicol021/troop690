@@ -413,25 +413,135 @@ tbody tr:nth-child(even){
   margin-bottom:18px
 }
 
+.calendar-navigation{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  margin:0 0 16px
+}
+
+.calendar-navigation .button{
+  min-width:44px;
+  padding:.5rem .7rem
+}
+
+.calendar-month-title{
+  min-width:190px;
+  text-align:center;
+  font-size:1.25rem;
+  font-weight:600
+}
+
+.calendar-grid{
+  display:grid;
+  grid-template-columns:repeat(7,minmax(0,1fr));
+  border-top:1px solid var(--border);
+  border-left:1px solid var(--border);
+  background:var(--border);
+  gap:1px
+}
+
+.calendar-weekday{
+  background:var(--khaki-light);
+  padding:9px 8px;
+  text-align:center;
+  font-size:.78rem;
+  font-weight:600;
+  text-transform:uppercase;
+  letter-spacing:.045em;
+  color:var(--muted)
+}
+
+.calendar-day{
+  min-height:120px;
+  padding:7px;
+  background:var(--offwhite);
+  overflow:hidden
+}
+
+.calendar-day-adjacent{
+  background:#f3f1eb
+}
+
+.calendar-day-number{
+  margin-bottom:5px;
+  font-size:.9rem;
+  font-weight:600
+}
+
+.calendar-day-adjacent .calendar-day-number{
+  color:#aaa397
+}
+
+.calendar-day-events{
+  display:grid;
+  gap:3px
+}
+
+.calendar-event{
+  padding:4px 5px;
+  border-radius:2px;
+  color:#fff;
+  overflow:hidden
+}
+
+.calendar-event-title{
+  font-size:.75rem;
+  font-weight:600;
+  line-height:1.2;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap
+}
+
+.calendar-event-time{
+  margin-top:2px;
+  font-size:.68rem;
+  line-height:1.15;
+  opacity:.92;
+  white-space:nowrap
+}
+
+.calendar-event-ceremony{
+  background:#d6a800;
+}
+
+.calendar-event-court-of-honor{
+  background:#b42323;
+}
+
+.calendar-event-fundraiser{
+  background:#6fa35c;
+}
+
+.calendar-event-mass{
+  background:#7b4aa8;
+}
+
+.calendar-event-meeting{
+  background:#336fa8;
+}
+
+.calendar-event-service{
+  background:#d06b92;
+}
+
+.calendar-event-summer-camp{
+  background:#356b3b;
+}
+
+.calendar-event-trip{
+  background:#7a5635;
+}
+
+.calendar-event-other{
+  background:#222
+}
+
 .calendar-list{
   display:grid;
   gap:14px
-}
-
-.calendar-list dl{
-  display:grid;
-  grid-template-columns:120px 1fr;
-  margin:0
-}
-
-.calendar-list dt,
-.calendar-list dd{
-  padding:4px 0
-}
-
-.calendar-list dt{
-  font-weight:600;
-  color:var(--muted)
 }
 
 .album-grid,
