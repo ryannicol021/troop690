@@ -927,7 +927,11 @@ app.get('/api/me',c=>json(c,{user:c.get('user')}));
 
 app.post('/api/login',async c=>{
   try {
-    const {username,password}=await c.req.json();
+    const {
+      username,
+      password,
+      rememberMe
+    }=await c.req.json();
 
     const a=await c.env.DB
       .prepare(
@@ -983,7 +987,9 @@ app.post('/api/login',async c=>{
         secure:true,
         sameSite:'Lax',
         path:'/',
-        maxAge:days*86400
+        ...(rememberMe?
+          {maxAge:days*86400}:
+          {})
       }
     );
 
@@ -3912,106 +3918,58 @@ app.get('/api/admin/quick-text.csv',async c=>{
   const rows=await c.env.DB
     .prepare(`
       SELECT
+        prefix,
         first_name,
+        middle_name,
         last_name,
-        phone,
-        email,
-        adult,
-        adult_leader,
-        archived
+        suffix,
+        phone
       FROM people
       WHERE archived=0
-      ORDER BY adult,last_name,first_name
+      ORDER BY
+        last_name,
+        first_name,
+        middle_name,
+        suffix
     `)
     .all<any>();
 
-  const scouts=(rows.results??[])
-    .filter(x=>!x.adult);
+  const formatPhone=(value:any)=>{
+    const digits=String(
+      value||''
+    ).replace(/\D/g,'');
 
-  const adults=(rows.results??[])
-    .filter(x=>x.adult);
-
-  const out=[
-    'SCOUTS',
-    'Name,Phone'
-  ];
-
-  for(const x of scouts)
-    out.push(
-      `"${x.last_name}, ${x.first_name}","${x.phone||''}"`
-    );
-
-  out.push(
-    '',
-    'ADULTS AND ADULT LEADERS',
-    'Name,Phone'
-  );
-
-  for(const x of adults)
-    out.push(
-      `"${x.last_name}, ${x.first_name}","${x.phone||''}"`
-    );
-
-  return c.text(
-    out.join('\r\n'),
-    200,
-    {
-      'Content-Type':'text/csv; charset=utf-8',
-      'Content-Disposition':
-        'attachment; filename="troop690-quick-text.csv"'
+    if(digits.length===10){
+      return `(${digits.slice(0,3)}) ${digits.slice(3,6)}-${digits.slice(6)}`;
     }
-  );
-});
 
-app.get('/api/admin/emergency-contacts.csv',async c=>{
-  const d=admin(c,'MIV');
-  if(d)return d;
+    return String(value||'');
+  };
 
-  const scouts=await c.env.DB
-    .prepare(`
-      SELECT *
-      FROM people
-      WHERE adult=0 AND archived=0
-      ORDER BY last_name,first_name
-    `)
-    .all<any>();
+  const fullName=(x:any)=>{
+    return [
+      x.prefix,
+      x.first_name,
+      x.middle_name?
+        String(x.middle_name).trim().charAt(0):
+        '',
+      x.last_name,
+      x.suffix
+    ]
+      .map((v:any)=>String(v||'').trim())
+      .filter(Boolean)
+      .join(' ');
+  };
 
   const out=[
-    'Scout Name,Contact 1 Name,Contact 1 Phone,Contact 2 Name,Contact 2 Phone'
+    'Name,Phone'
   ];
 
-  for(const s of scouts.results??[]){
-    const rs=await c.env.DB
-      .prepare(`
-        SELECT
-          p.*
-        FROM family_members child
-        JOIN family_members parent
-          ON parent.family_id=child.family_id
-        JOIN people p
-          ON p.id=parent.person_id
-        WHERE
-          child.person_id=?
-          AND p.adult=1
-        ORDER BY
-          p.last_name,
-          p.first_name
-      `)
-      .bind(s.id)
-      .all<any>();
-
-    const list=(rs.results??[]);
-
-    const a=list[0];
-    const b=list[1];
-
+  for(const x of (rows.results??[])){
     out.push(
       [
-        `${s.last_name}, ${s.first_name}`,
-        a?.first_name||'',
-        a?.phone||'',
-        b?.first_name||'',
-        b?.phone||''
+        fullName(x),
+        formatPhone(x.phone)
       ]
       .map(v=>
         `"${String(v).replaceAll('"','""')}"`
@@ -4024,7 +3982,127 @@ app.get('/api/admin/emergency-contacts.csv',async c=>{
     out.join('\r\n'),
     200,
     {
-      'Content-Type':'text/csv; charset=utf-8',
+      'Content-Type':
+        'text/csv; charset=utf-8',
+      'Content-Disposition':
+        'attachment; filename="troop690-quick-text.csv"'
+    }
+  );
+});
+
+app.get('/api/admin/emergency-contacts.csv',async c=>{
+  const d=admin(c,'MIV');
+  if(d)return d;
+
+  const scouts=await c.env.DB
+    .prepare(`
+      SELECT
+        s.first_name,
+        s.middle_name,
+        s.last_name,
+
+        (
+          SELECT
+            p.first_name||'|'||
+            COALESCE(p.phone,'')
+          FROM family_members child
+          JOIN family_members parent
+            ON parent.family_id=child.family_id
+          JOIN people p
+            ON p.id=parent.person_id
+          WHERE
+            child.person_id=s.id
+            AND p.adult=1
+          ORDER BY
+            p.last_name,
+            p.first_name,
+            p.middle_name
+          LIMIT 1
+        ) contact_1,
+
+        (
+          SELECT
+            p.first_name||'|'||
+            COALESCE(p.phone,'')
+          FROM family_members child
+          JOIN family_members parent
+            ON parent.family_id=child.family_id
+          JOIN people p
+            ON p.id=parent.person_id
+          WHERE
+            child.person_id=s.id
+            AND p.adult=1
+          ORDER BY
+            p.last_name,
+            p.first_name,
+            p.middle_name
+          LIMIT 1 OFFSET 1
+        ) contact_2
+
+      FROM people s
+      WHERE
+        s.adult=0
+        AND s.archived=0
+      ORDER BY
+        s.last_name,
+        s.first_name,
+        s.middle_name
+    `)
+    .all<any>();
+
+  const scoutName=(x:any)=>{
+    return [
+      x.first_name,
+      x.middle_name?
+        String(x.middle_name).trim().charAt(0):
+        '',
+      x.last_name
+    ]
+      .map((v:any)=>String(v||'').trim())
+      .filter(Boolean)
+      .join(' ');
+  };
+
+  const splitContact=(value:any)=>{
+    const parts=String(
+      value||''
+    ).split('|');
+
+    return {
+      name:String(parts[0]||''),
+      phone:String(parts[1]||'')
+    };
+  };
+
+  const out=[
+    'Name,Contact 1,Phone 1,Contact 2,Phone 2'
+  ];
+
+  for(const x of (scouts.results??[])){
+    const a=splitContact(x.contact_1);
+    const b=splitContact(x.contact_2);
+
+    out.push(
+      [
+        scoutName(x),
+        a.name,
+        a.phone,
+        b.name,
+        b.phone
+      ]
+      .map(v=>
+        `"${String(v).replaceAll('"','""')}"`
+      )
+      .join(',')
+    );
+  }
+
+  return c.text(
+    out.join('\r\n'),
+    200,
+    {
+      'Content-Type':
+        'text/csv; charset=utf-8',
       'Content-Disposition':
         'attachment; filename="troop690-emergency-contacts.csv"'
     }
