@@ -2051,7 +2051,6 @@ async function familiesResponse(c:any){
     individuals:individuals.results??[],
     families
   });
-});
 
 app.post('/api/admin/positions',async c=>{
   const d=admin(c,'POS');
