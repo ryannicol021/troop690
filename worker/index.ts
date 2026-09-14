@@ -1655,6 +1655,11 @@ app.get('/api/admin/members',async c=>{
       SELECT
         p.*,
         (
+          SELECT person_id
+          FROM site_administrator
+          WHERE id=1
+        ) site_administrator_id,
+        (
           SELECT pu.name
           FROM patrol_members pm
           JOIN patrol_units pu
@@ -4739,6 +4744,106 @@ app.put('/api/admin/positions/:id/permissions',async c=>{
   }
 
   return json(c,{ok:true});
+});
+
+app.get('/api/admin/site-administrator',async c=>{
+  const d=admin(c,'ACCT');
+  if(d)return d;
+
+  const rows=await c.env.DB
+    .prepare(`
+      SELECT
+        p.id,
+        p.first_name,
+        p.last_name
+      FROM people p
+      JOIN person_positions pp
+        ON pp.person_id=p.id
+      JOIN positions pos
+        ON pos.id=pp.position_id
+      WHERE pos.code='ADMIN'
+        AND p.archived=0
+      ORDER BY
+        p.last_name,
+        p.first_name
+    `)
+    .all<any>();
+
+  const selected=await c.env.DB
+    .prepare(`
+      SELECT person_id
+      FROM site_administrator
+      WHERE id=1
+    `)
+    .first<any>();
+
+  return json(c,{
+    administrators:rows.results??[],
+    siteAdministratorId:
+      selected?.person_id==null?
+        null:
+        Number(selected.person_id)
+  });
+});
+
+app.put('/api/admin/site-administrator',async c=>{
+  const d=admin(c,'ACCT');
+  if(d)return d;
+
+  const x=await c.req.json();
+  const personId=Number(x.personId);
+
+  if(!Number.isInteger(personId)){
+    return json(
+      c,
+      {error:'A Site Administrator must be selected.'},
+      400
+    );
+  }
+
+  const administrator=await c.env.DB
+    .prepare(`
+      SELECT p.id
+      FROM people p
+      JOIN person_positions pp
+        ON pp.person_id=p.id
+      JOIN positions pos
+        ON pos.id=pp.position_id
+      WHERE p.id=?
+        AND p.archived=0
+        AND pos.code='ADMIN'
+      LIMIT 1
+    `)
+    .bind(personId)
+    .first<any>();
+
+  if(!administrator){
+    return json(
+      c,
+      {
+        error:
+          'The Site Administrator must already have Administrator checked.'
+      },
+      400
+    );
+  }
+
+  await c.env.DB.prepare(`
+    INSERT INTO site_administrator(
+      id,
+      person_id
+    )
+    VALUES(1,?)
+    ON CONFLICT(id)
+    DO UPDATE SET person_id=excluded.person_id
+  `)
+    .bind(personId)
+    .run();
+
+  return json(c,{
+    ok:true,
+    siteAdministratorId:personId
+  });
 });
 
 app.get('/api/admin/account-logins',async c=>{
