@@ -3865,12 +3865,13 @@ app.post('/api/claim',async c=>{
     .first<any>();
 
   if(!a)
-    const isReset=Number(a.active)===1;
     return json(
       c,
       {error:'Invalid or expired invitation'},
       400
     );
+
+  const isReset=Number(a.active)===1;
 
   const pw=await hashPassword(
     x.password||''
