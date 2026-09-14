@@ -759,12 +759,76 @@ async function ensureFamilySchema(c: Context<AppEnv>) {
   ).run();
 }
 
+async function ensureSiteAdministratorSchema(c: Context<AppEnv>){
+  await c.env.DB.prepare(`
+    CREATE TABLE IF NOT EXISTS site_administrator(
+      id INTEGER PRIMARY KEY CHECK(id=1),
+      person_id INTEGER NOT NULL UNIQUE
+    )
+  `).run();
+
+  const current=await c.env.DB
+    .prepare(`
+      SELECT person_id
+      FROM site_administrator
+      WHERE id=1
+    `)
+    .first<any>();
+
+  const admins=await c.env.DB
+    .prepare(`
+      SELECT DISTINCT pp.person_id
+      FROM person_positions pp
+      JOIN positions pos
+        ON pos.id=pp.position_id
+      JOIN people p
+        ON p.id=pp.person_id
+      WHERE pos.code='ADMIN'
+        AND p.archived=0
+      ORDER BY p.last_name,p.first_name
+    `)
+    .all<any>();
+
+  const adminIds=(admins.results??[])
+    .map((x:any)=>Number(x.person_id));
+
+  if(!current){
+    if(adminIds.length){
+      await c.env.DB.prepare(`
+        INSERT OR IGNORE INTO site_administrator(
+          id,
+          person_id
+        )
+        VALUES(1,?)
+      `)
+        .bind(adminIds[0])
+        .run();
+    }
+  }else if(!adminIds.includes(Number(current.person_id))){
+    if(adminIds.length){
+      await c.env.DB.prepare(`
+        UPDATE site_administrator
+        SET person_id=?
+        WHERE id=1
+      `)
+        .bind(adminIds[0])
+        .run();
+    }else{
+      await c.env.DB.prepare(`
+        DELETE FROM site_administrator
+        WHERE id=1
+      `).run();
+    }
+  }
+}
+
 app.use('/api/*', async (c, next) => {
   try {
     if (c.req.path !== '/api/login' && c.req.path !== '/api/bootstrap') {
       await ensurePermissionSchema(c);
       await ensureFamilySchema(c);
       await ensurePatrolSchema(c);
+      await ensureSiteAdministratorSchema(c);
     }
   } catch {
     // Ignore permission-schema errors here so they cannot break authentication.
