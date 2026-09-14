@@ -542,6 +542,16 @@ function Eagles(){
 
 function Calendar(){
   const [d,setD]=useState<any>();
+  const [viewDate,setViewDate]=useState(
+    ()=>{
+      const now=new Date();
+      return new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        1
+      );
+    }
+  );
 
   useEffect(()=>{
     api('/calendar').then(setD)
@@ -550,44 +560,271 @@ function Calendar(){
   if(!d)
     return <Page title="Calendar"><Loading/></Page>;
 
+  const year=viewDate.getFullYear();
+  const month=viewDate.getMonth();
+
+  const firstDay=
+    new Date(year,month,1).getDay();
+
+  const daysInMonth=
+    new Date(year,month+1,0).getDate();
+
+  const previousMonthDays=
+    new Date(year,month,0).getDate();
+
+  const cells:any[]=[];
+
+  for(let i=0;i<firstDay;i++){
+    cells.push({
+      day:
+        previousMonthDays-firstDay+i+1,
+      current:false,
+      date:new Date(
+        year,
+        month-1,
+        previousMonthDays-firstDay+i+1
+      )
+    });
+  }
+
+  for(let day=1;day<=daysInMonth;day++){
+    cells.push({
+      day,
+      current:true,
+      date:new Date(year,month,day)
+    });
+  }
+
+  let nextDay=1;
+
+  while(cells.length%7!==0){
+    cells.push({
+      day:nextDay++,
+      current:false,
+      date:new Date(year,month+1,nextDay-1)
+    });
+  }
+
+  while(cells.length<35)
+    cells.push({
+      day:nextDay++,
+      current:false,
+      date:new Date(year,month+1,nextDay-1)
+    });
+
+  const monthName=
+    viewDate.toLocaleString(
+      undefined,
+      {month:'long'}
+    );
+
+  const pad=(n:number)=>
+    String(n).padStart(2,'0');
+
+  const dateKey=(date:Date)=>
+    `${date.getFullYear()}-${pad(date.getMonth()+1)}-${pad(date.getDate())}`;
+
+  const eventDate=(e:any)=>
+    new Date(e.start_at);
+
+  const eventsForDay=(date:Date)=>
+    d.events
+      .filter((e:any)=>
+        dateKey(eventDate(e))===dateKey(date)
+      )
+      .sort((a:any,b:any)=>{
+        if(Number(a.all_day)!==
+           Number(b.all_day))
+          return Number(b.all_day)-
+                 Number(a.all_day);
+
+        const startA=
+          new Date(a.start_at).getTime();
+
+        const startB=
+          new Date(b.start_at).getTime();
+
+        if(startA!==startB)
+          return startA-startB;
+
+        const endA=
+          a.end_at?
+            new Date(a.end_at).getTime():
+            Number.MAX_SAFE_INTEGER;
+
+        const endB=
+          b.end_at?
+            new Date(b.end_at).getTime():
+            Number.MAX_SAFE_INTEGER;
+
+        if(endA!==endB)
+          return endA-endB;
+
+        return String(a.title||'')
+          .localeCompare(
+            String(b.title||'')
+          );
+      });
+
+  const eventTypeClass=(type:string)=>{
+    return (
+      'calendar-event calendar-event-' +
+      String(type||'Other')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g,'-')
+    );
+  };
+
+  const formatTime=(value:string)=>{
+    const date=new Date(value);
+
+    return date.toLocaleTimeString(
+      undefined,
+      {
+        hour:'numeric',
+        minute:'2-digit'
+      }
+    );
+  };
+
+  const eventText=(e:any)=>{
+    if(e.all_day)
+      return 'All Day';
+
+    return `${formatTime(e.start_at)} – ${formatTime(e.end_at)}`;
+  };
+
+  const goMonth=(delta:number)=>{
+    setViewDate(
+      new Date(year,month+delta,1)
+    );
+  };
+
+  const goYear=(delta:number)=>{
+    setViewDate(
+      new Date(year+delta,month,1)
+    );
+  };
+
   return <Page
     title="Calendar"
-    actions={<a className="button" href="/api/calendar.ics">Calendar subscription</a>}
+    actions={
+      <a
+        className="button"
+        href="/api/calendar.ics"
+      >
+        Calendar subscription
+      </a>
+    }
   >
     <p className="muted">
       Copy the subscription link into Apple Calendar or Google Calendar.
       The feed stays current as the troop calendar changes.
     </p>
 
-    <div className="calendar-list">
-      {d.events.map((e:any)=>
-        <article className="card" key={e.id}>
-          <h2>{e.title}</h2>
-          <p>{e.description}</p>
+    <div className="calendar-navigation">
+      <button
+        type="button"
+        className="button"
+        onClick={()=>{
+          goYear(-1);
+        }}
+      >
+        «
+      </button>
 
-          <dl>
-            <dt>When</dt>
-            <dd>
-              {e.all_day?
-                'All day':
-                `${new Date(e.start_at).toLocaleString()}${e.end_at?' to '+new Date(e.end_at).toLocaleString():''}`
-              }
-            </dd>
+      <button
+        type="button"
+        className="button"
+        onClick={()=>{
+          goMonth(-1);
+        }}
+      >
+        ‹
+      </button>
 
-            <dt>Leader</dt>
-            <dd>{e.leader_name||''}</dd>
+      <div className="calendar-month-title">
+        {monthName} {year}
+      </div>
 
-            <dt>Uniform</dt>
-            <dd>{e.uniform||''}</dd>
+      <button
+        type="button"
+        className="button"
+        onClick={()=>{
+          goMonth(1);
+        }}
+      >
+        ›
+      </button>
 
-            <dt>Cost</dt>
-            <dd>{e.estimated_cost||''}</dd>
+      <button
+        type="button"
+        className="button"
+        onClick={()=>{
+          goYear(1);
+        }}
+      >
+        »
+      </button>
+    </div>
 
-            <dt>Location</dt>
-            <dd>{e.location||''}</dd>
-          </dl>
-        </article>
+    <div className="calendar-grid">
+      {[
+        'Sunday',
+        'Monday',
+        'Tuesday',
+        'Wednesday',
+        'Thursday',
+        'Friday',
+        'Saturday'
+      ].map(day=>
+        <div
+          className="calendar-weekday"
+          key={day}
+        >
+          {day}
+        </div>
       )}
+
+      {cells.map((cell:any,i:number)=>{
+        const events=
+          cell.current?
+            eventsForDay(cell.date):
+            [];
+
+        return <div
+          className={
+            'calendar-day '+
+            (cell.current?
+              'calendar-day-current':
+              'calendar-day-adjacent')
+          }
+          key={i}
+        >
+          <div className="calendar-day-number">
+            {cell.day}
+          </div>
+
+          <div className="calendar-day-events">
+            {events.map((e:any)=>
+              <div
+                className={
+                  eventTypeClass(e.event_type)
+                }
+                key={e.id}
+              >
+                <div className="calendar-event-title">
+                  {e.title}
+                </div>
+
+                <div className="calendar-event-time">
+                  {eventText(e)}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>;
+      })}
     </div>
   </Page>
 }
