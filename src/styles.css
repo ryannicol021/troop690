@@ -519,39 +519,39 @@ tbody tr:nth-child(even){
 }
 
 .calendar-event-ceremony{
-  background:#d6a800;
+  color:#d6a800;
 }
 
 .calendar-event-court-of-honor{
-  background:#b42323;
+  color:#b42323;
 }
 
 .calendar-event-fundraiser{
-  background:#6fa35c;
+  color:#6fa35c;
 }
 
 .calendar-event-mass{
-  background:#7b4aa8;
+  color:#7b4aa8;
 }
 
 .calendar-event-meeting{
-  background:#336fa8;
+  color:#336fa8;
 }
 
 .calendar-event-service{
-  background:#d06b92;
+  color:#d06b92;
 }
 
 .calendar-event-summer-camp{
-  background:#356b3b;
+  color:#356b3b;
 }
 
 .calendar-event-trip{
-  background:#7a5635;
+  color:#7a5635;
 }
 
 .calendar-event-other{
-  background:#222
+  color:#222
 }
 
 .calendar-list{
