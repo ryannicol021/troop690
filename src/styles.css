@@ -478,6 +478,25 @@ tbody tr:nth-child(even){
   flex-wrap:wrap
 }
 
+.site-admin-card{
+  max-width:420px;
+  padding:14px;
+  border:1px solid var(--border);
+  background:#fff
+}
+
+.site-admin-card label{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  font-weight:600
+}
+
+.site-admin-card select{
+  width:100%;
+  min-height:38px
+}
+
 .admin-table-wrap{
   width:100%;
   max-height:320px;
