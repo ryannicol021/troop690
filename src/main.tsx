@@ -2461,6 +2461,10 @@ function MemberEditor({
 }){
   const isNew=!value?.id;
 
+  const isArchivedEagle=
+    !!value?.eagle_scout_archive&&
+    !!value?.archived;
+
   const empty={
     prefix:'',
     first_name:'',
@@ -2663,20 +2667,22 @@ function MemberEditor({
 
       <div className="member-form-card">
         <div className="member-check-grid">
-          <label className="checkbox-label">
-            <input
-              type="checkbox"
-              checked={!!x.adult}
-              onChange={e=>
-                setAdult(
-                  e.target.checked
-                )
-              }
-            />
-            Adult
-          </label>
+          {!isArchivedEagle&&
+            <label className="checkbox-label">
+              <input
+                type="checkbox"
+                checked={!!x.adult}
+                onChange={e=>
+                  setAdult(
+                    e.target.checked
+                  )
+                }
+              />
+              Adult
+            </label>
+          }
 
-          {!!x.adult&&
+          {!!x.adult&&!isArchivedEagle&&
             <label className="checkbox-label">
               <input
                 type="checkbox"
@@ -3031,22 +3037,24 @@ function MemberEditor({
 
       <div className="member-form-card">
         <div className="member-check-grid">
-          <label className="checkbox-label">
-            <input
-              type="checkbox"
-              checked={!!x.email_default_opt_out}
-              onChange={e=>
-                setX({
-                  ...x,
-                  email_default_opt_out:
-                    e.target.checked
-                })
-              }
-            />
-            Email Default Opt-Out
-          </label>
+          {!isArchivedEagle&&
+            <label className="checkbox-label">
+              <input
+                type="checkbox"
+                checked={!!x.email_default_opt_out}
+                onChange={e=>
+                  setX({
+                    ...x,
+                    email_default_opt_out:
+                      e.target.checked
+                  })
+                }
+              />
+              Email Default Opt-Out
+            </label>
+          }
 
-          {(!x.adult || x.adult_leader) &&
+          {(!x.adult || x.adult_leader || isArchivedEagle) &&
             <label className="checkbox-label">
               <input
                 type="checkbox"
@@ -3061,7 +3069,7 @@ function MemberEditor({
               Order of the Arrow Member
             </label>
           }
-        {(!x.adult || x.adult_leader)&&
+        {(!x.adult || x.adult_leader || isArchivedEagle)&&
           <label className="checkbox-label">
             <input
               type="checkbox"
