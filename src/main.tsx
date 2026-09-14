@@ -263,6 +263,7 @@ function Home({me}:{me:any}){
 function Login({setMe}:{setMe:(x:any)=>void}){
   const [u,setU]=useState('');
   const [p,setP]=useState('');
+  const [rememberMe,setRememberMe]=useState(true);
   const [err,setErr]=useState('');
   const nav=useNavigate();
 
@@ -272,7 +273,14 @@ function Login({setMe}:{setMe:(x:any)=>void}){
       onSubmit={async e=>{
         e.preventDefault();
         try{
-          await post('/login',{username:u,password:p});
+          await post(
+            '/login',
+            {
+              username:u,
+              password:p,
+              rememberMe
+            }
+          );
           const x=await api('/me');
           setMe(x.user);
           nav('/');
@@ -300,6 +308,17 @@ function Login({setMe}:{setMe:(x:any)=>void}){
         />
       </label>
 
+      <label className="checkbox-label">
+        <input
+          type="checkbox"
+          checked={rememberMe}
+          onChange={e=>
+            setRememberMe(e.target.checked)
+          }
+        />
+        Remember Me
+      </label>
+      
       {err&&<p className="error">{err}</p>}
 
       <button className="primary">Log In</button>
@@ -308,49 +327,126 @@ function Login({setMe}:{setMe:(x:any)=>void}){
 }
 
 function Claim(){
-  const token=decodeURIComponent(location.pathname.split('/').pop()||'');
+  const token=decodeURIComponent(
+    location.pathname.split('/').pop()||''
+  );
+
+  const [mode,setMode]=useState<
+    'create'|'reset'|null
+  >(null);
+
   const [username,setUsername]=useState('');
   const [pw,setPw]=useState('');
   const [ok,setOk]=useState(false);
   const [err,setErr]=useState('');
 
-  return <Page title="Claim Account">
+  useEffect(()=>{
+    api(
+      '/claim?token='+
+      encodeURIComponent(token)
+    )
+      .then((x:any)=>{
+        setMode(x.mode);
+
+        if(x.username)
+          setUsername(x.username);
+      })
+      .catch((e:any)=>
+        setErr(e.message)
+      );
+  },[]);
+
+  return <Page
+    title={
+      mode==='reset'?
+        'Reset Password':
+        'Claim Account'
+    }
+  >
     <form
       className="form narrow"
       onSubmit={async e=>{
         e.preventDefault();
 
         try{
-          await post('/claim',{token,username,password:pw});
-          setOk(true)
+          const r=await post(
+            '/claim',
+            {
+              token,
+              username,
+              password:pw
+            }
+          );
+
+          setMode(r.mode);
+          setOk(true);
         }catch(e:any){
-          setErr(e.message)
+          setErr(e.message);
         }
       }}
     >
       {ok?
-        <p>Your account has been created. You can now log in.</p>:
+        <p>
+          {mode==='reset'?
+            'Your password has been reset. You can now log in.':
+            'Your account has been created. You can now log in.'
+          }
+        </p>:
         <>
-          <label>
-            Username
-            <input
-              value={username}
-              onChange={e=>setUsername(e.target.value)}
-            />
-          </label>
+          {mode!=='reset'&&
+            <label>
+              Username
+              <input
+                value={username}
+                onChange={e=>
+                  setUsername(e.target.value)
+                }
+                autoComplete="username"
+              />
+            </label>
+          }
+
+          {mode==='reset'&&
+            <label>
+              Username
+              <input
+                value={username}
+                readOnly
+              />
+            </label>
+          }
 
           <label>
-            Password
+            {mode==='reset'?
+              'New Password':
+              'Password'
+            }
             <input
               type="password"
               value={pw}
-              onChange={e=>setPw(e.target.value)}
+              onChange={e=>
+                setPw(e.target.value)
+              }
+              autoComplete={
+                mode==='reset'?
+                  'new-password':
+                  'new-password'
+              }
             />
           </label>
 
-          {err&&<p className="error">{err}</p>}
+          {err&&
+            <p className="error">
+              {err}
+            </p>
+          }
 
-          <button className="primary">Create Account</button>
+          <button className="primary">
+            {mode==='reset'?
+              'Reset Password':
+              'Create Account'
+            }
+          </button>
         </>
       }
     </form>
@@ -1102,25 +1198,105 @@ function MemberInfo({me}:{me:any}){
     </div>;
   };
 
-  const createLink=async(x:any)=>{
-    try{
-      const r=await post(
-        '/admin/invite/'+x.id,
-        {}
-      );
+const createLink=async(x:any)=>{
+  try{
+    const r=await post(
+      '/admin/invite/'+x.id,
+      {}
+    );
 
-      setAccountLink({
-        username:r.username,
-        url:r.inviteUrl
-      });
-    }catch(e:any){
-      setMsg(e.message);
-      setTimeout(
-        ()=>setMsg(''),
-        2200
-      );
-    }
-  };
+    setAccountLink({
+      username:r.username,
+      url:
+        window.location.origin+
+        '/claim/'+
+        encodeURIComponent(r.token),
+      mode:r.mode,
+      person:x
+    });
+  }catch(e:any){
+    setMsg(e.message);
+    setTimeout(
+      ()=>setMsg(''),
+      2200
+    );
+  }
+};
+
+const sendAccountLinkEmail=()=>{
+  if(!accountLink)
+    return;
+
+  const person=
+    accountLink.person||{};
+
+  const first=String(
+    person.first_name||''
+  ).trim();
+
+  const last=String(
+    person.last_name||''
+  ).trim();
+
+  const creatorFirst=String(
+    me?.person?.first_name||''
+  ).trim();
+
+  const creatorLast=String(
+    me?.person?.last_name||''
+  ).trim();
+
+  const action=
+    accountLink.mode==='reset'?
+      'reset your password':
+      'create your account';
+
+  const subject=
+    accountLink.mode==='reset'?
+      '[Troop 690] Reset Password':
+      '[Troop 690] Create Account';
+
+  const body=
+    `${first} ${last},
+
+Please see the following link to ${action} on troop690.org:
+
+${accountLink.url}
+
+Yours in Scouting,
+${creatorFirst} ${creatorLast}
+Troop 690`;
+
+  const youthCC=
+    !person.adult?
+      (person.emergency_contacts||[])
+        .map((p:any)=>
+          String(p.email||'').trim()
+        )
+        .filter(Boolean):
+      [];
+
+  const to=String(
+    person.email||''
+  ).trim();
+
+  const params=[
+    `subject=${encodeURIComponent(subject)}`,
+    `body=${encodeURIComponent(body)}`
+  ];
+
+  if(youthCC.length){
+    params.unshift(
+      `cc=${encodeURIComponent(
+        youthCC.join(',')
+      )}`
+    );
+  }
+
+  window.location.href=
+    `mailto:${encodeURIComponent(to)}?`+
+    params.join('&');
+};
 
   const renderAccount=(x:any)=>{
     return <>
@@ -1147,15 +1323,17 @@ function MemberInfo({me}:{me:any}){
       }
 
       {canInvite&&
-       !x.active&&
        !x.archived&&
-        <button
+       <button
           className="admin-action-button"
           onClick={()=>
             createLink(x)
           }
         >
-          Link
+          {x.active?
+            'Link':
+            'Link'
+          }
         </button>
       }
 
@@ -1574,12 +1752,18 @@ function MemberInfo({me}:{me:any}){
     {accountLink&&
       <div className="modal">
         <div className="modal-card">
-          <h2>Account Link</h2>
+          <h2>
+            {accountLink.mode==='reset'?
+              'Reset Password':
+              'Account Link'
+            }
+          </h2>
 
           <p>
-            This does not send an email or text message.
-            Copy the link below and give it to the member
-            manually.
+            {accountLink.mode==='reset'?
+              'Use this link to let the member reset password.':
+              'Use this link to let the member create account.'
+            }
           </p>
 
           <label className="form">
@@ -1626,6 +1810,13 @@ function MemberInfo({me}:{me:any}){
               }}
             >
               Copy Link
+            </button>
+
+            <button
+              type="button"
+              onClick={sendAccountLinkEmail}
+            >
+              Send
             </button>
 
             <button
