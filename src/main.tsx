@@ -1921,7 +1921,7 @@ function Families({canEdit}:{canEdit:boolean}){
   </div>;
 }
 
-function patrolPosition=(x:any)=>{
+const patrolPosition=(x:any)=>{
   const names=x.position_names||[];
 
   return names.filter(
@@ -1933,7 +1933,7 @@ function patrolPosition=(x:any)=>{
   ).join(', ');
 };
 
-function patrolPriority=(x:any)=>{
+const patrolPriority=(x:any)=>{
   const names=x.position_names||[];
 
   if(names.includes('Patrol Leader'))
