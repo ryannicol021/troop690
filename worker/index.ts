@@ -822,6 +822,43 @@ async function ensureSiteAdministratorSchema(c: Context<AppEnv>){
   }
 }
 
+async function ensureEventSchema(c:Context<AppEnv>){
+  const cols=await c.env.DB
+    .prepare(
+      'PRAGMA table_info(events)'
+    )
+    .all<any>();
+
+  const names=new Set(
+    (cols.results??[]).map(
+      (x:any)=>String(x.name)
+    )
+  );
+
+  const additions=[
+    ['event_type',"TEXT DEFAULT 'Other'"],
+    ['location_name',"TEXT DEFAULT ''"],
+    ['location_address',"TEXT DEFAULT ''"],
+    ['departure_arrival_location_name',"TEXT DEFAULT ''"],
+    ['departure_arrival_location_address',"TEXT DEFAULT ''"],
+    ['dress_code',"TEXT DEFAULT ''"],
+    ['service_hours',"REAL"],
+    ['camping_nights',"REAL"],
+    ['hiking_miles',"REAL"],
+    ['leader_1_id',"INTEGER"],
+    ['leader_2_id',"INTEGER"]
+  ];
+
+  for(const [name,type] of additions){
+    if(!names.has(name)){
+      await c.env.DB.prepare(`
+        ALTER TABLE events
+        ADD COLUMN ${name} ${type}
+      `).run();
+    }
+  }
+}
+
 async function ensureAccountLinkSchema(c:Context<AppEnv>){
   const cols=await c.env.DB
     .prepare(
@@ -901,6 +938,7 @@ app.use('/api/*',async(c,next)=>{
           await ensureFamilySchema(c);
           await ensurePatrolSchema(c);
           await ensureSiteAdministratorSchema(c);
+          await ensureEventSchema(c);
           await ensureAccountLinkSchema(c);
         })();
       }
