@@ -3528,7 +3528,10 @@ app.put('/api/admin/members/:id',async c=>{
     `).run();
   }
   
-  if(x.eagle_scout_archive){
+  if(
+    x.eagle_scout_archive &&
+    Number(before?.eagle_scout_archive)!==1
+  ){
     const current=await c.env.DB
       .prepare(`
         SELECT
