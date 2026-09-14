@@ -122,7 +122,9 @@ header{
   background:transparent;
   color:#fff;
   padding:8px;
-  min-width:44px
+  min-width:44px;
+  display:grid;
+  place-items:center
 }
 
 .header-actions>div>button:hover{
