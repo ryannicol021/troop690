@@ -815,20 +815,7 @@ const eventsForDay=(date:Date)=>
   };
 
   return <Page
-    title="Calendar"
-    actions={
-      <a
-        className="button"
-        href="/api/calendar.ics"
-      >
-        Calendar subscription
-      </a>
-    }
-  >
-    <p className="muted">
-      Copy the subscription link into Apple Calendar or Google Calendar.
-      The feed stays current as the troop calendar changes.
-    </p>
+    title="Calendar">
 
     <div className="calendar-navigation">
       <button
