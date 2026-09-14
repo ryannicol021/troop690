@@ -1778,6 +1778,21 @@ useEffect(()=>{
         p.category==='youth'
   );
 
+  const formatPhone=(value:string)=>{
+    const digits=value.replace(/\D/g,'').slice(0,10);
+  
+    if(!digits)
+      return '';
+  
+    if(digits.length<=3)
+      return `(${digits}`;
+  
+    if(digits.length<=6)
+      return `(${digits.slice(0,3)}) ${digits.slice(3)}`;
+  
+    return `(${digits.slice(0,3)}) ${digits.slice(3,6)}-${digits.slice(6)}`;
+  };
+  
   return <div className="modal">
     <form
       className="modal-card form member-editor"
@@ -2008,11 +2023,13 @@ useEffect(()=>{
             Phone
             <input
               type="tel"
-              value={x.phone||''}
+              inputMode="numeric"
+              maxLength={14}
+              value={formatPhone(x.phone||'')}
               onChange={e=>
                 setX({
                   ...x,
-                  phone:e.target.value
+                  phone:formatPhone(e.target.value)
                 })
               }
             />
