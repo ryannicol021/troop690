@@ -2631,7 +2631,7 @@ function MemberEditor({
           !value?.eagle_scout_archive
         ){
           const confirmed=confirm(
-            'Are you sure you want to move this Adult Leader to the Eagle Scout Archive? Their login will be permanently deleted and they will no longer be an Adult Leader.'
+            'Are you sure you want to move this member to the Eagle Scout Archive?'
           );
 
           if(!confirmed)
