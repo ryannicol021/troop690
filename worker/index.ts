@@ -457,6 +457,123 @@ async function userFromRequest(c: Context<AppEnv>): Promise<User | null> {
   };
 }
 
+async function ensurePatrolSchema(c: Context<AppEnv>){
+  await c.env.DB.prepare(`
+    CREATE TABLE IF NOT EXISTS patrol_units(
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL UNIQUE,
+      custom_name INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )
+  `).run();
+
+  await c.env.DB.prepare(`
+    CREATE TABLE IF NOT EXISTS patrol_members(
+      patrol_id INTEGER NOT NULL,
+      person_id INTEGER NOT NULL UNIQUE,
+      PRIMARY KEY(patrol_id,person_id),
+      FOREIGN KEY(patrol_id)
+        REFERENCES patrol_units(id)
+        ON DELETE CASCADE,
+      FOREIGN KEY(person_id)
+        REFERENCES people(id)
+        ON DELETE CASCADE
+    )
+  `).run();
+
+  await c.env.DB.prepare(`
+    CREATE TABLE IF NOT EXISTS individual_patrol_members(
+      person_id INTEGER PRIMARY KEY,
+      FOREIGN KEY(person_id)
+        REFERENCES people(id)
+        ON DELETE CASCADE
+    )
+  `).run();
+
+  const count=await c.env.DB
+    .prepare(
+      'SELECT COUNT(*) count FROM patrol_units'
+    )
+    .first<any>();
+
+  if(Number(count?.count||0)>0)
+    return;
+
+  const legacy=await c.env.DB
+    .prepare(`
+      SELECT
+        id,
+        patrol
+      FROM people
+      WHERE adult=0
+        AND archived=0
+        AND TRIM(COALESCE(patrol,''))<>''
+    `)
+    .all<any>();
+
+  const patrolIds=new Map<string,number>();
+
+  for(const row of (legacy.results??[])){
+    const name=String(
+      row.patrol||''
+    ).trim();
+
+    if(!name)
+      continue;
+
+    let patrolId=patrolIds.get(name);
+
+    if(patrolId==null){
+      const existing=await c.env.DB
+        .prepare(`
+          SELECT id
+          FROM patrol_units
+          WHERE name=?
+        `)
+        .bind(name)
+        .first<any>();
+
+      if(existing){
+        patrolId=Number(existing.id);
+      }else{
+        const created=await c.env.DB
+          .prepare(`
+            INSERT INTO patrol_units(
+              name,
+              custom_name
+            )
+            VALUES(?,0)
+          `)
+          .bind(name)
+          .run();
+
+        patrolId=Number(
+          created.meta.last_row_id
+        );
+      }
+
+      patrolIds.set(
+        name,
+        patrolId
+      );
+    }
+
+    await c.env.DB
+      .prepare(`
+        INSERT OR IGNORE INTO patrol_members(
+          patrol_id,
+          person_id
+        )
+        VALUES(?,?)
+      `)
+      .bind(
+        patrolId,
+        Number(row.id)
+      )
+      .run();
+  }
+}
+
 async function ensureFamilySchema(c: Context<AppEnv>) {
   await c.env.DB.prepare(`
     CREATE TABLE IF NOT EXISTS family_units(
