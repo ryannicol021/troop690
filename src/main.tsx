@@ -1735,16 +1735,17 @@ Troop 690`;
           setEdit(null);
           setAdding(false);
         }}
-        onSaved={async()=>{
+        onSaved={()=>{
           setEdit(null);
           setAdding(false);
-          await load();
 
           setMsg('Saved');
           setTimeout(
             ()=>setMsg(''),
             1800
           );
+
+          load();
         }}
       />
     }
@@ -3222,8 +3223,11 @@ function Administration({me}:{me:any}){
     const p=await api('/admin/permissions');
     setConfig(p);
 
-    if(can('ACCT')){
-      const sa=await api('/admin/site-administrator');
+        if(can('ACCT')){
+      const [sa,a]=await Promise.all([
+        api('/admin/site-administrator'),
+        api('/admin/account-logins')
+      ]);
 
       setSiteAdministrators(
         (sa.administrators||[]).sort((x:any,y:any)=>
@@ -3238,8 +3242,6 @@ function Administration({me}:{me:any}){
           null:
           Number(sa.siteAdministratorId)
       );
-
-      const a=await api('/admin/account-logins');
 
       setAccounts(
         (a.accounts||[]).sort((x:any,y:any)=>
