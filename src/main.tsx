@@ -542,7 +542,7 @@ function Eagles(){
   </Page>
 }
 
-function Calendar(){
+function Calendar({me}:{me:any}){
   const [d,setD]=useState<any>();
   const [viewDate,setViewDate]=useState(
     ()=>{
@@ -554,6 +554,7 @@ function Calendar(){
       );
     }
   );
+  const [showAddEvent,setShowAddEvent]=useState(false);
 
   useEffect(()=>{
     api('/calendar').then(setD)
@@ -817,7 +818,21 @@ const eventsForDay=(date:Date)=>
   };
 
   return <Page
-    title="Calendar">
+  title="Calendar"
+  actions={
+    me?.permissions?.includes('EVT')?
+      <button
+        type="button"
+        className="button"
+        onClick={()=>{
+          setShowAddEvent(true);
+        }}
+      >
+        Add Event
+      </button>:
+      undefined
+  }
+>
 
     <div className="calendar-navigation">
       <button
@@ -930,7 +945,39 @@ const eventsForDay=(date:Date)=>
         </div>;
       })}
     </div>
-  </Page>
+{showAddEvent&&
+  <div className="modal-backdrop">
+    <div className="modal-card">
+      <div className="modal-header">
+        <h2>Add Event</h2>
+
+        <button
+          type="button"
+          className="button secondary"
+          onClick={()=>{
+            setShowAddEvent(false);
+          }}
+        >
+          Cancel
+        </button>
+      </div>
+
+      <EventForm
+        me={me}
+        onSaved={()=>{
+          setShowAddEvent(false);
+
+          api('/calendar')
+            .then(setD);
+        }}
+        onCancel={()=>{
+          setShowAddEvent(false);
+        }}
+      />
+    </div>
+  </div>
+}
+</Page>
 }
 
 function CalendarEvent({
@@ -1062,6 +1109,433 @@ const canEdit=
       }
     </article>
   </Page>
+}
+
+function EventForm({
+  me,
+  onSaved,
+  onCancel
+}:{
+  me:any,
+  onSaved:()=>void,
+  onCancel:()=>void
+}){
+  const [saving,setSaving]=useState(false);
+  const [error,setError]=useState('');
+
+  const [form,setForm]=useState<any>({
+    title:'',
+    event_type:'Ceremony',
+    location_name:'',
+    location_address:'',
+    departure_arrival_location_name:'',
+    departure_arrival_location_address:'',
+    start_date:'',
+    start_time:'',
+    start_ampm:'p.m.',
+    end_date:'',
+    end_time:'',
+    end_ampm:'p.m.',
+    all_day:false,
+    dress_code:'',
+    estimated_cost:'',
+    service_hours:'',
+    camping_nights:'',
+    hiking_miles:'',
+    leader_1_id:'',
+    leader_2_id:'',
+    description:''
+  });
+
+  const set=(name:string,value:any)=>{
+    setForm((x:any)=>({
+      ...x,
+      [name]:value
+    }));
+  };
+
+  const save=async()=>{
+    setError('');
+
+    if(!form.title.trim()){
+      setError('Event Name is required.');
+      return;
+    }
+
+    if(!form.start_date||!form.end_date){
+      setError('Start and End dates are required.');
+      return;
+    }
+
+    if(!form.all_day&&
+      (!form.start_time||
+       !form.end_time)){
+      setError('Start and End times are required.');
+      return;
+    }
+
+    setSaving(true);
+
+    try{
+      const toDateTime=(
+        date:string,
+        time:string,
+        ampm:string
+      )=>{
+        if(!time)
+          return date+'T00:00:00';
+
+        let [hour,minute]=
+          time.split(':').map(Number);
+
+        if(ampm==='a.m.'){
+          if(hour===12)
+            hour=0;
+        }else{
+          if(hour!==12)
+            hour+=12;
+        }
+
+        return `${date}T${
+          String(hour).padStart(2,'0')
+        }:${
+          String(minute).padStart(2,'0')
+        }:00`;
+      };
+
+      await post('/admin/events',{
+        title:form.title.trim(),
+        description:form.description.trim(),
+        event_type:form.event_type,
+        location_name:form.location_name.trim(),
+        location_address:form.location_address.trim(),
+        departure_arrival_location_name:
+          form.departure_arrival_location_name.trim(),
+        departure_arrival_location_address:
+          form.departure_arrival_location_address.trim(),
+        start_at:toDateTime(
+          form.start_date,
+          form.all_day?'00:00':form.start_time,
+          form.start_ampm
+        ),
+        end_at:toDateTime(
+          form.end_date,
+          form.all_day?'23:59':form.end_time,
+          form.end_ampm
+        ),
+        all_day:form.all_day?1:0,
+        dress_code:form.dress_code,
+        estimated_cost:
+          form.estimated_cost===''?
+            '':
+            Number(form.estimated_cost).toFixed(2),
+        service_hours:
+          form.service_hours===''?
+            null:
+            Number(form.service_hours),
+        camping_nights:
+          form.camping_nights===''?
+            null:
+            Number(form.camping_nights),
+        hiking_miles:
+          form.hiking_miles===''?
+            null:
+            Number(form.hiking_miles),
+        leader_1_id:
+          form.leader_1_id||null,
+        leader_2_id:
+          form.leader_2_id||null
+      });
+
+      onSaved();
+    }catch(err:any){
+      setError(
+        err?.message||
+        'Unable to save event.'
+      );
+    }finally{
+      setSaving(false);
+    }
+  };
+
+  return <div className="event-form">
+
+    {error&&
+      <div className="error">
+        {error}
+      </div>
+    }
+
+    <label>
+      Event Name
+      <input
+        value={form.title}
+        onChange={e=>{
+          set('title',e.target.value);
+        }}
+      />
+    </label>
+
+    <label>
+      Event Type
+      <select
+        value={form.event_type}
+        onChange={e=>{
+          set('event_type',e.target.value);
+        }}
+      >
+        {[
+          'Ceremony',
+          'Court of Honor',
+          'Fundraiser',
+          'Mass',
+          'Meeting',
+          'Service',
+          'Summer Camp',
+          'Trip',
+          'Other'
+        ].map(x=>
+          <option key={x}>{x}</option>
+        )}
+      </select>
+    </label>
+
+    <label>
+      Location
+      <input
+        value={form.location_name}
+        placeholder="Search for a place or address"
+        onChange={e=>{
+          set('location_name',e.target.value);
+        }}
+      />
+    </label>
+
+    <label>
+      Location Address
+      <input
+        value={form.location_address}
+        onChange={e=>{
+          set('location_address',e.target.value);
+        }}
+      />
+    </label>
+
+    <label>
+      Departure / Arrival Location
+      <input
+        value={
+          form.departure_arrival_location_name
+        }
+        placeholder="Optional"
+        onChange={e=>{
+          set(
+            'departure_arrival_location_name',
+            e.target.value
+          );
+        }}
+      />
+    </label>
+
+    <label>
+      Departure / Arrival Address
+      <input
+        value={
+          form.departure_arrival_location_address
+        }
+        onChange={e=>{
+          set(
+            'departure_arrival_location_address',
+            e.target.value
+          );
+        }}
+      />
+    </label>
+
+    <label>
+      <input
+        type="checkbox"
+        checked={form.all_day}
+        onChange={e=>{
+          set('all_day',e.target.checked);
+        }}
+      />
+      All Day
+    </label>
+
+    <div className="event-form-row">
+      <label>
+        Start Date
+        <input
+          type="date"
+          value={form.start_date}
+          onChange={e=>{
+            set('start_date',e.target.value);
+          }}
+        />
+      </label>
+
+      {!form.all_day&&
+        <label>
+          Start Time
+          <div className="event-time">
+            <input
+              type="time"
+              value={form.start_time}
+              onChange={e=>{
+                set('start_time',e.target.value);
+              }}
+            />
+            <select
+              value={form.start_ampm}
+              onChange={e=>{
+                set('start_ampm',e.target.value);
+              }}
+            >
+              <option>a.m.</option>
+              <option>p.m.</option>
+            </select>
+          </div>
+        </label>
+      }
+    </div>
+
+    <div className="event-form-row">
+      <label>
+        End Date
+        <input
+          type="date"
+          value={form.end_date}
+          onChange={e=>{
+            set('end_date',e.target.value);
+          }}
+        />
+      </label>
+
+      {!form.all_day&&
+        <label>
+          End Time
+          <div className="event-time">
+            <input
+              type="time"
+              value={form.end_time}
+              onChange={e=>{
+                set('end_time',e.target.value);
+              }}
+            />
+            <select
+              value={form.end_ampm}
+              onChange={e=>{
+                set('end_ampm',e.target.value);
+              }}
+            >
+              <option>a.m.</option>
+              <option>p.m.</option>
+            </select>
+          </div>
+        </label>
+      }
+    </div>
+
+    <label>
+      Dress Code
+      <select
+        value={form.dress_code}
+        onChange={e=>{
+          set('dress_code',e.target.value);
+        }}
+      >
+        <option value="">None</option>
+        <option>Class A</option>
+        <option>Class B</option>
+        <option>Casual</option>
+        <option>Other</option>
+      </select>
+    </label>
+
+    <label>
+      Estimated Cost
+      <input
+        type="number"
+        min="0"
+        step="0.01"
+        value={form.estimated_cost}
+        placeholder="$"
+        onChange={e=>{
+          set('estimated_cost',e.target.value);
+        }}
+      />
+    </label>
+
+    <label>
+      Service Hours
+      <input
+        type="number"
+        min="0"
+        step="0.1"
+        value={form.service_hours}
+        onChange={e=>{
+          set('service_hours',e.target.value);
+        }}
+      />
+    </label>
+
+    <label>
+      Camping Nights
+      <input
+        type="number"
+        min="0"
+        step="1"
+        value={form.camping_nights}
+        onChange={e=>{
+          set('camping_nights',e.target.value);
+        }}
+      />
+    </label>
+
+    <label>
+      Hiking Miles
+      <input
+        type="number"
+        min="0"
+        step="0.1"
+        value={form.hiking_miles}
+        onChange={e=>{
+          set('hiking_miles',e.target.value);
+        }}
+      />
+    </label>
+
+    <label>
+      Description
+      <textarea
+        value={form.description}
+        onChange={e=>{
+          set('description',e.target.value);
+        }}
+      />
+    </label>
+
+    <div className="event-form-actions">
+      <button
+        type="button"
+        className="button secondary"
+        onClick={onCancel}
+        disabled={saving}
+      >
+        Cancel
+      </button>
+
+      <button
+        type="button"
+        className="button"
+        onClick={save}
+        disabled={saving}
+      >
+        {saving?'Saving…':'Save Event'}
+      </button>
+    </div>
+  </div>;
 }
 
 function PhotoAlbum({id}:{id:string}){
