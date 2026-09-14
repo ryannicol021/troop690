@@ -2826,6 +2826,10 @@ function MemberEditor({
                   checked={x.position_ids.includes(
                     Number(p.id)
                   )}
+                  disabled={
+                    p.code==='ADMIN'&&
+                    Number(x.id)===Number(x.site_administrator_id)
+                  }
                   onChange={()=>
                     togglePosition(
                       Number(p.id)
@@ -2979,6 +2983,8 @@ function Email(){
 
 function Administration({me}:{me:any}){
   const [accounts,setAccounts]=useState<any[]>([]);
+  const [siteAdministrators,setSiteAdministrators]=useState<any[]>([]);
+  const [siteAdministratorId,setSiteAdministratorId]=useState<number|null>(null);
   const [config,setConfig]=useState<any>({
     permissions:[],
     positions:[]
@@ -3026,6 +3032,22 @@ function Administration({me}:{me:any}){
     setConfig(p);
 
     if(can('ACCT')){
+      const sa=await api('/admin/site-administrator');
+
+      setSiteAdministrators(
+        (sa.administrators||[]).sort((x:any,y:any)=>
+          `${x.first_name} ${x.last_name}`.localeCompare(
+            `${y.first_name} ${y.last_name}`
+          )
+        )
+      );
+
+      setSiteAdministratorId(
+        sa.siteAdministratorId==null?
+          null:
+          Number(sa.siteAdministratorId)
+      );
+
       const a=await api('/admin/account-logins');
 
       setAccounts(
@@ -3217,6 +3239,54 @@ function Administration({me}:{me:any}){
   };
 
   return <Page title="Administration">
+
+        {can('ACCT')&&
+      <section>
+        <h2>Site Administrator</h2>
+
+        <div className="site-admin-card">
+          <label>
+            Site Administrator
+            <select
+              value={siteAdministratorId??''}
+              onChange={async e=>{
+                try{
+                  const personId=Number(e.target.value);
+
+                  await put(
+                    '/admin/site-administrator',
+                    {personId}
+                  );
+
+                  setSiteAdministratorId(personId);
+
+                  setMsg('Saved');
+                  setTimeout(
+                    ()=>setMsg(''),
+                    1800
+                  );
+                }catch(e:any){
+                  setMsg(e.message);
+                  setTimeout(
+                    ()=>setMsg(''),
+                    2200
+                  );
+                }
+              }}
+            >
+              {siteAdministrators.map(x=>
+                <option
+                  key={x.id}
+                  value={x.id}
+                >
+                  {x.first_name} {x.last_name}
+                </option>
+              )}
+            </select>
+          </label>
+        </div>
+      </section>
+    }
 
         {can('ACCT')&&
       <section>
