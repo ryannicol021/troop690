@@ -1180,9 +1180,16 @@ app.get('/api/home',async c=>{
       .prepare(`
         SELECT
           e.*,
-          p.first_name||' '||p.last_name leader_name
+          p.first_name||' '||p.last_name leader_name,
+          p1.first_name||' '||p1.last_name leader_1_name,
+          p2.first_name||' '||p2.last_name leader_2_name
         FROM events e
-        LEFT JOIN people p ON p.id=e.leader_person_id
+        LEFT JOIN people p
+          ON p.id=e.leader_person_id
+        LEFT JOIN people p1
+          ON p1.id=e.leader_1_id
+        LEFT JOIN people p2
+          ON p2.id=e.leader_2_id
         WHERE e.start_at>=datetime('now')
         ORDER BY e.start_at
         LIMIT 8
@@ -1294,9 +1301,16 @@ app.get('/api/calendar',async c=>{
     .prepare(`
       SELECT
         e.*,
-        p.first_name||' '||p.last_name leader_name
+        p.first_name||' '||p.last_name leader_name,
+        p1.first_name||' '||p1.last_name leader_1_name,
+        p2.first_name||' '||p2.last_name leader_2_name
       FROM events e
-      LEFT JOIN people p ON p.id=e.leader_person_id
+      LEFT JOIN people p
+        ON p.id=e.leader_person_id
+      LEFT JOIN people p1
+        ON p1.id=e.leader_1_id
+      LEFT JOIN people p2
+        ON p2.id=e.leader_2_id
       ORDER BY e.start_at
     `)
     .all<any>();
@@ -1314,9 +1328,16 @@ app.get('/api/events/:id',async c=>{
     .prepare(`
       SELECT
         e.*,
-        p.first_name||' '||p.last_name leader_name
+        p.first_name||' '||p.last_name leader_name,
+        p1.first_name||' '||p1.last_name leader_1_name,
+        p2.first_name||' '||p2.last_name leader_2_name
       FROM events e
-      LEFT JOIN people p ON p.id=e.leader_person_id
+      LEFT JOIN people p
+        ON p.id=e.leader_person_id
+      LEFT JOIN people p1
+        ON p1.id=e.leader_1_id
+      LEFT JOIN people p2
+        ON p2.id=e.leader_2_id
       WHERE e.id=?
     `)
     .bind(id)
@@ -4296,6 +4317,96 @@ app.post('/api/admin/events',async c=>{
 
   const x=await c.req.json();
 
+  const title=
+    String(x.event_name??x.title??'').trim();
+
+  const startAt=
+    String(x.start_at??'').trim();
+
+  const endAt=
+    String(x.end_at??'').trim();
+
+  if(!title)
+    return json(
+      c,
+      {error:'Event Name is required.'},
+      400
+    );
+
+  if(!startAt)
+    return json(
+      c,
+      {error:'Start is required.'},
+      400
+    );
+
+  if(!endAt)
+    return json(
+      c,
+      {error:'End is required.'},
+      400
+    );
+
+  const eventType=
+    String(x.event_type||'Other');
+
+  const locationName=
+    String(x.location_name??x.location??'');
+
+  const locationAddress=
+    String(x.location_address||'');
+
+  const departureName=
+    String(
+      x.departure_arrival_location_name||
+      x.departure_location||
+      ''
+    );
+
+  const departureAddress=
+    String(
+      x.departure_arrival_location_address||''
+    );
+
+  const dressCode=
+    String(
+      x.dress_code??x.uniform??''
+    );
+
+  const estimatedCost=
+    x.estimated_cost==null?
+      '':
+      String(x.estimated_cost);
+
+  const serviceHours=
+    x.service_hours==null?
+      null:
+      Number(x.service_hours);
+
+  const campingNights=
+    x.camping_nights==null?
+      null:
+      Number(x.camping_nights);
+
+  const hikingMiles=
+    x.hiking_miles==null?
+      null:
+      Number(x.hiking_miles);
+
+  const allDay=x.all_day?1:0;
+
+  const leader1Id=
+    x.leader_1_id==null||
+    x.leader_1_id===''?
+      null:
+      Number(x.leader_1_id);
+
+  const leader2Id=
+    x.leader_2_id==null||
+    x.leader_2_id===''?
+      null:
+      Number(x.leader_2_id);
+
   const r=await c.env.DB
     .prepare(`
       INSERT INTO events(
@@ -4309,22 +4420,54 @@ app.post('/api/admin/events',async c=>{
         estimated_cost,
         location,
         departure_location,
-        return_location
+        return_location,
+        event_type,
+        location_name,
+        location_address,
+        departure_arrival_location_name,
+        departure_arrival_location_address,
+        dress_code,
+        service_hours,
+        camping_nights,
+        hiking_miles,
+        leader_1_id,
+        leader_2_id
       )
-      VALUES(?,?,?,?,?,?,?,?,?,?,?)
+      VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
     `)
     .bind(
-      x.title,
-      x.description||'',
-      x.start_at,
-      x.end_at||null,
-      x.all_day?1:0,
-      x.leader_person_id||null,
-      x.uniform||'',
-      x.estimated_cost||'',
-      x.location||'',
-      x.departure_location||'',
-      x.return_location||''
+      title,
+      String(x.description||''),
+      startAt,
+      endAt,
+      allDay,
+      leader1Id,
+      dressCode,
+      estimatedCost,
+      locationName+
+        (
+          locationAddress?
+            ` (${locationAddress})`:
+            ''
+        ),
+      departureName+
+        (
+          departureAddress?
+            ` (${departureAddress})`:
+            ''
+        ),
+      '',
+      eventType,
+      locationName,
+      locationAddress,
+      departureName,
+      departureAddress,
+      dressCode,
+      serviceHours,
+      campingNights,
+      hikingMiles,
+      leader1Id,
+      leader2Id
     )
     .run();
 
@@ -4339,6 +4482,96 @@ app.put('/api/admin/events/:id',async c=>{
 
   const id=Number(c.req.param('id'));
   const x=await c.req.json();
+
+  const title=
+    String(x.event_name??x.title??'').trim();
+
+  const startAt=
+    String(x.start_at??'').trim();
+
+  const endAt=
+    String(x.end_at??'').trim();
+
+  if(!title)
+    return json(
+      c,
+      {error:'Event Name is required.'},
+      400
+    );
+
+  if(!startAt)
+    return json(
+      c,
+      {error:'Start is required.'},
+      400
+    );
+
+  if(!endAt)
+    return json(
+      c,
+      {error:'End is required.'},
+      400
+    );
+
+  const eventType=
+    String(x.event_type||'Other');
+
+  const locationName=
+    String(x.location_name??x.location??'');
+
+  const locationAddress=
+    String(x.location_address||'');
+
+  const departureName=
+    String(
+      x.departure_arrival_location_name||
+      x.departure_location||
+      ''
+    );
+
+  const departureAddress=
+    String(
+      x.departure_arrival_location_address||''
+    );
+
+  const dressCode=
+    String(
+      x.dress_code??x.uniform??''
+    );
+
+  const estimatedCost=
+    x.estimated_cost==null?
+      '':
+      String(x.estimated_cost);
+
+  const serviceHours=
+    x.service_hours==null?
+      null:
+      Number(x.service_hours);
+
+  const campingNights=
+    x.camping_nights==null?
+      null:
+      Number(x.camping_nights);
+
+  const hikingMiles=
+    x.hiking_miles==null?
+      null:
+      Number(x.hiking_miles);
+
+  const allDay=x.all_day?1:0;
+
+  const leader1Id=
+    x.leader_1_id==null||
+    x.leader_1_id===''?
+      null:
+      Number(x.leader_1_id);
+
+  const leader2Id=
+    x.leader_2_id==null||
+    x.leader_2_id===''?
+      null:
+      Number(x.leader_2_id);
 
   await c.env.DB
     .prepare(`
@@ -4355,28 +4588,59 @@ app.put('/api/admin/events/:id',async c=>{
         location=?,
         departure_location=?,
         return_location=?,
+        event_type=?,
+        location_name=?,
+        location_address=?,
+        departure_arrival_location_name=?,
+        departure_arrival_location_address=?,
+        dress_code=?,
+        service_hours=?,
+        camping_nights=?,
+        hiking_miles=?,
+        leader_1_id=?,
+        leader_2_id=?,
         updated_at=CURRENT_TIMESTAMP
       WHERE id=?
     `)
     .bind(
-      x.title,
-      x.description||'',
-      x.start_at,
-      x.end_at||null,
-      x.all_day?1:0,
-      x.leader_person_id||null,
-      x.uniform||'',
-      x.estimated_cost||'',
-      x.location||'',
-      x.departure_location||'',
-      x.return_location||'',
+      title,
+      String(x.description||''),
+      startAt,
+      endAt,
+      allDay,
+      leader1Id,
+      dressCode,
+      estimatedCost,
+      locationName+
+        (
+          locationAddress?
+            ` (${locationAddress})`:
+            ''
+        ),
+      departureName+
+        (
+          departureAddress?
+            ` (${departureAddress})`:
+            ''
+        ),
+      '',
+      eventType,
+      locationName,
+      locationAddress,
+      departureName,
+      departureAddress,
+      dressCode,
+      serviceHours,
+      campingNights,
+      hikingMiles,
+      leader1Id,
+      leader2Id,
       id
     )
     .run();
 
   return json(c,{ok:true});
 });
-
 app.delete('/api/admin/events/:id',async c=>{
   const d=admin(c,'EVT');
   if(d)return d;
