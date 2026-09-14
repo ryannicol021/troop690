@@ -2488,6 +2488,7 @@ app.get('/api/admin/families',async c=>{
         ON fm.family_id=fu.id
       LEFT JOIN people p
         ON p.id=fm.person_id
+        AND p.archived=0
       ORDER BY
         fu.id,
         p.last_name,
@@ -2506,11 +2507,13 @@ app.get('/api/admin/families',async c=>{
         adult,
         adult_leader
       FROM people p
-      WHERE NOT EXISTS(
-        SELECT 1
-        FROM family_members fm
-        WHERE fm.person_id=p.id
-      )
+      WHERE
+        p.archived=0
+        AND NOT EXISTS(
+          SELECT 1
+          FROM family_members fm
+          WHERE fm.person_id=p.id
+        )
       AND NOT EXISTS(
         SELECT 1
         FROM family_individuals fi
@@ -3289,9 +3292,14 @@ app.put('/api/admin/members/:id',async c=>{
   const x=await c.req.json();
 
   const before=await c.env.DB
-    .prepare(
-      'SELECT adult FROM people WHERE id=?'
-    )
+    .prepare(`
+      SELECT
+        adult,
+        eagle_scout_archive,
+        archived
+      FROM people
+      WHERE id=?
+    `)
     .bind(id)
     .first<any>();
 
@@ -3382,6 +3390,52 @@ app.put('/api/admin/members/:id',async c=>{
     );
   }
 
+  const unarchiving=
+    Number(before?.eagle_scout_archive)===1 &&
+    'eagle_scout_archive' in x &&
+    x.eagle_scout_archive===false;
+
+  if(unarchiving){
+    x.adult=true;
+    x.adult_leader=false;
+    x.eagle_scout_archive=false;
+    x.archived=false;
+    x.position_ids=[];
+
+    await c.env.DB.prepare(
+      'DELETE FROM family_members WHERE person_id=?'
+    )
+      .bind(id)
+      .run();
+
+    await c.env.DB.prepare(
+      'DELETE FROM family_individuals WHERE person_id=?'
+    )
+      .bind(id)
+      .run();
+
+    await c.env.DB.prepare(
+      'DELETE FROM patrol_members WHERE person_id=?'
+    )
+      .bind(id)
+      .run();
+
+    await c.env.DB.prepare(
+      'DELETE FROM individual_patrol_members WHERE person_id=?'
+    )
+      .bind(id)
+      .run();
+
+    await c.env.DB.prepare(`
+      DELETE FROM family_units
+      WHERE NOT EXISTS(
+        SELECT 1
+        FROM family_members fm
+        WHERE fm.family_id=family_units.id
+      )
+    `).run();
+  }
+  
   if(sets.length){
     await c.env.DB
       .prepare(`
@@ -3466,48 +3520,6 @@ app.put('/api/admin/members/:id',async c=>{
         WHERE fm.family_id=family_units.id
       )
     `).run();
-  }
-
-  if(
-    before &&
-    'eagle_scout_archive' in x &&
-    x.eagle_scout_archive===false
-  ){
-    const currentArchive=await c.env.DB
-      .prepare(`
-        SELECT
-          eagle_scout_archive
-        FROM people
-        WHERE id=?
-      `)
-      .bind(id)
-      .first<any>();
-
-    if(Number(currentArchive?.eagle_scout_archive)===1){
-      await c.env.DB
-        .prepare(`
-          UPDATE people
-          SET
-            adult=1,
-            adult_leader=0,
-            eagle_scout_archive=0,
-            archived=0,
-            updated_at=CURRENT_TIMESTAMP
-          WHERE id=?
-        `)
-        .bind(id)
-        .run();
-
-      await c.env.DB
-        .prepare(`
-          DELETE FROM person_positions
-          WHERE person_id=?
-        `)
-        .bind(id)
-        .run();
-
-      x.position_ids=[];
-    }
   }
   
   if(x.eagle_scout_archive){
