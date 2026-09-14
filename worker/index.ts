@@ -2317,7 +2317,6 @@ app.post('/api/admin/patrols/move',async c=>{
         FROM patrol_members pm
         WHERE pm.patrol_id=patrol_units.id
       )
-      AND custom_name=0
     `)
     .run();
 
