@@ -873,6 +873,21 @@ async function ensureAccountLinkSchema(c:Context<AppEnv>){
       )
       .run();
   }
+
+  await c.env.DB.prepare(`
+    UPDATE people
+    SET
+      adult=1,
+      adult_leader=0,
+      eagle_scout_archive=0,
+      archived=0,
+      updated_at=CURRENT_TIMESTAMP
+    WHERE
+      adult=1
+      AND adult_leader=0
+      AND eagle_scout_archive=0
+      AND archived=1
+  `).run();
 }
 
 let adminSchemaPromise:Promise<void>|null=null;
