@@ -822,22 +822,84 @@ async function ensureSiteAdministratorSchema(c: Context<AppEnv>){
   }
 }
 
-app.use('/api/*', async (c, next) => {
-  try {
-    if (c.req.path !== '/api/login' && c.req.path !== '/api/bootstrap') {
-      await ensurePermissionSchema(c);
-      await ensureFamilySchema(c);
-      await ensurePatrolSchema(c);
-      await ensureSiteAdministratorSchema(c);
-    }
-  } catch {
-    // Ignore permission-schema errors here so they cannot break authentication.
+async function ensureAccountLinkSchema(c:Context<AppEnv>){
+  const cols=await c.env.DB
+    .prepare(
+      'PRAGMA table_info(accounts)'
+    )
+    .all<any>();
+
+  const names=new Set(
+    (cols.results??[]).map(
+      (x:any)=>String(x.name)
+    )
+  );
+
+  if(!names.has('account_link_token')){
+    await c.env.DB.prepare(`
+      ALTER TABLE accounts
+      ADD COLUMN account_link_token TEXT
+    `).run();
   }
 
-  try {
-    c.set('user', await userFromRequest(c));
-  } catch {
-    c.set('user', null);
+  await c.env.DB.prepare(`
+    CREATE UNIQUE INDEX IF NOT EXISTS
+    idx_accounts_account_link_token
+    ON accounts(account_link_token)
+  `).run();
+
+  const rows=await c.env.DB
+    .prepare(`
+      SELECT id
+      FROM accounts
+      WHERE account_link_token IS NULL
+         OR TRIM(account_link_token)=''
+    `)
+    .all<any>();
+
+  for(const row of (rows.results??[])){
+    await c.env.DB.prepare(`
+      UPDATE accounts
+      SET account_link_token=?
+      WHERE id=?
+        AND (
+          account_link_token IS NULL
+          OR TRIM(account_link_token)=''
+        )
+    `)
+      .bind(
+        crypto.randomUUID(),
+        Number(row.id)
+      )
+      .run();
+  }
+}
+
+let adminSchemaPromise:Promise<void>|null=null;
+
+app.use('/api/*',async(c,next)=>{
+  if(c.req.path.startsWith('/api/admin/')){
+    try{
+      if(!adminSchemaPromise){
+        adminSchemaPromise=(async()=>{
+          await ensurePermissionSchema(c);
+          await ensureFamilySchema(c);
+          await ensurePatrolSchema(c);
+          await ensureSiteAdministratorSchema(c);
+          await ensureAccountLinkSchema(c);
+        })();
+      }
+
+      await adminSchemaPromise;
+    }catch{
+      adminSchemaPromise=null;
+    }
+  }
+
+  try{
+    c.set('user',await userFromRequest(c));
+  }catch{
+    c.set('user',null);
   }
 
   await next();
@@ -1706,8 +1768,10 @@ app.get('/api/admin/members',async c=>{
         fmChild.person_id child_id,
         p.id parent_id,
         p.first_name,
+        p.middle_name,
         p.last_name,
-        p.phone
+        p.phone,
+        p.email
       FROM family_members fmChild
       JOIN family_members fmParent
         ON fmParent.family_id=fmChild.family_id
@@ -1737,8 +1801,10 @@ app.get('/api/admin/members',async c=>{
     contactsByChild.get(childId)!.push({
       id:Number(row.parent_id),
       first_name:String(row.first_name||''),
+      middle_name:String(row.middle_name||''),
       last_name:String(row.last_name||''),
-      phone:String(row.phone||'')
+      phone:String(row.phone||''),
+      email:String(row.email||'')
     });
   }
 
@@ -3626,7 +3692,9 @@ app.post('/api/admin/invite/:id',async c=>{
     .prepare(`
       SELECT
         id,
-        active
+        username,
+        active,
+        account_link_token
       FROM accounts
       WHERE person_id=?
       LIMIT 1
@@ -3634,20 +3702,49 @@ app.post('/api/admin/invite/:id',async c=>{
     .bind(id)
     .first<any>();
 
-  if(existing?.active){
-    return json(
-      c,
-      {error:'This member already has an active account.'},
-      409
-    );
+  let token=String(
+    existing?.account_link_token||''
+  );
+
+  if(!token)
+    token=crypto.randomUUID();
+
+  const exp=new Date(
+    Date.now()+72*3600000
+  ).toISOString();
+
+  if(existing){
+    await c.env.DB
+      .prepare(`
+        UPDATE accounts
+        SET
+          account_link_token=?,
+          invite_token_hash=?,
+          invite_expires_at=?
+        WHERE id=?
+      `)
+      .bind(
+        token,
+        await sha256(token),
+        exp,
+        Number(existing.id)
+      )
+      .run();
+
+    return json(c,{
+      username:String(existing.username||''),
+      token,
+      mode:Number(existing.active)?
+        'reset':
+        'create'
+    });
   }
 
-  const base=
-    (
-      String(p.first_name||'')+
-      String(p.last_name||'')
-    )
-      .replace(/[^A-Za-z0-9]/g,'');
+  const base=(
+    String(p.first_name||'')+
+    String(p.last_name||'')
+  )
+    .replace(/[^A-Za-z0-9]/g,'');
 
   let u=base||'member';
   let n=0;
@@ -3663,37 +3760,80 @@ app.post('/api/admin/invite/:id',async c=>{
     u=base+(++n);
   }
 
-  const token=b64(random(36));
-
-  const exp=new Date(
-    Date.now()+72*3600000
-  ).toISOString();
-
-  const ih=await sha256(token);
-
   await c.env.DB
     .prepare(`
-      INSERT OR REPLACE INTO accounts(
+      INSERT INTO accounts(
         person_id,
         username,
         active,
         invite_token_hash,
-        invite_expires_at
+        invite_expires_at,
+        account_link_token
       )
-      VALUES(?,?,0,?,?)
+      VALUES(?,?,0,?,?,?)
     `)
     .bind(
       id,
       u,
-      ih,
-      exp
+      await sha256(token),
+      exp,
+      token
     )
     .run();
 
   return json(c,{
     username:u,
-    inviteUrl:
-      `${c.env.PUBLIC_SITE_URL}/claim/${encodeURIComponent(token)}`
+    token,
+    mode:'create'
+  });
+});
+
+app.get('/api/claim',async c=>{
+  const token=String(
+    c.req.query('token')||''
+  );
+
+  if(!token)
+    return json(
+      c,
+      {error:'Invalid account link'},
+      400
+    );
+
+  const h=await sha256(token);
+
+  const a=await c.env.DB
+    .prepare(`
+      SELECT
+        username,
+        active
+      FROM accounts
+      WHERE
+        (
+          account_link_token=?
+          OR invite_token_hash=?
+        )
+        AND invite_expires_at>datetime('now')
+      LIMIT 1
+    `)
+    .bind(
+      token,
+      h
+    )
+    .first<any>();
+
+  if(!a)
+    return json(
+      c,
+      {error:'Invalid or expired account link'},
+      400
+    );
+
+  return json(c,{
+    mode:Number(a.active)?
+      'reset':
+      'create',
+    username:String(a.username||'')
   });
 });
 
@@ -3706,14 +3846,20 @@ app.post('/api/claim',async c=>{
       SELECT *
       FROM accounts
       WHERE
-        invite_token_hash=?
+        (
+          account_link_token=?
+          OR invite_token_hash=?
+        )
         AND invite_expires_at>datetime('now')
-        AND active=0
     `)
-    .bind(h)
+    .bind(
+      x.token||'',
+      h
+    )
     .first<any>();
 
   if(!a)
+    const isReset=Number(a.active)===1;
     return json(
       c,
       {error:'Invalid or expired invitation'},
@@ -3732,19 +3878,31 @@ app.post('/api/claim',async c=>{
         password_hash=?,
         password_salt=?,
         active=1,
-        invite_token_hash=NULL,
-        invite_expires_at=NULL
+        invite_token_hash=?,
+        invite_expires_at=?
       WHERE id=?
     `)
     .bind(
-      x.username||a.username,
+      isReset?
+        a.username:
+        (x.username||a.username),
       pw.hash,
       pw.salt,
+      a.invite_token_hash||
+        await sha256(x.token||''),
+      new Date(
+        Date.now()+72*3600000
+      ).toISOString(),
       a.id
     )
     .run();
 
-  return json(c,{ok:true});
+  return json(c,{
+    ok:true,
+    mode:isReset?
+      'reset':
+      'create'
+  });
 });
 
 app.get('/api/admin/quick-text.csv',async c=>{
