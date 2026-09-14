@@ -755,49 +755,130 @@ tbody tr:nth-child(even){
   }
 }
 
-.member-family-add{
-  display:grid;
-  gap:14px
+.member-info-tabs{
+  display:flex;
+  gap:0;
+  border-bottom:1px solid var(--border);
+  margin-bottom:18px
 }
 
-.member-family-add-row{
-  display:grid;
-  grid-template-columns:
-    minmax(130px,.8fr)
-    minmax(220px,1.5fr)
-    auto;
-  gap:10px;
-  align-items:end
+.member-info-tabs button{
+  border:0;
+  border-bottom:3px solid transparent;
+  background:transparent;
+  color:var(--muted);
+  padding:9px 16px;
+  font-weight:600;
+  cursor:pointer
 }
 
-.member-family-list{
-  display:grid;
-  gap:6px;
-  padding-top:4px
+.member-info-tabs button.active{
+  color:var(--navy);
+  border-bottom-color:var(--red)
 }
 
-.member-family-row{
+.families-page{
+  display:grid;
+  gap:18px
+}
+
+.family-section{
+  background:#fff;
+  border:1px solid var(--border);
+  border-radius:3px;
+  padding:16px;
+  transition:
+    padding .15s ease,
+    transform .15s ease
+}
+
+.families-page.is-dragging .family-section{
+  padding:10px
+}
+
+.family-section-head{
   display:flex;
   align-items:center;
-  justify-content:space-between;
-  gap:12px;
-  padding:8px 0;
-  border-bottom:1px solid var(--border)
+  gap:8px;
+  margin-bottom:10px
 }
 
-.member-family-row:last-child{
+.family-section-head h2{
+  margin:0
+}
+
+.family-edit-button{
+  border:0;
+  background:transparent;
+  color:var(--muted);
+  padding:2px 5px;
+  font-size:15px;
+  cursor:pointer
+}
+
+.family-table-wrap{
+  width:100%;
+  overflow:auto;
+  border:1px solid var(--border);
+  background:#fff
+}
+
+.family-member-table{
+  width:100%;
+  border-collapse:collapse
+}
+
+.family-member-table th,
+.family-member-table td{
+  padding:9px 10px;
+  border-bottom:1px solid var(--border);
+  text-align:left
+}
+
+.family-member-table thead th{
+  background:var(--khaki-light);
+  color:var(--navy)
+}
+
+.family-member-table tbody tr:last-child td{
   border-bottom:0
 }
 
-@media(max-width:800px){
-  .member-family-add-row{
-    grid-template-columns:1fr
-  }
+.family-drag-handle{
+  display:inline-block;
+  margin-right:8px;
+  color:#9d9d9d;
+  opacity:.55;
+  cursor:grab;
+  user-select:none
+}
 
-  .member-family-row{
-    align-items:flex-start;
-    flex-direction:column
-  }
+.family-drag-handle:active{
+  cursor:grabbing
+}
+
+.family-drag-handle.disabled{
+  cursor:default
+}
+
+.new-family-placeholder{
+  width:100%;
+  min-height:72px;
+  border:1px dashed #b9b1a2;
+  background:var(--khaki-light);
+  color:var(--muted);
+  font-size:17px;
+  font-weight:600;
+  cursor:pointer
+}
+
+.family-drop-section{
+  transition:
+    padding .15s ease
+}
+
+.families-page.is-dragging .family-drop-section{
+  box-shadow:inset 0 0 0 1px rgba(0,63,135,.08)
 }
 
 .public-only{
