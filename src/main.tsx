@@ -160,7 +160,8 @@ function RouterPage({
   if(p.startsWith('/claim/'))return <Claim/>;
   if(p==='/settings')return <Settings me={me}/>;
   if(p==='/eagles')return <Eagles/>;
-  if(p==='/calendar')return <Calendar/>;
+if(p==='/calendar')return <Calendar/>;
+if(p.startsWith('/calendar/'))return <CalendarEvent id={p.split('/')[2]}/>;
   if(p==='/photos')return <Photos/>;
   if(p.startsWith('/photos/'))return <PhotoAlbum id={p.split('/')[2]}/>;
   if(p==='/documents')return <Documents/>;
