@@ -3425,15 +3425,6 @@ app.put('/api/admin/members/:id',async c=>{
     )
       .bind(id)
       .run();
-
-    await c.env.DB.prepare(`
-      DELETE FROM family_units
-      WHERE NOT EXISTS(
-        SELECT 1
-        FROM family_members fm
-        WHERE fm.family_id=family_units.id
-      )
-    `).run();
   }
   
   if(sets.length){
