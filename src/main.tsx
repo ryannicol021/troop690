@@ -2665,9 +2665,9 @@ function MemberEditor({
         {isNew?'Add Person':'Edit Member'}
       </h2>
 
+      {!isArchivedEagle&&
       <div className="member-form-card">
         <div className="member-check-grid">
-          {!isArchivedEagle&&
             <label className="checkbox-label">
               <input
                 type="checkbox"
@@ -2680,7 +2680,6 @@ function MemberEditor({
               />
               Adult
             </label>
-          }
 
           {!!x.adult&&!isArchivedEagle&&
             <label className="checkbox-label">
@@ -2698,6 +2697,7 @@ function MemberEditor({
           }
         </div>
       </div>
+      }
 
       <div className="member-form-card">
         <div className="member-name-grid">
@@ -2898,7 +2898,7 @@ function MemberEditor({
         </div>
       </div>
 
-      {!x.adult || x.adult_leader ? (
+      {!x.adult || x.adult_leader || isArchivedEagle ? (
       <div className="member-form-card">
         <div className="member-scouting-grid">
           <label>
@@ -2942,7 +2942,7 @@ function MemberEditor({
             />
           </label>
 
-          {!x.adult&&
+          {(!x.adult || isArchivedEagle)&&
             <label>
               Cub Scout Pack
               <input
@@ -2957,8 +2957,9 @@ function MemberEditor({
             </label>
           }
 
-          <label>
-            Scouting Membership ID
+          {!isArchivedEagle&&
+            <label>
+              Scouting Membership ID
             <input
               value={x.scouting_membership_id||''}
               onChange={e=>
@@ -2969,10 +2970,12 @@ function MemberEditor({
                 })
               }
             />
-          </label>
+            </label>
+          }
 
-          <label>
-            Registration Expiration
+          {!isArchivedEagle&&
+            <label>
+              Registration Expiration
             <input
               type="date"
               value={x.registration_expiration||''}
@@ -2984,7 +2987,8 @@ function MemberEditor({
                 })
               }
             />
-          </label>
+            </label>
+          }
 
           {!!x.adult && !!x.adult_leader &&
   <label>
