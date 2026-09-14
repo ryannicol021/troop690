@@ -764,6 +764,7 @@ app.use('/api/*', async (c, next) => {
     if (c.req.path !== '/api/login' && c.req.path !== '/api/bootstrap') {
       await ensurePermissionSchema(c);
       await ensureFamilySchema(c);
+      await ensurePatrolSchema(c);
     }
   } catch {
     // Ignore permission-schema errors here so they cannot break authentication.
