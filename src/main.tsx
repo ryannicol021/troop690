@@ -932,6 +932,131 @@ const eventsForDay=(date:Date)=>
   </Page>
 }
 
+function CalendarEvent({id}:{id:string}){
+  const [d,setD]=useState<any>();
+  const nav=useNavigate();
+
+  useEffect(()=>{
+    api('/events/'+id)
+      .then(setD)
+      .catch(()=>setD({event:null}));
+  },[id]);
+
+  if(!d)
+    return <Page title="Event"><Loading/></Page>;
+
+  if(!d.event)
+    return <Page title="Event"><p className="error">Event not found.</p></Page>;
+
+  const e=d.event;
+
+  const canEdit=
+    !!window.__ME__?.permissions?.includes('EVT');
+
+  return <Page
+    title={e.title}
+    actions={
+      canEdit?
+        <button
+          className="button"
+          onClick={()=>{
+            nav('/calendar/'+id+'/edit');
+          }}
+        >
+          Edit Event
+        </button>:
+        undefined
+    }
+  >
+    <article className="card">
+      <p>
+        <strong>Type</strong><br/>
+        {e.event_type||'Other'}
+      </p>
+
+      <p>
+        <strong>When</strong><br/>
+        {e.all_day?
+          'All Day':
+          `${new Date(e.start_at).toLocaleString()} – ${new Date(e.end_at).toLocaleString()}`
+        }
+      </p>
+
+      {e.location_name&&
+        <p>
+          <strong>Location</strong><br/>
+          {e.location_name}
+          {e.location_address&&
+            <><br/>{e.location_address}</>
+          }
+        </p>
+      }
+
+      {e.departure_arrival_location_name&&
+        <p>
+          <strong>Departure / Arrival Location</strong><br/>
+          {e.departure_arrival_location_name}
+          {e.departure_arrival_location_address&&
+            <><br/>{e.departure_arrival_location_address}</>
+          }
+        </p>
+      }
+
+      {e.dress_code&&
+        <p>
+          <strong>Dress Code</strong><br/>
+          {e.dress_code}
+        </p>
+      }
+
+      {e.estimated_cost!==''&&
+        e.estimated_cost!=null&&
+        <p>
+          <strong>Estimated Cost</strong><br/>
+          ${Number(e.estimated_cost).toFixed(2)}
+        </p>
+      }
+
+      {e.service_hours!=null&&
+        <p>
+          <strong>Service Hours</strong><br/>
+          {e.service_hours}
+        </p>
+      }
+
+      {e.camping_nights!=null&&
+        <p>
+          <strong>Camping Nights</strong><br/>
+          {e.camping_nights}
+        </p>
+      }
+
+      {e.hiking_miles!=null&&
+        <p>
+          <strong>Hiking Miles</strong><br/>
+          {e.hiking_miles}
+        </p>
+      }
+
+      {(e.leader_1_name||e.leader_2_name)&&
+        <p>
+          <strong>Leaders</strong><br/>
+          {e.leader_1_name||''}
+          {e.leader_1_name&&e.leader_2_name&&<><br/></>}
+          {e.leader_2_name||''}
+        </p>
+      }
+
+      {e.description&&
+        <p>
+          <strong>Description</strong><br/>
+          {e.description}
+        </p>
+      }
+    </article>
+  </Page>
+}
+
 function PhotoAlbum({id}:{id:string}){
   const [d,setD]=useState<any>();
 
