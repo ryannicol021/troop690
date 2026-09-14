@@ -624,20 +624,146 @@ function Calendar(){
   const dateKey=(date:Date)=>
     `${date.getFullYear()}-${pad(date.getMonth()+1)}-${pad(date.getDate())}`;
 
-  const eventDate=(e:any)=>
-    new Date(e.start_at);
+const eventDate=(e:any)=>
+  new Date(e.start_at);
 
-  const eventsForDay=(date:Date)=>
-    d.events
-      .filter((e:any)=>
-        dateKey(eventDate(e))===dateKey(date)
-      )
-      .sort((a:any,b:any)=>{
-        if(Number(a.all_day)!==
-           Number(b.all_day))
-          return Number(b.all_day)-
-                 Number(a.all_day);
+const dateOnly=(value:string|Date)=>{
+  const d=
+    value instanceof Date?
+      value:
+      new Date(value);
 
+  return new Date(
+    d.getFullYear(),
+    d.getMonth(),
+    d.getDate()
+  );
+};
+
+const dayDifference=(a:Date,b:Date)=>{
+  const da=dateOnly(a).getTime();
+  const db=dateOnly(b).getTime();
+
+  return Math.round(
+    (db-da)/86400000
+  );
+};
+
+const eventTypeClass=(type:string)=>{
+  return (
+    'calendar-event calendar-event-' +
+    String(type||'Other')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g,'-')
+  );
+};
+
+const eventInfo=(e:any,date:Date)=>{
+  const start=
+    dateOnly(e.start_at);
+
+  const end=
+    e.end_at?
+      dateOnly(e.end_at):
+      start;
+
+  const current=
+    dateOnly(date);
+
+  const startsToday=
+    current.getTime()===start.getTime();
+
+  const endsToday=
+    current.getTime()===end.getTime();
+
+  const multiDay=
+    start.getTime()!==end.getTime();
+
+  if(Number(e.all_day)){
+    return {
+      bar:true,
+      text:'All Day'
+    };
+  }
+
+  if(!multiDay){
+    return {
+      bar:false,
+      text:
+        `${formatTime(e.start_at)} – ${formatTime(e.end_at)}`
+    };
+  }
+
+  if(startsToday){
+    return {
+      bar:true,
+      text:`Starts ${formatTime(e.start_at)}`
+    };
+  }
+
+  if(endsToday){
+    return {
+      bar:true,
+      text:`Ends ${formatTime(e.end_at)}`
+    };
+  }
+
+  return {
+    bar:true,
+    text:'All Day'
+  };
+};
+
+const formatTime=(value:string)=>{
+  const date=new Date(value);
+
+  return date.toLocaleTimeString(
+    undefined,
+    {
+      hour:'numeric',
+      minute:'2-digit'
+    }
+  );
+};
+
+const eventsForDay=(date:Date)=>
+  d.events
+    .filter((e:any)=>{
+      const start=
+        dateOnly(e.start_at);
+
+      const end=
+        e.end_at?
+          dateOnly(e.end_at):
+          start;
+
+      const current=
+        dateOnly(date);
+
+      if(Number(e.all_day))
+        return (
+          current>=start &&
+          current<=end
+        );
+
+      return (
+        current>=start &&
+        current<=end
+      );
+    })
+    .sort((a:any,b:any)=>{
+      const infoA=
+        eventInfo(a,date);
+
+      const infoB=
+        eventInfo(b,date);
+
+      if(infoA.bar!==infoB.bar)
+        return infoA.bar?
+          -1:
+          1;
+
+      if(infoA.bar&&infoB.bar){
         const startA=
           new Date(a.start_at).getTime();
 
@@ -646,53 +772,35 @@ function Calendar(){
 
         if(startA!==startB)
           return startA-startB;
-
-        const endA=
-          a.end_at?
-            new Date(a.end_at).getTime():
-            Number.MAX_SAFE_INTEGER;
-
-        const endB=
-          b.end_at?
-            new Date(b.end_at).getTime():
-            Number.MAX_SAFE_INTEGER;
-
-        if(endA!==endB)
-          return endA-endB;
-
-        return String(a.title||'')
-          .localeCompare(
-            String(b.title||'')
-          );
-      });
-
-  const eventTypeClass=(type:string)=>{
-    return (
-      'calendar-event calendar-event-' +
-      String(type||'Other')
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g,'-')
-    );
-  };
-
-  const formatTime=(value:string)=>{
-    const date=new Date(value);
-
-    return date.toLocaleTimeString(
-      undefined,
-      {
-        hour:'numeric',
-        minute:'2-digit'
       }
-    );
-  };
 
-  const eventText=(e:any)=>{
-    if(e.all_day)
-      return 'All Day';
+      const startA=
+        new Date(a.start_at).getTime();
 
-    return `${formatTime(e.start_at)} – ${formatTime(e.end_at)}`;
-  };
+      const startB=
+        new Date(b.start_at).getTime();
+
+      if(startA!==startB)
+        return startA-startB;
+
+      const endA=
+        a.end_at?
+          new Date(a.end_at).getTime():
+          Number.MAX_SAFE_INTEGER;
+
+      const endB=
+        b.end_at?
+          new Date(b.end_at).getTime():
+          Number.MAX_SAFE_INTEGER;
+
+      if(endA!==endB)
+        return endA-endB;
+
+      return String(a.title||'')
+        .localeCompare(
+          String(b.title||'')
+        );
+    });
 
   const goMonth=(delta:number)=>{
     setViewDate(
@@ -806,22 +914,28 @@ function Calendar(){
           </div>
 
           <div className="calendar-day-events">
-            {events.map((e:any)=>
-              <div
+            {events.map((e:any)=>{
+              const info=
+                eventInfo(e,cell.date);
+            
+              return <div
                 className={
-                  eventTypeClass(e.event_type)
+                  eventTypeClass(e.event_type) +
+                  (info.bar?
+                    ' calendar-event-bar':
+                    ' calendar-event-timed')
                 }
                 key={e.id}
               >
                 <div className="calendar-event-title">
                   {e.title}
                 </div>
-
+            
                 <div className="calendar-event-time">
-                  {eventText(e)}
+                  {info.text}
                 </div>
-              </div>
-            )}
+              </div>;
+            })}
           </div>
         </div>;
       })}
