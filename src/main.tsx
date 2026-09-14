@@ -929,6 +929,7 @@ function MemberInfo({me}:{me:any}){
   const [accountLink,setAccountLink]=useState<any|null>(null);
   const [msg,setMsg]=useState('');
   const [error,setError]=useState('');
+  const [memberTab,setMemberTab]=useState<'members'|'families'>('members');
 
   const canEdit=
     !!me?.permissions?.includes('MIE');
@@ -1496,25 +1497,48 @@ function MemberInfo({me}:{me:any}){
       <p className="error">{error}</p>
     }
 
-    <section>
-      <h2>Youth</h2>
-      {youthTable}
-    </section>
+    <div className="member-info-tabs">
+      <button
+        type="button"
+        className={memberTab==='members'?'active':''}
+        onClick={()=>setMemberTab('members')}
+      >
+        Members
+      </button>
 
-    <section>
-      <h2>Adults</h2>
-      {adultTable}
-    </section>
+      <button
+        type="button"
+        className={memberTab==='families'?'active':''}
+        onClick={()=>setMemberTab('families')}
+      >
+        Families
+      </button>
+    </div>
 
-    <section>
-      <h2>Adult Leaders</h2>
-      {leaderTable}
-    </section>
+    {memberTab==='members'?
+      <>
+        <section>
+          <h2>Youth</h2>
+          {youthTable}
+        </section>
 
-    <section>
-      <h2>Archived Eagle Scouts</h2>
-      {archiveTable}
-    </section>
+        <section>
+          <h2>Adults</h2>
+          {adultTable}
+        </section>
+
+        <section>
+          <h2>Adult Leaders</h2>
+          {leaderTable}
+        </section>
+
+        <section>
+          <h2>Archived Eagle Scouts</h2>
+          {archiveTable}
+        </section>
+      </>:
+      <Families canEdit={canEdit}/>
+    }
 
     {(edit||adding)&&
       <MemberEditor
@@ -1615,6 +1639,278 @@ function MemberInfo({me}:{me:any}){
   </Page>
 }
 
+function Families({canEdit}:{canEdit:boolean}){
+  const [data,setData]=useState<any>({
+    unassigned:[],
+    individuals:[],
+    families:[]
+  });
+
+  const [dragged,setDragged]=useState<number|null>(null);
+  const [error,setError]=useState('');
+
+  const load=async()=>{
+    try{
+      const r=await api('/admin/families');
+      setData(r);
+    }catch(e:any){
+      setError(e.message);
+    }
+  };
+
+  useEffect(()=>{
+    load();
+  },[]);
+
+  const assign=async(
+    personId:number,
+    familyId:number|null,
+    individual:boolean
+  )=>{
+    try{
+      const r=await post(
+        '/admin/families/assign',
+        {
+          personId,
+          familyId,
+          individual
+        }
+      );
+
+      setData(r);
+      setDragged(null);
+      setError('');
+    }catch(e:any){
+      setError(e.message);
+    }
+  };
+
+  const newFamily=async()=>{
+    try{
+      const r=await post(
+        '/admin/families',
+        {}
+      );
+
+      setData(r);
+      setError('');
+    }catch(e:any){
+      setError(e.message);
+    }
+  };
+
+  const renameFamily=async(family:any)=>{
+    const next=prompt(
+      'Family name',
+      family.name||''
+    );
+
+    if(next===null)
+      return;
+
+    const name=next.trim();
+
+    if(!name||name===family.name)
+      return;
+
+    try{
+      const r=await put(
+        '/admin/families/'+family.id,
+        {name}
+      );
+
+      setData(r);
+      setError('');
+    }catch(e:any){
+      setError(e.message);
+    }
+  };
+
+  const beginDrag=(e:any,id:number)=>{
+    if(!canEdit)
+      return;
+
+    e.dataTransfer.effectAllowed='move';
+
+    e.dataTransfer.setData(
+      'text/plain',
+      String(id)
+    );
+
+    setDragged(id);
+  };
+
+  const dropPerson=async(
+    e:any,
+    familyId:number|null,
+    individual:boolean
+  )=>{
+    e.preventDefault();
+
+    if(!canEdit)
+      return;
+
+    const id=Number(
+      e.dataTransfer.getData('text/plain')
+    );
+
+    if(!Number.isInteger(id))
+      return;
+
+    await assign(
+      id,
+      familyId,
+      individual
+    );
+  };
+
+  const memberType=(p:any)=>
+    Number(p.adult_leader)?
+      'LEADER':
+      Number(p.adult)?
+        'ADULT':
+        'YOUTH';
+
+  const memberRow=(p:any)=>
+    <tr key={p.id}>
+      <td>
+        <span
+          className={
+            canEdit?
+              'family-drag-handle':
+              'family-drag-handle disabled'
+          }
+          draggable={canEdit}
+          onDragStart={e=>
+            beginDrag(
+              e,
+              Number(p.id)
+            )
+          }
+          onDragEnd={()=>
+            setDragged(null)
+          }
+        >
+          ☰
+        </span>
+        {p.first_name||''}
+      </td>
+
+      <td>{p.middle_name||''}</td>
+      <td>{p.last_name||''}</td>
+      <td>{memberType(p)}</td>
+    </tr>;
+
+  const memberTable=(
+    people:any[],
+    familyId:number|null,
+    individual:boolean
+  )=>
+    <div
+      className="family-table-wrap"
+      onDragOver={e=>{
+        if(canEdit)
+          e.preventDefault();
+      }}
+      onDrop={e=>
+        dropPerson(
+          e,
+          familyId,
+          individual
+        )
+      }
+    >
+      <table className="family-member-table">
+        <thead>
+          <tr>
+            <th>First</th>
+            <th>Middle</th>
+            <th>Last</th>
+            <th>Type</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {people.map(memberRow)}
+        </tbody>
+      </table>
+    </div>;
+
+  return <div
+    className={
+      dragged!==null?
+        'families-page is-dragging':
+        'families-page'
+    }
+  >
+    {error&&
+      <p className="error">{error}</p>
+    }
+
+    <section className="family-section family-drop-section">
+      <h2>Unassigned Members</h2>
+
+      {memberTable(
+        data.unassigned||[],
+        null,
+        false
+      )}
+    </section>
+
+    <section className="family-section family-drop-section">
+      <h2>Individual Members</h2>
+
+      {memberTable(
+        data.individuals||[],
+        null,
+        true
+      )}
+    </section>
+
+    {canEdit&&
+      <button
+        type="button"
+        className="new-family-placeholder"
+        onClick={newFamily}
+      >
+        + New Family
+      </button>
+    }
+
+    {(data.families||[]).map((family:any)=>
+      <section
+        className="family-section family-drop-section"
+        key={family.id}
+      >
+        <div className="family-section-head">
+          <h2>
+            {family.name||'New Family'}
+          </h2>
+
+          {canEdit&&
+            <button
+              type="button"
+              className="family-edit-button"
+              title="Rename family"
+              onClick={()=>
+                renameFamily(family)
+              }
+            >
+              ✎
+            </button>
+          }
+        </div>
+
+        {memberTable(
+          family.members||[],
+          Number(family.id),
+          false
+        )}
+      </section>
+    )}
+  </div>;
+}
+
 function MemberEditor({
   value,
   onClose,
@@ -1661,13 +1957,6 @@ function MemberEditor({
   });
 
   const [positions,setPositions]=useState<any[]>([]);
-  const [familyPeople,setFamilyPeople]=useState<any[]>([]);
-  const [family,setFamily]=useState<any>({
-    parents:[],
-    siblings:[]
-  });
-  const [familyTarget,setFamilyTarget]=useState('');
-  const [familyRole,setFamilyRole]=useState('');
   const [err,setErr]=useState('');
 
   useEffect(()=>{
@@ -1675,36 +1964,6 @@ function MemberEditor({
       .then(r=>setPositions(r.positions||[]))
       .catch((e:any)=>setErr(e.message));
   },[]);
-
-  useEffect(()=>{
-  if(isNew)
-    return;
-
-  api('/admin/members')
-    .then(r=>{
-      setFamilyPeople(
-        (r.members||[])
-          .filter(
-            (p:any)=>
-              Number(p.id)!==
-              Number(value?.id)
-          )
-      );
-    })
-    .catch((e:any)=>setErr(e.message));
-},[isNew,value?.id]);
-
-useEffect(()=>{
-  if(isNew)
-    return;
-
-  api(
-    '/admin/family-relationships/'+
-    value.id
-  )
-    .then(r=>setFamily(r))
-    .catch((e:any)=>setErr(e.message));
-},[isNew,value?.id]);
 
   const togglePosition=(id:number)=>{
     setX((v:any)=>({
@@ -2238,203 +2497,6 @@ useEffect(()=>{
                 {p.name}
               </label>
             )}
-          </div>
-        </div>
-      }
-
-            {!isNew&&
-        <div className="member-form-card">
-          <div className="member-family-add">
-            <div className="member-family-add-row">
-              <select
-                value={familyRole}
-                onChange={e=>
-                  setFamilyRole(e.target.value)
-                }
-              >
-                <option value="">
-                  Select relationship
-                </option>
-                <option value="Parent">
-                  Parent
-                </option>
-                <option value="Guardian">
-                  Guardian
-                </option>
-              </select>
-
-              <select
-                value={familyTarget}
-                onChange={e=>
-                  setFamilyTarget(e.target.value)
-                }
-              >
-                <option value="">
-                  Select family member
-                </option>
-
-                {familyPeople
-                  .filter((p:any)=>{
-                    if(x.adult)
-                      return !p.adult;
-                  
-                    return p.adult;
-                  })
-                  .map((p:any)=>
-                    <option
-                      key={p.id}
-                      value={p.id}
-                    >
-                      {p.last_name}, {p.first_name}
-                    </option>
-                  )
-                }
-              </select>
-
-              <button
-                type="button"
-                className="admin-action-button"
-                disabled={!familyTarget}
-                onClick={async()=>{
-                  try{
-                    await post(
-                      '/admin/family-relationships',
-                      {
-                        personId:x.adult?
-                          x.id:
-                          Number(familyTarget),
-                        relatedPersonId:x.adult?
-                          Number(familyTarget):
-                          x.id,
-                        role:familyRole
-                      }
-                    );
-
-                    const r=
-                      await api(
-                        '/admin/family-relationships/'+
-                        x.id
-                      );
-
-                    setFamily(r);
-                    setFamilyTarget('');
-                    setErr('');
-                  }catch(e:any){
-                    setErr(e.message)
-                  }
-                }}
-              >
-                Add
-              </button>
-            </div>
-
-            {family.parents.length>0&&
-              <div className="member-family-list">
-                <strong>Parents / Guardians</strong>
-
-                {family.parents.map((p:any)=>
-                  <div
-                    className="member-family-row"
-                    key={p.id}
-                  >
-                    <span>
-                      {p.last_name}, {p.first_name}
-                    </span>
-
-                    <button
-                      type="button"
-                      className="admin-action-button"
-                      onClick={async()=>{
-                        try{
-                          await fetch(
-                            '/api/admin/family-relationships',
-                            {
-                              method:'DELETE',
-                              credentials:'include',
-                              headers:{
-                                'Content-Type':
-                                  'application/json'
-                              },
-                              body:JSON.stringify({
-                                personId:p.id,
-                                relatedPersonId:x.id,
-                                role:'Parent'
-                              })
-                            }
-                          );
-
-                          const r=
-                            await api(
-                              '/admin/family-relationships/'+
-                              x.id
-                            );
-
-                          setFamily(r);
-                        }catch(e:any){
-                          setErr(e.message)
-                        }
-                      }}
-                    >
-                      Remove
-                    </button>
-                  </div>
-                )}
-              </div>
-            }
-
-            {family.siblings.length>0&&
-              <div className="member-family-list">
-                <strong>Siblings</strong>
-
-                {family.siblings.map((p:any)=>
-                  <div
-                    className="member-family-row"
-                    key={p.id}
-                  >
-                    <span>
-                      {p.last_name}, {p.first_name}
-                    </span>
-
-                    <button
-                      type="button"
-                      className="admin-action-button"
-                      onClick={async()=>{
-                        try{
-                          await fetch(
-                            '/api/admin/family-relationships',
-                            {
-                              method:'DELETE',
-                              credentials:'include',
-                              headers:{
-                                'Content-Type':
-                                  'application/json'
-                              },
-                              body:JSON.stringify({
-                                personId:x.id,
-                                relatedPersonId:p.id,
-                                role:'Sibling'
-                              })
-                            }
-                          );
-
-                          const r=
-                            await api(
-                              '/admin/family-relationships/'+
-                              x.id
-                            );
-
-                          setFamily(r);
-                        }catch(e:any){
-                          setErr(e.message)
-                        }
-                      }}
-                    >
-                      Remove
-                    </button>
-                  </div>
-                )}
-              </div>
-            }
           </div>
         </div>
       }
