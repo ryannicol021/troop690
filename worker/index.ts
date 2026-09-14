@@ -1590,6 +1590,14 @@ app.get('/api/admin/members',async c=>{
     .prepare(`
       SELECT
         p.*,
+        (
+          SELECT pu.name
+          FROM patrol_members pm
+          JOIN patrol_units pu
+            ON pu.id=pm.patrol_id
+          WHERE pm.person_id=p.id
+          LIMIT 1
+        ) patrol_name,
         a.username,
         a.active,
         a.invite_expires_at,
@@ -1683,6 +1691,7 @@ app.get('/api/admin/members',async c=>{
 
       return {
         ...x,
+        patrol:x.patrol_name||'',
         position_ids:String(
           x.position_ids||''
         )
@@ -1749,6 +1758,574 @@ app.get('/api/admin/member-positions',async c=>{
     positions:rows.results??[]
   });
 });
+
+app.get('/api/admin/patrols',async c=>{
+  const d=admin(c,'MIV');
+  if(d)return d;
+
+  const patrolRows=await c.env.DB
+    .prepare(`
+      SELECT
+        id,
+        name,
+        custom_name
+      FROM patrol_units
+      ORDER BY
+        name
+    `)
+    .all<any>();
+
+  const patrols=(patrolRows.results??[])
+    .map((p:any)=>({
+      id:Number(p.id),
+      name:String(p.name||''),
+      custom_name:Number(
+        p.custom_name||0
+      ),
+      members:[]
+    }));
+
+  const patrolMap=new Map<number,any>();
+
+  for(const p of patrols)
+    patrolMap.set(
+      p.id,
+      p
+    );
+
+  const positionRows=await c.env.DB
+    .prepare(`
+      SELECT
+        pp.person_id,
+        GROUP_CONCAT(
+          DISTINCT pos.name
+        ) position_names
+      FROM person_positions pp
+      JOIN positions pos
+        ON pos.id=pp.position_id
+      WHERE pos.name IN(
+        'Senior Patrol Leader',
+        'Assistant Senior Patrol Leader',
+        'Patrol Leader',
+        'Assistant Patrol Leader'
+      )
+      GROUP BY pp.person_id
+    `)
+    .all<any>();
+
+  const positionMap=new Map<number,string[]>();
+
+  for(const row of (positionRows.results??[])){
+    positionMap.set(
+      Number(row.person_id),
+      String(
+        row.position_names||''
+      )
+        .split(',')
+        .map(
+          (x:string)=>x.trim()
+        )
+        .filter(Boolean)
+    );
+  }
+
+  const people=await c.env.DB
+    .prepare(`
+      SELECT
+        p.id,
+        p.first_name,
+        p.middle_name,
+        p.last_name,
+        p.rank,
+        pm.patrol_id
+      FROM people p
+      LEFT JOIN patrol_members pm
+        ON pm.person_id=p.id
+      WHERE
+        p.adult=0
+        AND p.archived=0
+    `)
+    .all<any>();
+
+  const individuals=await c.env.DB
+    .prepare(`
+      SELECT
+        p.id,
+        p.first_name,
+        p.middle_name,
+        p.last_name,
+        p.rank
+      FROM individual_patrol_members ip
+      JOIN people p
+        ON p.id=ip.person_id
+      WHERE
+        p.adult=0
+        AND p.archived=0
+      ORDER BY
+        p.last_name,
+        p.first_name,
+        p.middle_name
+    `)
+    .all<any>();
+
+  const individualIds=new Set(
+    (individuals.results??[])
+      .map(
+        (x:any)=>Number(x.id)
+      )
+  );
+
+  const unassigned:any[]=[];
+
+  for(const row of (people.results??[])){
+    const member={
+      id:Number(row.id),
+      first_name:String(
+        row.first_name||''
+      ),
+      middle_name:String(
+        row.middle_name||''
+      ),
+      last_name:String(
+        row.last_name||''
+      ),
+      rank:String(
+        row.rank||''
+      ),
+      position_names:
+        positionMap.get(
+          Number(row.id)
+        )||[]
+    };
+
+    if(
+      row.patrol_id==null&&
+      !individualIds.has(
+        Number(row.id)
+      )
+    ){
+      unassigned.push(member);
+    }
+
+    if(row.patrol_id!=null){
+      const patrol=patrolMap.get(
+        Number(row.patrol_id)
+      );
+
+      if(patrol)
+        patrol.members.push(member);
+    }
+  }
+
+  return json(c,{
+    unassigned,
+    individuals:
+      (individuals.results??[])
+        .map((x:any)=>({
+          id:Number(x.id),
+          first_name:String(
+            x.first_name||''
+          ),
+          middle_name:String(
+            x.middle_name||''
+          ),
+          last_name:String(
+            x.last_name||''
+          ),
+          rank:String(
+            x.rank||''
+          ),
+          position_names:
+            positionMap.get(
+              Number(x.id)
+            )||[]
+        })),
+    patrols
+  });
+});
+
+app.post('/api/admin/patrols',async c=>{
+  const d=admin(c,'MIE');
+  if(d)return d;
+
+  let name='New Patrol';
+  let n=2;
+
+  while(await c.env.DB
+    .prepare(`
+      SELECT id
+      FROM patrol_units
+      WHERE name=?
+    `)
+    .bind(name)
+    .first()
+  ){
+    name=`New Patrol (${n++})`;
+  }
+
+  await c.env.DB
+    .prepare(`
+      INSERT INTO patrol_units(
+        name,
+        custom_name
+      )
+      VALUES(?,0)
+    `)
+    .bind(name)
+    .run();
+
+  return patrolResponse(c);
+});
+
+app.put('/api/admin/patrols/:id',async c=>{
+  const d=admin(c,'MIE');
+  if(d)return d;
+
+  const id=Number(
+    c.req.param('id')
+  );
+
+  const x=await c.req.json();
+  const base=String(
+    x.name||''
+  ).trim();
+
+  if(!base)
+    return json(
+      c,
+      {error:'Patrol name is required'},
+      400
+    );
+
+  const exists=await c.env.DB
+    .prepare(`
+      SELECT id
+      FROM patrol_units
+      WHERE id=?
+    `)
+    .bind(id)
+    .first();
+
+  if(!exists)
+    return json(
+      c,
+      {error:'Patrol not found'},
+      404
+    );
+
+  const clash=await c.env.DB
+    .prepare(`
+      SELECT id
+      FROM patrol_units
+      WHERE name=?
+        AND id<>?
+    `)
+    .bind(base,id)
+    .first();
+
+  if(clash)
+    return json(
+      c,
+      {error:'A patrol with that name already exists.'},
+      409
+    );
+
+  await c.env.DB
+    .prepare(`
+      UPDATE patrol_units
+      SET
+        name=?,
+        custom_name=1
+      WHERE id=?
+    `)
+    .bind(base,id)
+    .run();
+
+  return patrolResponse(c);
+});
+
+app.post('/api/admin/patrols/move',async c=>{
+  const d=admin(c,'MIE');
+  if(d)return d;
+
+  const x=await c.req.json();
+
+  const personId=Number(
+    x.personId
+  );
+
+  const target=String(
+    x.target||'unassigned'
+  );
+
+  const person=await c.env.DB
+    .prepare(`
+      SELECT
+        id,
+        adult,
+        archived
+      FROM people
+      WHERE id=?
+    `)
+    .bind(personId)
+    .first<any>();
+
+  if(!person)
+    return json(
+      c,
+      {error:'Member not found'},
+      404
+    );
+
+  if(
+    Number(person.adult)||
+    Number(person.archived)
+  ){
+    return json(
+      c,
+      {error:'Only active Youth can be assigned to patrols.'},
+      400
+    );
+  }
+
+  if(
+    target!=='unassigned'&&
+    target!=='individual'
+  ){
+    const patrolId=Number(target);
+
+    const patrol=await c.env.DB
+      .prepare(`
+        SELECT id
+        FROM patrol_units
+        WHERE id=?
+      `)
+      .bind(patrolId)
+      .first();
+
+    if(!patrol)
+      return json(
+        c,
+        {error:'Patrol not found'},
+        404
+      );
+  }
+
+  await c.env.DB
+    .prepare(`
+      DELETE FROM patrol_members
+      WHERE person_id=?
+    `)
+    .bind(personId)
+    .run();
+
+  await c.env.DB
+    .prepare(`
+      DELETE FROM individual_patrol_members
+      WHERE person_id=?
+    `)
+    .bind(personId)
+    .run();
+
+  if(target==='individual'){
+    await c.env.DB
+      .prepare(`
+        INSERT OR IGNORE INTO individual_patrol_members(
+          person_id
+        )
+        VALUES(?)
+      `)
+      .bind(personId)
+      .run();
+  }else if(target!=='unassigned'){
+    await c.env.DB
+      .prepare(`
+        INSERT INTO patrol_members(
+          patrol_id,
+          person_id
+        )
+        VALUES(?,?)
+      `)
+      .bind(
+        Number(target),
+        personId
+      )
+      .run();
+  }
+
+  await c.env.DB
+    .prepare(`
+      DELETE FROM patrol_units
+      WHERE NOT EXISTS(
+        SELECT 1
+        FROM patrol_members pm
+        WHERE pm.patrol_id=patrol_units.id
+      )
+      AND custom_name=0
+    `)
+    .run();
+
+  return patrolResponse(c);
+});
+
+async function patrolResponse(c:any){
+  const patrolRows=await c.env.DB
+    .prepare(`
+      SELECT
+        id,
+        name,
+        custom_name
+      FROM patrol_units
+      ORDER BY name
+    `)
+    .all<any>();
+
+  const positions=await c.env.DB
+    .prepare(`
+      SELECT
+        pp.person_id,
+        GROUP_CONCAT(
+          DISTINCT pos.name
+        ) position_names
+      FROM person_positions pp
+      JOIN positions pos
+        ON pos.id=pp.position_id
+      WHERE pos.name IN(
+        'Senior Patrol Leader',
+        'Assistant Senior Patrol Leader',
+        'Patrol Leader',
+        'Assistant Patrol Leader'
+      )
+      GROUP BY pp.person_id
+    `)
+    .all<any>();
+
+  const positionMap=new Map<number,string[]>();
+
+  for(const row of (positions.results??[])){
+    positionMap.set(
+      Number(row.person_id),
+      String(
+        row.position_names||''
+      )
+        .split(',')
+        .map(
+          (x:string)=>x.trim()
+        )
+        .filter(Boolean)
+    );
+  }
+
+  const patrols=(patrolRows.results??[])
+    .map((p:any)=>({
+      id:Number(p.id),
+      name:String(p.name||''),
+      custom_name:Number(
+        p.custom_name||0
+      ),
+      members:[]
+    }));
+
+  const patrolMap=new Map<number,any>();
+
+  for(const p of patrols)
+    patrolMap.set(
+      p.id,
+      p
+    );
+
+  const people=await c.env.DB
+    .prepare(`
+      SELECT
+        p.id,
+        p.first_name,
+        p.middle_name,
+        p.last_name,
+        p.rank,
+        pm.patrol_id
+      FROM people p
+      LEFT JOIN patrol_members pm
+        ON pm.person_id=p.id
+      WHERE
+        p.adult=0
+        AND p.archived=0
+    `)
+    .all<any>();
+
+  const individualRows=await c.env.DB
+    .prepare(`
+      SELECT
+        p.id,
+        p.first_name,
+        p.middle_name,
+        p.last_name,
+        p.rank
+      FROM individual_patrol_members ip
+      JOIN people p
+        ON p.id=ip.person_id
+      WHERE
+        p.adult=0
+        AND p.archived=0
+      ORDER BY
+        p.last_name,
+        p.first_name,
+        p.middle_name
+    `)
+    .all<any>();
+
+  const individualIds=new Set(
+    (individualRows.results??[])
+      .map(
+        (x:any)=>Number(x.id)
+      )
+  );
+
+  const unassigned:any[]=[];
+
+  for(const row of (people.results??[])){
+    const member={
+      id:Number(row.id),
+      first_name:String(
+        row.first_name||''
+      ),
+      middle_name:String(
+        row.middle_name||''
+      ),
+      last_name:String(
+        row.last_name||''
+      ),
+      rank:String(
+        row.rank||''
+      ),
+      position_names:
+        positionMap.get(
+          Number(row.id)
+        )||[]
+    };
+
+    if(
+      row.patrol_id==null&&
+      !individualIds.has(
+        Number(row.id)
+      )
+    ){
+      unassigned.push(member);
+    }
+
+    if(row.patrol_id!=null){
+      patrolMap
+        .get(Number(row.patrol_id))
+        ?.members.push(member);
+    }
+  }
+
+  return json(c,{
+    unassigned,
+    individuals:
+      individualRows.results??[],
+    patrols
+  });
+}
 
 app.get('/api/admin/families',async c=>{
   const d=admin(c,'MIV');
@@ -2681,6 +3258,18 @@ app.put('/api/admin/members/:id',async c=>{
       .bind(id)
       .run();
 
+    await c.env.DB.prepare(
+      'DELETE FROM patrol_members WHERE person_id=?'
+    )
+      .bind(id)
+      .run();
+
+    await c.env.DB.prepare(
+      'DELETE FROM individual_patrol_members WHERE person_id=?'
+    )
+      .bind(id)
+      .run();
+
     await c.env.DB.prepare(`
       DELETE FROM family_units
       WHERE NOT EXISTS(
@@ -2828,6 +3417,18 @@ app.delete('/api/admin/members/:id',async c=>{
 
   await c.env.DB.prepare(
     'DELETE FROM family_individuals WHERE person_id=?'
+  )
+    .bind(id)
+    .run();
+
+  await c.env.DB.prepare(
+    'DELETE FROM patrol_members WHERE person_id=?'
+  )
+    .bind(id)
+    .run();
+
+  await c.env.DB.prepare(
+    'DELETE FROM individual_patrol_members WHERE person_id=?'
   )
     .bind(id)
     .run();
