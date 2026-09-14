@@ -1969,7 +1969,7 @@ async function familiesResponse(c:any){
         p.first_name,
         p.middle_name
     `)
-    .all<any>();
+    .all();
 
   const unassigned=await c.env.DB
     .prepare(`
@@ -1996,7 +1996,7 @@ async function familiesResponse(c:any){
         first_name,
         middle_name
     `)
-    .all<any>();
+    .all();
 
   const individuals=await c.env.DB
     .prepare(`
@@ -2015,7 +2015,7 @@ async function familiesResponse(c:any){
         p.first_name,
         p.middle_name
     `)
-    .all<any>();
+    .all();
 
   const families:any[]=[];
   const byFamily=new Map<number,any>();
