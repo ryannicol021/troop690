@@ -1192,7 +1192,6 @@ app.get('/api/home',async c=>{
           ON p2.id=e.leader_2_id
         WHERE e.start_at>=datetime('now')
         ORDER BY e.start_at
-        LIMIT 8
       `)
       .all<any>();
 
