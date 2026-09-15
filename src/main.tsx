@@ -526,56 +526,48 @@ function Home({me}:{me:any}){
                 })
                 .slice(0,3);
 
-            const formatDay=(date:Date)=>{
-              return date.toLocaleDateString(
-                'en-US',
-                {
-                  weekday:'short'
-                }
-              );
-            };
-
-            const formatDateNumber=(date:Date)=>{
-              return date.toLocaleDateString(
-                'en-US',
-                {
-                  month:'numeric',
-                  day:'numeric'
-                }
-              );
-            };
-
             return <>
-              <div className="home-upcoming-wrap">
-                <div className="home-upcoming-grid">
-
+              <div className="calendar-grid-wrap">
+                <div className="calendar-grid">
+                
+                  {days.map(day=>
+                    <div
+                      className="calendar-weekday"
+                      key={'weekday-'+dateKey(day)}
+                    >
+                      {day.toLocaleDateString(
+                        'en-US',
+                        {
+                          weekday:'short'
+                        }
+                      )}
+                    </div>
+                  )}
+                
                   {days.map(day=>{
                     const events=
                       eventsForDay(day);
-
+                
                     return <div
-                      className="home-upcoming-day"
+                      className="calendar-day calendar-day-current"
                       key={dateKey(day)}
                     >
-                      <div className="home-upcoming-day-header">
-                        <span>
-                          {formatDay(day)}
-                        </span>
-                        <span>
-                          {formatDateNumber(day)}
-                        </span>
+                      <div className="calendar-day-number">
+                        {day.getDate()}
                       </div>
-
-                      <div className="home-upcoming-day-events">
+                
+                      <div className="calendar-day-events">
                         {events.map((e:any)=>{
                           const info=
                             eventInfo(
                               e,
                               day
                             );
-
+                
                           return <a
-                            href={'/calendar/'+e.id}
+                            href={
+                              '/calendar/'+e.id
+                            }
                             className={
                               eventTypeClass(
                                 e.event_type
@@ -591,7 +583,7 @@ function Home({me}:{me:any}){
                             <div className="calendar-event-title">
                               {e.title}
                             </div>
-
+                
                             <div className="calendar-event-time">
                               {info.text}
                             </div>
@@ -600,7 +592,7 @@ function Home({me}:{me:any}){
                       </div>
                     </div>;
                   })}
-
+                
                 </div>
               </div>
 
