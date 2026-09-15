@@ -131,7 +131,7 @@ const permissions=[
   ['DOCV','View Documents','View Documents'],
   ['LDV','View Member Leadership','View Member Leadership'],
   ['HSTV','View Leadership History','View Leadership History'],
-  ['SET','Settings','Settings'],
+  ['SET','Update Info','Update Info'],
   ['MIV','View Member Info','View Member Info'],
   ['MIE','Edit Member Info','Edit Member Info'],
   ['MDEL','Delete Members','Delete Members'],
@@ -5191,7 +5191,7 @@ app.delete('/api/admin/documents/:id',async c=>{
   return json(c,{ok:true});
 });
 
-app.put('/api/settings',async c=>{
+app.put('/api/update-info',async c=>{
   const deny=requirePerm('SET')(c);
   if(deny)return deny;
 
@@ -5207,12 +5207,6 @@ app.put('/api/settings',async c=>{
   const x=await c.req.json();
 
   const cols=[
-    'prefix',
-    'first_name',
-    'middle_name',
-    'last_name',
-    'suffix',
-    'dob',
     'phone',
     'email',
     'street',
