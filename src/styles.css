@@ -445,7 +445,8 @@ tbody tr:nth-child(even){
 }
 
 .calendar-navigation{
-  display:flex;
+  display:grid;
+  grid-template-columns:42px 42px minmax(0,190px) 42px 42px;
   align-items:center;
   justify-content:center;
   gap:8px;
