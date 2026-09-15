@@ -305,22 +305,30 @@ section>h2{
   max-height:520px;
   object-fit:cover;
   border:1px solid var(--border);
+  border-radius:5px;
   display:block
 }
 
-.home-contact-card,
+.home-contact-card{
+  max-width:720px;
+  margin-bottom:18px
+}
+
 .home-announcements-card,
 .home-history-card{
   margin-bottom:18px
 }
 
 .home-contact-option{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:16px;
   padding:12px 0;
   border-bottom:1px solid var(--border)
+}
+
+.home-contact-option .button{
+  display:inline-block;
+  margin-top:8px;
+  min-height:0;
+  padding:.42rem .72rem
 }
 
 .home-contact-option:last-child{
@@ -371,6 +379,7 @@ section>h2{
   flex:none;
   object-fit:cover;
   border:1px solid var(--border);
+  border-radius:5px;
   display:block
 }
 
@@ -1065,6 +1074,7 @@ tbody tr:nth-child(even){
 .uniform-img{
   width:100%;
   max-width:440px;
+  border-radius:5px;
   display:block
 }
 
@@ -1840,11 +1850,6 @@ footer a:hover{
   }
 
   .page-head{
-    align-items:flex-start;
-    flex-direction:column
-  }
-
-  .home-contact-option{
     align-items:flex-start;
     flex-direction:column
   }
