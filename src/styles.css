@@ -413,12 +413,27 @@ tbody tr:nth-child(even){
   margin-bottom:18px
 }
 
+.calendar-top-actions,
 .calendar-navigation{
+  width:min(380px,100%);
+  margin-left:auto;
+  margin-right:auto
+}
+
+.calendar-top-actions{
   display:flex;
   align-items:center;
-  justify-content:center;
+  justify-content:space-between;
   gap:8px;
-  margin:0 0 16px
+  margin-bottom:16px
+}
+
+.calendar-navigation{
+  display:grid;
+  grid-template-columns:
+    42px 42px minmax(0,190px) 42px 42px;
+  gap:8px;
+  align-items:center;
 }
 
 .calendar-navigation .button{
@@ -432,7 +447,7 @@ tbody tr:nth-child(even){
 }
 
 .calendar-month-title{
-  min-width:190px;
+  min-width:0;
   text-align:center;
   font-size:1.25rem;
   font-weight:600;
