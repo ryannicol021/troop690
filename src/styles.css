@@ -948,7 +948,7 @@ tbody tr:nth-child(even){
   justify-content:center;
   padding:20px;
   background:rgba(0,0,0,.48);
-  box-sizing:border-box
+  box-sizing:border-box;
   overflow-y:auto;
 }
 
