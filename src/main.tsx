@@ -925,29 +925,6 @@ function Calendar({me}:{me:any}){
     title="Calendar"
   >
 
-    <div className="calendar-top-actions">
-      {canEdit?
-        <button
-          type="button"
-          className="button"
-          onClick={()=>{
-            setShowAddEvent(true);
-          }}
-        >
-          Add Event
-        </button>:
-        <span />
-      }
-
-      <button
-        type="button"
-        className="button"
-        disabled
-      >
-        Subscribe
-      </button>
-    </div>
-
     <div className="calendar-navigation">
       <button
         type="button"
@@ -997,6 +974,38 @@ function Calendar({me}:{me:any}){
         title="Next year"
       >
         »
+      </button>
+    </div>
+
+    <div
+      className={
+        'calendar-top-actions '+
+        (
+          canEdit?
+            '':
+            'calendar-top-actions-single'
+        )
+      }
+    >
+      {canEdit?
+        <button
+          type="button"
+          className="button"
+          onClick={()=>{
+            setShowAddEvent(true);
+          }}
+        >
+          Add Event
+        </button>:
+        <span />
+      }
+
+      <button
+        type="button"
+        className="button"
+        disabled
+      >
+        Subscribe
       </button>
     </div>
 
