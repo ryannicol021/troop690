@@ -1379,6 +1379,14 @@ tbody tr:nth-child(even){
   padding:14px
 }
 
+.update-info-member{
+  margin-bottom:28px
+}
+
+.update-info-member>h2{
+  margin:0 0 12px
+}
+
 .member-name-grid{
   display:grid;
   grid-template-columns:
