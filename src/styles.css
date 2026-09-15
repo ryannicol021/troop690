@@ -445,16 +445,29 @@ tbody tr:nth-child(even){
 }
 
 .calendar-navigation{
-  display:grid;
-  grid-template-columns:
-    42px 42px minmax(0,190px) 42px 42px;
-  gap:8px;
+  display:flex;
   align-items:center;
+  justify-content:center;
+  gap:8px;
+  width:min(390px,100%);
+  margin:-10px auto 8px
 }
 
 .calendar-navigation .button{
   min-width:42px;
   padding:.5rem .7rem
+}
+
+.calendar-top-actions{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  width:min(390px,100%);
+  margin:0 auto 16px
+}
+
+.calendar-top-actions-single{
+  justify-content:center
 }
 
 .calendar-navigation .button:disabled{
