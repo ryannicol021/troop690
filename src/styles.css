@@ -610,56 +610,6 @@ tbody tr:nth-child(even){
   color:#222
 }
 
-.home-upcoming-wrap{
-  width:100%;
-  overflow-x:auto
-}
-
-.home-upcoming-grid{
-  display:grid;
-  grid-template-columns:
-    repeat(7,minmax(0,1fr));
-  min-width:760px;
-  border-top:1px solid var(--border);
-  border-left:1px solid var(--border);
-  background:var(--border);
-  gap:1px
-}
-
-.home-upcoming-day{
-  min-height:126px;
-  padding:7px;
-  background:var(--offwhite);
-  overflow:hidden
-}
-
-.home-upcoming-day-header{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:6px;
-  margin-bottom:6px;
-  padding-bottom:6px;
-  border-bottom:1px solid var(--border);
-  font-size:.78rem;
-  font-weight:600;
-  text-transform:uppercase;
-  letter-spacing:.045em;
-  color:var(--muted)
-}
-
-.home-upcoming-day-header span:last-child{
-  font-size:.72rem;
-  font-weight:500;
-  text-transform:none;
-  letter-spacing:0
-}
-
-.home-upcoming-day-events{
-  display:grid;
-  gap:4px
-}
-
 .home-later-events{
   display:grid;
   gap:0;
@@ -980,10 +930,6 @@ tbody tr:nth-child(even){
   
   .calendar-day-events{
     gap:2px;
-  }
-
-  .home-upcoming-grid{
-    min-width:760px
   }
 
   .home-later-event{
