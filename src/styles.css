@@ -1105,6 +1105,17 @@ tbody tr:nth-child(even){
     flex-direction:column;
     gap:3px
   }
+
+  .modal-backdrop{
+    align-items:flex-start;
+    padding:16px 10px;
+  }
+
+  .modal-card{
+    width:100%;
+    max-height:calc(100vh - 32px);
+    overflow-y:auto;
+  }
 }
 
 .album-grid,
