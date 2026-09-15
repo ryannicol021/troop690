@@ -335,7 +335,9 @@ section>h2{
   border:1px solid var(--border);
   border-radius:3px;
   padding:18px;
-  box-shadow:0 1px 2px rgba(0,0,0,.04)
+  box-shadow:0 1px 2px rgba(0,0,0,.04);
+  min-width:0;
+  max-width:100%
 }
 
 .card h2,
@@ -391,6 +393,8 @@ section>h2{
 }
 
 .table-wrap{
+  width:100%;
+  max-width:100%;
   overflow:auto;
   background:#fff;
   border:1px solid var(--border);
@@ -486,14 +490,16 @@ tbody tr:nth-child(even){
 
 .calendar-grid-wrap{
   width:100%;
-  overflow-x:auto
+  max-width:100%;
+  overflow:hidden
 }
 
 .calendar-grid{
   display:grid;
   grid-template-columns:
     repeat(7,minmax(0,1fr));
-  min-width:760px;
+  width:100%;
+  min-width:0;
   border-top:1px solid var(--border);
   border-left:1px solid var(--border);
   background:var(--border);
@@ -893,8 +899,9 @@ tbody tr:nth-child(even){
     grid-template-columns:1fr
   }
 
-    .calendar-grid-wrap{
+  .calendar-grid-wrap{
     width:100%;
+    max-width:100%;
     overflow:hidden;
   }
   
@@ -1435,6 +1442,7 @@ tbody tr:nth-child(even){
 
 .family-table-wrap{
   width:100%;
+  max-width:100%;
   overflow:auto;
   border:1px solid var(--border);
   background:#fff
