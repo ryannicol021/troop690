@@ -517,14 +517,14 @@ tbody tr:nth-child(even){
 
 .calendar-top-actions{
   display:grid;
-  grid-template-columns:repeat(3,128px);
+  grid-template-columns:repeat(3,124px);
   justify-content:center;
   gap:8px;
   margin-bottom:18px;
 }
 
 .calendar-top-actions .button{
-  width:128px;
+  width:124px;
 }
 
 .calendar-top-actions>button:first-of-type{
