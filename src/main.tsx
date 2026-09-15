@@ -4560,7 +4560,7 @@ function MemberEditor({
               >
                 <option value=""></option>
                 <option value="Rev.">Rev.</option>
-                <option value="Msgr.">Msgr.</option>
+                <option value="Rev. Msgr.">Rev. Msgr.</option>
               </select>
             </label>
           }
