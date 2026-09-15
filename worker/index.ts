@@ -4311,6 +4311,53 @@ app.get('/files/:key{.+}',async c=>{
   );
 });
 
+app.get('/api/admin/event-options',async c=>{
+  const d=admin(c,'EVT');
+  if(d)return d;
+
+  const rows=await c.env.DB
+    .prepare(`
+      SELECT
+        id,
+        first_name,
+        middle_name,
+        last_name,
+        adult,
+        adult_leader
+      FROM people
+      WHERE
+        archived=0
+        AND (
+          adult=0
+          OR adult_leader=1
+        )
+      ORDER BY
+        last_name,
+        first_name,
+        middle_name
+    `)
+    .all<any>();
+
+  return json(c,{
+    leaders:(rows.results??[]).map((x:any)=>({
+      id:Number(x.id),
+      first_name:String(
+        x.first_name||''
+      ),
+      middle_name:String(
+        x.middle_name||''
+      ),
+      last_name:String(
+        x.last_name||''
+      ),
+      adult:Number(x.adult),
+      adult_leader:Number(
+        x.adult_leader
+      )
+    }))
+  });
+});
+
 app.post('/api/admin/events',async c=>{
   const d=admin(c,'EVT');
   if(d)return d;
