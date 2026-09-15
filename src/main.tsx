@@ -856,8 +856,10 @@ function Calendar({me}:{me:any}){
 
   return <Page
     title="Calendar"
-    actions={
-      canEdit?
+  >
+
+    <div className="calendar-top-actions">
+      {canEdit?
         <button
           type="button"
           className="button"
@@ -867,9 +869,17 @@ function Calendar({me}:{me:any}){
         >
           Add Event
         </button>:
-        undefined
-    }
-  >
+        <span />
+      }
+
+      <button
+        type="button"
+        className="button"
+        disabled
+      >
+        Subscribe
+      </button>
+    </div>
 
     <div className="calendar-navigation">
       <button
