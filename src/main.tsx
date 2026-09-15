@@ -65,6 +65,7 @@ const me=
         !!me.isAdministrator:
         !!me.permissions?.includes(p)
     );
+  
   const visible=[
     ...nav.filter(x=>x[2]==='public'||can(x[2])),
     ...adminNav.filter(x=>can(x[2]))
