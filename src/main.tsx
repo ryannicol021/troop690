@@ -163,7 +163,7 @@ const me=
     </header>
 
     <main>
-      <RouterPage me={me} setMe={setMe} authReady={authReady}/>
+      <RouterPage me={me} setMe={setActualMe} authReady={authReady}/>
     </main>
 
     <footer>
