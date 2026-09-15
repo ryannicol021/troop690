@@ -368,6 +368,7 @@ function Home({me}:{me:any}){
             </a>
           </div>
         </>
+      }
     </section>
 
     <section className="card home-announcements-card">
