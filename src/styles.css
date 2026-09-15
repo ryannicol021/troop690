@@ -422,20 +422,33 @@ tbody tr:nth-child(even){
 }
 
 .calendar-navigation .button{
-  min-width:44px;
+  min-width:42px;
   padding:.5rem .7rem
+}
+
+.calendar-navigation .button:disabled{
+  opacity:.4;
+  cursor:not-allowed
 }
 
 .calendar-month-title{
   min-width:190px;
   text-align:center;
   font-size:1.25rem;
-  font-weight:600
+  font-weight:600;
+  color:var(--navy)
+}
+
+.calendar-grid-wrap{
+  width:100%;
+  overflow-x:auto
 }
 
 .calendar-grid{
   display:grid;
-  grid-template-columns:repeat(7,minmax(0,1fr));
+  grid-template-columns:
+    repeat(7,minmax(0,1fr));
+  min-width:760px;
   border-top:1px solid var(--border);
   border-left:1px solid var(--border);
   background:var(--border);
@@ -454,18 +467,18 @@ tbody tr:nth-child(even){
 }
 
 .calendar-day{
-  min-height:120px;
+  min-height:126px;
   padding:7px;
   background:var(--offwhite);
   overflow:hidden
 }
 
 .calendar-day-adjacent{
-  background:#f3f1eb
+  background:#f2f0ea
 }
 
 .calendar-day-number{
-  margin-bottom:5px;
+  margin-bottom:6px;
   font-size:.9rem;
   font-weight:600
 }
@@ -476,11 +489,13 @@ tbody tr:nth-child(even){
 
 .calendar-day-events{
   display:grid;
-  gap:3px
+  gap:4px
 }
 
 .calendar-event{
-  overflow:hidden
+  display:block;
+  overflow:hidden;
+  text-decoration:none
 }
 
 .calendar-event-bar{
@@ -491,8 +506,7 @@ tbody tr:nth-child(even){
 }
 
 .calendar-event-timed{
-  padding:1px 0;
-  background:transparent
+  padding:1px 0
 }
 
 .calendar-event-title{
@@ -511,52 +525,298 @@ tbody tr:nth-child(even){
   white-space:nowrap
 }
 
-.calendar-event-bar .calendar-event-title,
-.calendar-event-bar .calendar-event-time,
-.calendar-event-timed .calendar-event-title,
-.calendar-event-timed .calendar-event-time{
-  color:currentColor
+.calendar-event:hover{
+  text-decoration:underline
 }
 
 .calendar-event-ceremony{
-  color:#d6a800;
+  color:#d6a800
 }
 
 .calendar-event-court-of-honor{
-  color:#b42323;
+  color:#b42323
 }
 
 .calendar-event-fundraiser{
-  color:#6fa35c;
+  color:#6fa35c
 }
 
 .calendar-event-mass{
-  color:#7b4aa8;
+  color:#7b4aa8
 }
 
 .calendar-event-meeting{
-  color:#336fa8;
+  color:#336fa8
 }
 
 .calendar-event-service{
-  color:#d06b92;
+  color:#d06b92
 }
 
 .calendar-event-summer-camp{
-  color:#356b3b;
+  color:#356b3b
 }
 
 .calendar-event-trip{
-  color:#7a5635;
+  color:#7a5635
 }
 
 .calendar-event-other{
   color:#222
 }
 
-.calendar-list{
+.place-search{
+  position:relative
+}
+
+.place-search>label{
+  position:relative
+}
+
+.event-optional{
+  margin-left:6px;
+  font-weight:400;
+  color:var(--muted)
+}
+
+.place-selected-address{
+  margin-top:4px;
+  font-size:.78rem;
+  color:var(--muted)
+}
+
+.place-results{
+  position:absolute;
+  left:0;
+  right:0;
+  top:100%;
+  z-index:50;
+  margin-top:3px;
+  border:1px solid var(--border);
+  background:#fff;
+  box-shadow:0 8px 20px rgba(0,0,0,.14)
+}
+
+.place-result{
+  display:flex;
+  flex-direction:column;
+  width:100%;
+  padding:9px 11px;
+  border:0;
+  border-bottom:1px solid var(--border);
+  background:#fff;
+  text-align:left;
+  cursor:pointer
+}
+
+.place-result:hover{
+  background:var(--khaki-light)
+}
+
+.place-result strong{
+  color:var(--navy)
+}
+
+.place-result span{
+  margin-top:2px;
+  color:var(--muted);
+  font-size:.8rem
+}
+
+.place-manual{
+  background:#f7f5ef
+}
+
+.place-loading,
+.place-attribution{
+  padding:7px 11px;
+  color:var(--muted);
+  font-size:.72rem
+}
+
+.place-attribution{
+  text-align:right;
+  border-top:1px solid var(--border)
+}
+
+.event-money-input{
+  display:flex;
+  align-items:center;
+  width:100%;
+  border:1px solid var(--border);
+  background:#fff;
+  border-radius:3px;
+  box-sizing:border-box
+}
+
+.event-money-input>span{
+  padding-left:10px;
+  color:var(--muted);
+  font-weight:600
+}
+
+.event-money-input input{
+  border:0;
+  outline:0;
+  background:transparent
+}
+
+.event-details dl{
+  display:grid;
+  grid-template-columns:
+    220px 1fr;
+  margin:0
+}
+
+.event-details dt,
+.event-details dd{
+  padding:9px 0;
+  border-bottom:1px solid var(--border)
+}
+
+.event-details dt{
+  font-weight:600;
+  color:var(--muted)
+}
+
+.event-details dd{
+  margin:0
+}
+
+.event-detail-type{
+  display:inline-block;
+  margin-bottom:18px;
+  padding:5px 9px;
+  border:1px solid var(--border);
+  border-radius:4px;
+  font-weight:600;
+  color:var(--navy);
+  background:var(--khaki-light)
+}
+
+.event-editor-page{
+  max-width:800px
+}
+
+.modal-backdrop{
+  position:fixed;
+  inset:0;
+  z-index:1000;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+  background:rgba(0,0,0,.48);
+  box-sizing:border-box
+}
+
+.modal-card{
+  width:min(800px,100%);
+  max-height:90vh;
+  overflow:auto;
+  background:var(--offwhite);
+  border:1px solid var(--border);
+  border-radius:4px;
+  box-shadow:0 12px 36px rgba(0,0,0,.24);
+  padding:22px;
+  box-sizing:border-box
+}
+
+.modal-header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:18px;
+  padding-bottom:12px;
+  border-bottom:2px solid var(--khaki)
+}
+
+.modal-header h2{
+  margin:0;
+  color:var(--navy)
+}
+
+.modal-close{
+  border:0;
+  background:transparent;
+  color:var(--muted);
+  font-size:1.6rem;
+  line-height:1;
+  padding:4px 8px;
+  cursor:pointer
+}
+
+.modal-close:hover{
+  color:var(--navy)
+}
+
+.event-form{
   display:grid;
   gap:14px
+}
+
+.event-form label{
+  display:grid;
+  gap:6px;
+  font-weight:600
+}
+
+.event-form input,
+.event-form select,
+.event-form textarea{
+  box-sizing:border-box;
+  width:100%
+}
+
+.event-form textarea{
+  min-height:110px;
+  resize:vertical
+}
+
+.event-form-row{
+  display:grid;
+  grid-template-columns:
+    repeat(2,minmax(0,1fr));
+  gap:14px
+}
+
+.event-time{
+  display:grid;
+  grid-template-columns:1fr auto;
+  gap:8px
+}
+
+.event-form-actions{
+  display:flex;
+  justify-content:flex-end;
+  gap:8px;
+  margin-top:6px;
+  padding-top:14px;
+  border-top:1px solid var(--border)
+}
+
+.event-form .checkbox-label{
+  display:flex;
+  align-items:center;
+  gap:8px
+}
+
+@media(max-width:700px){
+  .modal-backdrop{
+    align-items:flex-start;
+    padding:10px
+  }
+
+  .modal-card{
+    max-height:calc(100vh - 20px);
+    padding:16px
+  }
+
+  .event-form-row,
+  .event-details dl{
+    grid-template-columns:1fr
+  }
 }
 
 .album-grid,
