@@ -1336,6 +1336,7 @@ function Calendar({me}:{me:any}){
   );
 
   const [showAddEvent,setShowAddEvent]=useState(false);
+  const [showCopyEvent,setShowCopyEvent]=useState(false);
 
   const canEdit=
     !!me?.isAdministrator||
@@ -1678,37 +1679,41 @@ function Calendar({me}:{me:any}){
       </button>
     </div>
 
-    <div
-      className={
-        'calendar-top-actions '+
-        (
-          canEdit?
-            '':
-            'calendar-top-actions-single'
-        )
-      }
+<div className="calendar-top-actions">
+  {canEdit?
+    <button
+      type="button"
+      className="button"
+      onClick={()=>{
+        setShowAddEvent(true);
+      }}
     >
-      {canEdit?
-        <button
-          type="button"
-          className="button"
-          onClick={()=>{
-            setShowAddEvent(true);
-          }}
-        >
-          Add Event
-        </button>:
-        <span />
-      }
+      Add Event
+    </button>:
+    <span />
+  }
 
-      <button
-        type="button"
-        className="button"
-        disabled
-      >
-        Subscribe
-      </button>
-    </div>
+  {canEdit?
+    <button
+      type="button"
+      className="button"
+      onClick={()=>{
+        setShowCopyEvent(true);
+      }}
+    >
+      Copy Event
+    </button>:
+    <span />
+  }
+
+  <button
+    type="button"
+    className="button"
+    disabled
+  >
+    Subscribe
+  </button>
+</div>
 
     <div className="calendar-grid-wrap">
       <div className="calendar-grid">
@@ -1839,7 +1844,449 @@ function Calendar({me}:{me:any}){
         </div>
       </div>
     }
+
+    {showCopyEvent&&
+  <CopyEventModal
+    events={d.events||[]}
+    onSaved={()=>{
+      setShowCopyEvent(false);
+      load();
+    }}
+    onCancel={()=>{
+      setShowCopyEvent(false);
+    }}
+  />
+}
   </Page>
+}
+
+function CopyEventModal({
+  events,
+  onSaved,
+  onCancel
+}:{
+  events:any[],
+  onSaved:()=>void,
+  onCancel:()=>void
+}){
+  const pad=(n:number)=>
+    String(n).padStart(2,'0');
+
+  const dateKey=(date:Date)=>{
+    return `${
+      date.getFullYear()
+    }-${
+      pad(date.getMonth()+1)
+    }-${
+      pad(date.getDate())
+    }`;
+  };
+
+  const oneDayEvents=
+    [...events]
+      .filter((e:any)=>{
+        if(!e.start_at||!e.end_at)
+          return false;
+
+        return (
+          String(e.start_at).slice(0,10)===
+          String(e.end_at).slice(0,10)
+        );
+      })
+      .sort((a:any,b:any)=>
+        String(b.start_at)
+          .localeCompare(
+            String(a.start_at)
+          )
+      );
+
+  const [sourceId,setSourceId]=useState(
+    oneDayEvents.length?
+      String(oneDayEvents[0].id):
+      ''
+  );
+
+  const [viewDate,setViewDate]=useState(()=>{
+    const source=
+      oneDayEvents[0];
+
+    if(source){
+      const parts=
+        String(source.start_at)
+          .slice(0,10)
+          .split('-')
+          .map(Number);
+
+      return new Date(
+        parts[0],
+        parts[1]-1,
+        1
+      );
+    }
+
+    const now=new Date();
+
+    return new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      1
+    );
+  });
+
+  const [selectedDates,setSelectedDates]=
+    useState<string[]>([]);
+
+  const [saving,setSaving]=useState(false);
+  const [error,setError]=useState('');
+
+  const source=
+    oneDayEvents.find(
+      (e:any)=>String(e.id)===sourceId
+    );
+
+  const year=viewDate.getFullYear();
+  const month=viewDate.getMonth();
+
+  const firstDay=
+    new Date(
+      year,
+      month,
+      1
+    ).getDay();
+
+  const daysInMonth=
+    new Date(
+      year,
+      month+1,
+      0
+    ).getDate();
+
+  const previousMonthDays=
+    new Date(
+      year,
+      month,
+      0
+    ).getDate();
+
+  const cells:any[]=[];
+
+  for(let i=0;i<firstDay;i++){
+    cells.push({
+      day:
+        previousMonthDays-
+        firstDay+
+        i+
+        1,
+      current:false,
+      date:new Date(
+        year,
+        month-1,
+        previousMonthDays-
+        firstDay+
+        i+
+        1
+      )
+    });
+  }
+
+  for(let day=1;day<=daysInMonth;day++){
+    cells.push({
+      day,
+      current:true,
+      date:new Date(
+        year,
+        month,
+        day
+      )
+    });
+  }
+
+  while(cells.length%7!==0){
+    const day=
+      cells.length-
+      firstDay-
+      daysInMonth+
+      1;
+
+    cells.push({
+      day,
+      current:false,
+      date:new Date(
+        year,
+        month+1,
+        day
+      )
+    });
+  }
+
+  const toggleDate=(date:Date)=>{
+    const key=dateKey(date);
+
+    setSelectedDates(
+      current=>
+        current.includes(key)?
+          current.filter(
+            x=>x!==key
+          ):
+          [...current,key]
+    );
+  };
+
+  const changeMonth=(delta:number)=>{
+    setViewDate(
+      current=>
+        new Date(
+          current.getFullYear(),
+          current.getMonth()+delta,
+          1
+        )
+    );
+  };
+
+  const monthName=
+    viewDate.toLocaleString(
+      'en-US',
+      {month:'long'}
+    );
+
+  const save=async()=>{
+    setError('');
+
+    if(!source){
+      setError(
+        'Select an event to copy.'
+      );
+      return;
+    }
+
+    if(!selectedDates.length){
+      setError(
+        'Select at least one date.'
+      );
+      return;
+    }
+
+    setSaving(true);
+
+    try{
+      await post(
+        '/admin/events/copy',
+        {
+          source_event_id:Number(
+            source.id
+          ),
+          dates:
+            [...selectedDates].sort()
+        }
+      );
+
+      onSaved();
+    }catch(err:any){
+      setError(
+        err?.message||
+        'Unable to copy event.'
+      );
+    }finally{
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div
+      className="modal-backdrop"
+      onMouseDown={e=>{
+        if(
+          e.target===
+          e.currentTarget
+        )
+          onCancel();
+      }}
+    >
+      <div
+        className="modal-card copy-event-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="copy-event-title"
+      >
+        <div className="modal-header">
+          <h2 id="copy-event-title">
+            Copy Event
+          </h2>
+
+          <button
+            type="button"
+            className="modal-close"
+            onClick={onCancel}
+            aria-label="Close"
+          >
+            ×
+          </button>
+        </div>
+
+        {error&&
+          <div className="error">
+            {error}
+          </div>
+        }
+
+        {!oneDayEvents.length?
+          <p className="muted">
+            There are no one-day events
+            available to copy.
+          </p>:
+          <>
+            <label>
+              Event to copy
+              <select
+                value={sourceId}
+                onChange={e=>
+                  setSourceId(e.target.value)
+                }
+              >
+                {oneDayEvents.map(
+                  (e:any)=>
+                    <option
+                      key={e.id}
+                      value={e.id}
+                    >
+                      {String(
+                        e.start_at
+                      ).slice(0,10)}
+                      {' ('}
+                      {e.title}
+                      {')'}
+                    </option>
+                )}
+              </select>
+            </label>
+
+            <div className="copy-event-calendar-head">
+              <button
+                type="button"
+                className="button secondary"
+                onClick={()=>{
+                  changeMonth(-1);
+                }}
+              >
+                ‹
+              </button>
+
+              <div>
+                {monthName} {year}
+              </div>
+
+              <button
+                type="button"
+                className="button secondary"
+                onClick={()=>{
+                  changeMonth(1);
+                }}
+              >
+                ›
+              </button>
+            </div>
+
+            <div className="copy-event-calendar">
+              {[
+                'Sun',
+                'Mon',
+                'Tue',
+                'Wed',
+                'Thu',
+                'Fri',
+                'Sat'
+              ].map(day=>
+                <div
+                  className="copy-event-weekday"
+                  key={day}
+                >
+                  {day}
+                </div>
+              )}
+
+              {cells.map(
+                (cell:any,i:number)=>{
+                  const key=
+                    dateKey(cell.date);
+
+                  const checked=
+                    selectedDates.includes(
+                      key
+                    );
+
+                  return (
+                    <label
+                      className={
+                        'copy-event-day '+
+                        (
+                          cell.current?
+                            '':
+                            'copy-event-day-adjacent '
+                        )+
+                        (
+                          checked?
+                            'copy-event-day-selected':
+                            ''
+                        )
+                      }
+                      key={i}
+                    >
+                      <span>
+                        {cell.day}
+                      </span>
+
+                      {cell.current&&
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={()=>{
+                            toggleDate(
+                              cell.date
+                            );
+                          }}
+                        />
+                      }
+                    </label>
+                  );
+                }
+              )}
+            </div>
+
+            <p className="muted">
+              {selectedDates.length?
+                `${selectedDates.length} date${
+                  selectedDates.length===1?
+                    '':
+                    's'
+                } selected.`:
+                'Select the dates where you want a new copy of this event.'}
+            </p>
+
+            <div className="button-row">
+              <button
+                type="button"
+                className="primary"
+                disabled={saving}
+                onClick={save}
+              >
+                {saving?
+                  'Copying…':
+                  'Copy Events'}
+              </button>
+
+              <button
+                type="button"
+                onClick={onCancel}
+                disabled={saving}
+              >
+                Cancel
+              </button>
+            </div>
+          </>
+        }
+      </div>
+    </div>
+  );
 }
 
 function CalendarEvent({
