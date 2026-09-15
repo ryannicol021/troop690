@@ -160,9 +160,13 @@ function RouterPage({
   if(p.startsWith('/claim/'))return <Claim/>;
   if(p==='/settings')return <Settings me={me}/>;
   if(p==='/eagles')return <Eagles/>;
-if(p==='/calendar')return <Calendar me={me}/>;
-if(p.startsWith('/calendar/'))
-  return <CalendarEvent id={p.split('/')[2]} me={me}/>;
+  if(p==='/calendar')return <Calendar me={me}/>;
+  if(p.startsWith('/calendar/'))
+    return <CalendarEvent
+      id={p.split('/')[2]}
+      me={me}
+      edit={p.split('/')[3]==='edit'}
+    />;
   if(p==='/photos')return <Photos/>;
   if(p.startsWith('/photos/'))return <PhotoAlbum id={p.split('/')[2]}/>;
   if(p==='/documents')return <Documents/>;
@@ -982,10 +986,12 @@ const eventsForDay=(date:Date)=>
 
 function CalendarEvent({
   id,
-  me
+  me,
+  edit
 }:{
   id:string,
-  me:any
+  me:any,
+  edit?:boolean
 }){
   const [d,setD]=useState<any>();
   const nav=useNavigate();
@@ -1007,21 +1013,78 @@ function CalendarEvent({
 const canEdit=
   !!me?.permissions?.includes('EVT');
 
+  if(edit&&canEdit){
+    return <Page
+      title="Edit Event"
+      actions={
+        <button
+          type="button"
+          className="button secondary"
+          onClick={()=>{
+            nav('/calendar/'+id);
+          }}
+        >
+          Cancel
+        </button>
+      }
+    >
+      <EventForm
+        me={me}
+        initialEvent={e}
+        onSaved={()=>{
+          nav('/calendar/'+id);
+        }}
+        onCancel={()=>{
+          nav('/calendar/'+id);
+        }}
+      />
+    </Page>;
+  }
+
   return <Page
     title={e.title}
     actions={
       canEdit?
-        <button
-          className="button"
-          onClick={()=>{
-            nav('/calendar/'+id+'/edit');
-          }}
-        >
-          Edit Event
-        </button>:
+        <>
+          <button
+            className="button"
+            onClick={()=>{
+              nav('/calendar/'+id+'/edit');
+            }}
+          >
+            Edit Event
+          </button>
+
+          <button
+            className="button secondary"
+            onClick={async()=>{
+              if(!confirm(
+                'Delete this event?'
+              ))
+                return;
+
+              try{
+                await api(
+                  '/admin/events/'+id,
+                  {method:'DELETE'}
+                );
+
+                nav('/calendar');
+              }catch(err:any){
+                alert(
+                  err?.message||
+                  'Unable to delete event.'
+                );
+              }
+            }}
+          >
+            Delete Event
+          </button>
+        </>:
         undefined
     }
   >
+    
     <article className="card">
       <p>
         <strong>Type</strong><br/>
