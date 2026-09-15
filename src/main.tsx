@@ -14,6 +14,8 @@ function App(){
     useState<Record<string,string[]>>({});
   const [authReady,setAuthReady]=useState(false);
   const [open,setOpen]=useState<'account'|'nav'|null>(null);
+  const [viewAsOpen,setViewAsOpen]=useState(false);
+  const [viewAsChoice,setViewAsChoice]=useState('Administrator');
   const navg=useNavigate();
   const loc=useLocation();
 
@@ -83,40 +85,22 @@ const me=
   <div className="menu account-menu">
     <button onClick={()=>{
       setOpen(null);
-      actualMe?navg('/settings'):navg('/login')
+      actualMe?navg('/update-info'):navg('/login')
     }}>
-      {actualMe?'Settings':'Log In'}
+      {actualMe?'Update Info':'Log In'}
     </button>
 
-    {actualMe?.isAdministrator&&
-      <div className="view-as-section">
-        <div className="view-as-label">
-          View As
-        </div>
-
-        {[
-          'Administrator',
-          'Guest',
-          'Youth',
-          'Adult',
-          'Adult Leader'
-        ].map(role=>
-          <button
-            key={role}
-            className={
-              viewAs===role?
-                'active':
-                ''
-            }
-            onClick={()=>{
-              setViewAs(role);
-            }}
-          >
-            {role}
-          </button>
-        )}
-      </div>
-    }
+{actualMe?.isAdministrator&&
+  <button
+    onClick={()=>{
+      setOpen(null);
+      setViewAsChoice(viewAs);
+      setViewAsOpen(true);
+    }}
+  >
+    View As
+  </button>
+}
 
     {actualMe&&
       <button onClick={async()=>{
@@ -162,6 +146,75 @@ const me=
       </div>
     </header>
 
+{viewAsOpen&&
+  <div
+    className="modal-backdrop"
+    onMouseDown={e=>{
+      if(e.target===e.currentTarget)
+        setViewAsOpen(false);
+    }}
+  >
+    <div className="modal-card">
+      <div className="modal-header">
+        <h2>View As</h2>
+
+        <button
+          type="button"
+          className="modal-close"
+          aria-label="Close"
+          onClick={()=>{
+            setViewAsChoice(viewAs);
+            setViewAsOpen(false);
+          }}
+        >
+          ×
+        </button>
+      </div>
+
+      <form
+        className="form"
+        onSubmit={e=>{
+          e.preventDefault();
+          setViewAs(viewAsChoice);
+          setViewAsOpen(false);
+        }}
+      >
+        <label>
+          View as
+          <select
+            value={viewAsChoice}
+            onChange={e=>
+              setViewAsChoice(e.target.value)
+            }
+          >
+            <option value="Guest">Guest</option>
+            <option value="Youth">Youth</option>
+            <option value="Adult">Adult</option>
+            <option value="Adult Leader">Adult Leader</option>
+            <option value="Administrator">Administrator</option>
+          </select>
+        </label>
+
+        <div className="button-row">
+          <button className="primary">
+            Apply
+          </button>
+
+          <button
+            type="button"
+            onClick={()=>{
+              setViewAsChoice(viewAs);
+              setViewAsOpen(false);
+            }}
+          >
+            Cancel
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}
+    
     <main>
       <RouterPage me={me} setMe={setActualMe} authReady={authReady}/>
     </main>
@@ -194,7 +247,7 @@ function RouterPage({
   const p=useLocation().pathname;
 
   const required:Record<string,string>={
-    '/settings':'SET',
+    '/update-info':'SET',
     '/calendar':'CAL',
     '/photos':'PHV',
     '/documents':'DOCV',
@@ -232,7 +285,7 @@ const requiredPermission=
   if(p==='/')return <Home me={me}/>;
   if(p==='/login')return <Login setMe={setMe}/>;
   if(p.startsWith('/claim/'))return <Claim/>;
-  if(p==='/settings')return <Settings me={me}/>;
+  if(p==='/update-info')return <UpdateInfo me={me}/>;
   if(p==='/eagles')return <Eagles/>;
   if(p==='/calendar')return <Calendar me={me}/>;
   if(p.startsWith('/calendar/'))
@@ -948,48 +1001,142 @@ function Claim(){
   </Page>
 }
 
-function Settings({me}:{me:any}){
-  const [x,setX]=useState(me?.person||{});
+function UpdateInfo({me}:{me:any}){
+  const [x,setX]=useState({
+    phone:me?.person?.phone||'',
+    email:me?.person?.email||'',
+    street:me?.person?.street||'',
+    town:me?.person?.town||'',
+    zip:me?.person?.zip||''
+  });
+
+  const [error,setError]=useState('');
+  const [saved,setSaved]=useState(false);
+
+  const formatPhone=(value:string)=>{
+    const digits=value.replace(/\D/g,'').slice(0,10);
+
+    if(!digits)
+      return '';
+
+    if(digits.length<=3)
+      return `(${digits}`;
+
+    if(digits.length<=6)
+      return `(${digits.slice(0,3)}) ${digits.slice(3)}`;
+
+    return `(${digits.slice(0,3)}) ${digits.slice(3,6)}-${digits.slice(6)}`;
+  };
 
   if(!me)
     return <Login setMe={()=>{}}/>;
 
-  const fields=[
-    'prefix',
-    'first_name',
-    'middle_name',
-    'last_name',
-    'suffix',
-    'dob',
-    'phone',
-    'email',
-    'street',
-    'town',
-    'zip'
-  ];
-
-  return <Page title="Settings">
+  return <Page title="Update Info">
     <form
-      className="form"
+      className="form member-editor"
       onSubmit={async e=>{
         e.preventDefault();
-        await put('/settings',x);
-        alert('Saved')
+        setError('');
+        setSaved(false);
+
+        try{
+          await put('/update-info',x);
+          setSaved(true);
+        }catch(e:any){
+          setError(e.message);
+        }
       }}
     >
-      <div className="grid two">
-        {fields.map(f=>
-          <label key={f}>
-            {f.replaceAll('_',' ')}
+      <div className="member-form-card">
+        <div className="member-info-grid">
+          <label>
+            Phone
             <input
-              value={x[f]||''}
-              onChange={e=>setX({...x,[f]:e.target.value})}
+              type="tel"
+              inputMode="numeric"
+              maxLength={14}
+              value={formatPhone(x.phone)}
+              onChange={e=>
+                setX({
+                  ...x,
+                  phone:formatPhone(e.target.value)
+                })
+              }
             />
           </label>
-        )}
+
+          <label>
+            Email
+            <input
+              type="email"
+              value={x.email}
+              onChange={e=>
+                setX({
+                  ...x,
+                  email:e.target.value
+                })
+              }
+            />
+          </label>
+        </div>
       </div>
 
-      <button className="primary">Save</button>
+      <div className="member-form-card">
+        <div className="member-address-grid">
+          <label>
+            Street Address
+            <input
+              value={x.street}
+              onChange={e=>
+                setX({
+                  ...x,
+                  street:e.target.value
+                })
+              }
+            />
+          </label>
+
+          <label>
+            Town
+            <input
+              value={x.town}
+              onChange={e=>
+                setX({
+                  ...x,
+                  town:e.target.value
+                })
+              }
+            />
+          </label>
+
+          <label>
+            ZIP Code
+            <input
+              value={x.zip}
+              onChange={e=>
+                setX({
+                  ...x,
+                  zip:e.target.value
+                })
+              }
+            />
+          </label>
+        </div>
+      </div>
+
+      {error&&
+        <p className="error">{error}</p>
+      }
+
+      {saved&&
+        <p className="muted">Information updated.</p>
+      }
+
+      <div className="button-row">
+        <button className="primary">
+          Save
+        </button>
+      </div>
     </form>
   </Page>
 }
