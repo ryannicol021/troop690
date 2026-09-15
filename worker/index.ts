@@ -5191,6 +5191,90 @@ app.delete('/api/admin/documents/:id',async c=>{
   return json(c,{ok:true});
 });
 
+app.get('/api/update-info',async c=>{
+  const deny=requirePerm('SET')(c);
+  if(deny)return deny;
+
+  const u=c.get('user');
+
+  if(!u||!u.personId)
+    return json(
+      c,
+      {error:'Login required'},
+      401
+    );
+
+  await ensureFamilySchema(c);
+
+  const family=await c.env.DB
+    .prepare(`
+      SELECT family_id
+      FROM family_members
+      WHERE person_id=?
+      LIMIT 1
+    `)
+    .bind(u.personId)
+    .first<any>();
+
+  let rows:any;
+
+  if(family?.family_id){
+    rows=await c.env.DB
+      .prepare(`
+        SELECT
+          p.id,
+          p.prefix,
+          p.first_name,
+          p.middle_name,
+          p.last_name,
+          p.suffix,
+          p.phone,
+          p.email,
+          p.street,
+          p.town,
+          p.zip
+        FROM family_members fm
+        JOIN people p
+          ON p.id=fm.person_id
+        WHERE
+          fm.family_id=?
+          AND p.archived=0
+      `)
+      .bind(
+        Number(family.family_id)
+      )
+      .all<any>();
+  }else{
+    rows=await c.env.DB
+      .prepare(`
+        SELECT
+          id,
+          prefix,
+          first_name,
+          middle_name,
+          last_name,
+          suffix,
+          phone,
+          email,
+          street,
+          town,
+          zip
+        FROM people
+        WHERE
+          id=?
+          AND archived=0
+      `)
+      .bind(
+        u.personId
+      )
+      .all<any>();
+  }
+
+  return json(c,{
+    members:rows.results??[]
+  });
+});
+
 app.put('/api/update-info',async c=>{
   const deny=requirePerm('SET')(c);
   if(deny)return deny;
@@ -5204,33 +5288,87 @@ app.put('/api/update-info',async c=>{
       401
     );
 
-  const x=await c.req.json();
+  await ensureFamilySchema(c);
 
-  const cols=[
-    'phone',
-    'email',
-    'street',
-    'town',
-    'zip'
-  ];
+  const family=await c.env.DB
+    .prepare(`
+      SELECT family_id
+      FROM family_members
+      WHERE person_id=?
+      LIMIT 1
+    `)
+    .bind(u.personId)
+    .first<any>();
 
-  const vals=cols.map(
-    k=>x[k]??''
+  const allowedRows=
+    family?.family_id?
+      await c.env.DB
+        .prepare(`
+          SELECT p.id
+          FROM family_members fm
+          JOIN people p
+            ON p.id=fm.person_id
+          WHERE
+            fm.family_id=?
+            AND p.archived=0
+        `)
+        .bind(
+          Number(family.family_id)
+        )
+        .all<any>() :
+      await c.env.DB
+        .prepare(`
+          SELECT id
+          FROM people
+          WHERE
+            id=?
+            AND archived=0
+        `)
+        .bind(u.personId)
+        .all<any>();
+
+  const allowedIds=new Set(
+    (allowedRows.results??[])
+      .map((x:any)=>Number(x.id))
   );
 
-  await c.env.DB
-    .prepare(`
-      UPDATE people
-      SET
-        ${cols.map(k=>k+'=?').join(',')},
-        updated_at=CURRENT_TIMESTAMP
-      WHERE id=?
-    `)
-    .bind(
-      ...vals,
-      u.personId
-    )
-    .run();
+  const body=await c.req.json<any>();
+  const members=Array.isArray(body.members)?
+    body.members:
+    [];
+
+  for(const member of members){
+    const id=Number(member.id);
+
+    if(!allowedIds.has(id))
+      return json(
+        c,
+        {error:'You can only update members of your family.'},
+        403
+      );
+
+    await c.env.DB
+      .prepare(`
+        UPDATE people
+        SET
+          phone=?,
+          email=?,
+          street=?,
+          town=?,
+          zip=?,
+          updated_at=CURRENT_TIMESTAMP
+        WHERE id=?
+      `)
+      .bind(
+        member.phone??'',
+        member.email??'',
+        member.street??'',
+        member.town??'',
+        member.zip??'',
+        id
+      )
+      .run();
+  }
 
   return json(c,{ok:true});
 });
