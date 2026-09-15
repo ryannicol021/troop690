@@ -161,22 +161,6 @@ header{
   min-height:40px
 }
 
-.view-as-section{
-  border-top:1px solid var(--border);
-  border-bottom:1px solid var(--border);
-  margin:5px 0;
-  padding:5px 0
-}
-
-.view-as-label{
-  padding:6px 11px 4px;
-  font-size:.72rem;
-  font-weight:600;
-  text-transform:uppercase;
-  letter-spacing:.05em;
-  color:var(--muted)
-}
-
 .menu button:hover{
   background:var(--khaki-light)
 }
