@@ -371,13 +371,25 @@ function Home({me}:{me:any}){
         </>
     </section>
 
-    <section>
-      <h2>History</h2>
-      <p>{d.content.history||'History content can be maintained by an administrator.'}</p>
-    </section>
+    <section className="card home-announcements-card">
+      <h2>Announcements</h2>
 
+      {d.announcements?.length?
+        d.announcements.map((a:any)=>
+          <article
+            className="home-announcement"
+            key={a.id}
+          >
+            <h3>{a.title}</h3>
+            <p>{a.body}</p>
+          </article>
+        ):
+        <p className="muted">There are no current announcements.</p>
+      }
+    </section>
+        
     {me&&
-      <div className="grid two">
+      <>
         <section className="card">
           <h2>Upcoming Events</h2>
 
@@ -703,16 +715,41 @@ function Home({me}:{me:any}){
           <h2>Recent Photo Albums</h2>
           {d.recent.length?
             d.recent.map((e:any)=>
-              <div className="list-row" key={e.id}>
-                <b>{e.title}</b>
-                <span>{new Date(e.start_at).toLocaleDateString()}</span>
-              </div>
+              <a
+                className="home-photo-row"
+                key={e.id}
+                href={'/photos/'+e.id}
+              >
+                {e.photo&&
+                  <img
+                    className="home-photo-thumb"
+                    src={'/files/'+e.photo}
+                    alt=""
+                  />
+                }
+
+                <div className="home-photo-info">
+                  <b>{e.title}</b>
+                  <span>
+                    {new Date(e.start_at).toLocaleDateString()}
+                  </span>
+                </div>
+              </a>
             ):
             <p className="muted">No photo albums.</p>
           }
         </section>
-      </div>
+      </>
     }
+
+    <section className="card home-history-card">
+      <h2>History</h2>
+      <p>
+        {d.content.history||
+          'There is no troop history currently listed.'
+        }
+      </p>
+    </section>
   </Page>
 }
 
