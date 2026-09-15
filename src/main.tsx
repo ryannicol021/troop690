@@ -1334,6 +1334,27 @@ function EventForm({
     }));
   };
 
+const formatTimeInput=(value:string)=>{
+  const digits=
+    String(value||'')
+      .replace(/\D/g,'')
+      .slice(0,4);
+
+  if(digits.length<=2)
+    return digits;
+
+  return (
+    digits.slice(0,-2)+
+    ':'+
+    digits.slice(-2)
+  );
+};
+
+const validTime=(value:string)=>{
+  return /^(1[0-2]|[1-9]):[0-5][0-9]$/
+    .test(value);
+};
+  
   const save=async()=>{
     setError('');
 
@@ -1347,12 +1368,27 @@ function EventForm({
       return;
     }
 
-    if(!form.all_day&&
-      (!form.start_time||
-       !form.end_time)){
-      setError('Start and End times are required.');
-      return;
-    }
+if(!form.all_day&&
+  (
+    !form.start_time||
+    !form.end_time
+  )){
+  setError('Start and end times are required.');
+  return;
+}
+
+if(
+  !form.all_day&&
+  (
+    !validTime(form.start_time)||
+    !validTime(form.end_time)
+  )
+){
+  setError(
+    'Times must be entered as h:mm or hh:mm.'
+  );
+  return;
+}
 
     setSaving(true);
 
@@ -1560,10 +1596,16 @@ function EventForm({
           Start Time
           <div className="event-time">
             <input
-              type="time"
+              type="text"
+              inputMode="numeric"
+              placeholder="5:00"
+              maxLength={5}
               value={form.start_time}
               onChange={e=>{
-                set('start_time',e.target.value);
+                set(
+                  'start_time',
+                  formatTimeInput(e.target.value)
+                );
               }}
             />
             <select
@@ -1597,10 +1639,16 @@ function EventForm({
           End Time
           <div className="event-time">
             <input
-              type="time"
+              type="text"
+              inputMode="numeric"
+              placeholder="9:00"
+              maxLength={5}
               value={form.end_time}
               onChange={e=>{
-                set('end_time',e.target.value);
+                set(
+                  'end_time',
+                  formatTimeInput(e.target.value)
+                );
               }}
             />
             <select
