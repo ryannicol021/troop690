@@ -4,8 +4,8 @@ import {BrowserRouter,useNavigate,useLocation} from 'react-router-dom';
 import './styles.css';
 import {api,post,put} from './lib/api';
 
-const nav=[['/','Home','public'],['/eagles','Eagle Scouts','public'],['/calendar','Calendar','CAL'],['/photos','Photo Gallery','PHV'],['/documents','Documents','DOCV'],['/leadership','Leadership','public'],['/advancement','Advancement','public'],['/summer-camp','Summer Camp','public'],['/uniform','Scout Uniform','public'],['/contact','Contact Us','public']];
-const adminNav=[['/member-info','Member Info','MIV'],['/email','Email','EML'],['/administration','Administration','__ADMIN_ROLE__']];
+const nav=[['/','Home','public'],['/eagles','Eagle Scouts','public'],['/calendar','Calendar','CAL'],['/photos','Photo Gallery','PHV'],['/documents','Documents','DOCV'],['/leadership','Leadership','public'],['/advancement','Advancement','public'],['/summer-camp','Summer Camp','public'],['/uniform','Scout Uniform','public']];
+const adminNav=[['/email','Email','EML'],['/member-info','Member Info','MIV'],['/administration','Administration','__ADMIN_ROLE__']];
 
 function App(){
   const [actualMe,setActualMe]=useState<any>(null);
@@ -248,7 +248,6 @@ const requiredPermission=
   if(p==='/advancement')return <Advancement/>;
   if(p==='/summer-camp')return <SummerCamp/>;
   if(p==='/uniform')return <Uniform/>;
-  if(p==='/contact')return <Contact me={me}/>;
   if(p==='/member-info')
   return <MemberInfo me={me}/>;
   if(p==='/email')return <Email/>;
@@ -3096,35 +3095,35 @@ function Uniform(){
     return <Page title="Scout Uniform"><Loading/></Page>;
 
   const areas=[
-    ['uniform_class_a','Class A'],
-    ['uniform_class_b','Class B'],
-    ['uniform_right_sleeve','Right sleeve'],
-    ['uniform_left_sleeve','Left sleeve'],
-    ['uniform_right_pocket','Right pocket'],
-    ['uniform_left_pocket','Left pocket']
+    ['/images/uniform/class-a.png','Class A'],
+    ['/images/uniform/class-b.png','Class B'],
+    ['/images/uniform/right-sleeve.png','Right sleeve'],
+    ['/images/uniform/left-sleeve.png','Left sleeve'],
+    ['/images/uniform/right-pocket.png','Right pocket'],
+    ['/images/uniform/left-pocket.png','Left pocket']
   ];
 
   return <Page title="Scout Uniform">
     <section>
       <h2>Class A uniform</h2>
       <p>The Class A uniform is the troop's formal Scout uniform.</p>
-      <ImgSlot src={d.content.uniform_class_a}/>
+      <ImgSlot src="/images/uniform/class-a.png"/>
     </section>
 
     <section>
       <h2>Class B uniform</h2>
       <p>The Class B uniform is the troop's activity uniform.</p>
-      <ImgSlot src={d.content.uniform_class_b}/>
+      <ImgSlot src="/images/uniform/class-b.png"/>
     </section>
 
     <section>
       <h2>Insignia Guide</h2>
 
       <div className="uniform-grid">
-        {areas.slice(2).map(([k,n])=>
-          <div className="card" key={k}>
+        {areas.slice(2).map(([src,n])=>
+          <div className="card" key={src}>
             <h3>{n}</h3>
-            <ImgSlot src={d.content[k]}/>
+            <ImgSlot src={src}/>
           </div>
         )}
       </div>
@@ -3157,55 +3156,11 @@ function Uniform(){
 }
 
 function ImgSlot({src}:{src?:string}){
-  return src?
-    <img
-      className="uniform-img"
-      src={'/files/'+src}
-      alt="Uniform guide"
-    />:
-    <div className="image-slot">Owner-supplied image</div>
-}
-
-function Contact({me}:{me:any}){
-  return <Page title="Contact Us">
-    <div className="grid three">
-      <section className="card public-only">
-        <h2>Joining</h2>
-
-        {!me?
-          <a
-            className="button"
-            href="mailto:committee@troop690.org?cc=scoutmaster@troop690.org"
-          >
-            Contact the committee
-          </a>:
-          <p className="muted">This section is for non-members.</p>
-        }
-      </section>
-
-      <section className="card">
-        <h2>Questions</h2>
-
-        <a
-          className="button"
-          href="mailto:scoutmaster@troop690.org"
-        >
-          Contact the Scoutmaster
-        </a>
-      </section>
-
-      <section className="card">
-        <h2>Website Feedback</h2>
-
-        <a
-          className="button"
-          href="mailto:webmaster@troop690.org"
-        >
-          Report an issue or send feedback
-        </a>
-      </section>
-    </div>
-  </Page>
+  return <img
+    className="uniform-img"
+    src={src||'/images/uniform/placeholder.png'}
+    alt="Uniform guide"
+  />;
 }
 
 function MemberInfo({me}:{me:any}){
