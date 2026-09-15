@@ -3543,22 +3543,22 @@ Troop 690`;
     {memberTab==='members'?
       <>
         <section>
-          <h2>Youth</h2>
+          <h2>Youth ({youth.length})</h2>
           {youthTable}
         </section>
 
         <section>
-          <h2>Adults</h2>
+          <h2>Adults ({adults.length})</h2>
           {adultTable}
         </section>
 
         <section>
-          <h2>Adult Leaders</h2>
+          <h2>Adult Leaders ({leaders.length})</h2>
           {leaderTable}
         </section>
 
         <section>
-          <h2>Archived Eagle Scouts</h2>
+          <h2>Archived Eagle Scouts ({archived.length})</h2>
           {archiveTable}
         </section>
       </>:
