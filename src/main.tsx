@@ -311,16 +311,332 @@ function Home({me}:{me:any}){
     {me&&
       <div className="grid two">
         <section className="card">
-          <h2>Upcoming Calendar Events</h2>
-          {d.events.length?
-            d.events.map((e:any)=>
-              <div className="list-row" key={e.id}>
-                <b>{e.title}</b>
-                <span>{new Date(e.start_at).toLocaleString()}</span>
+          <h2>Upcoming Events</h2>
+
+          {(()=>{
+            const pad=(n:number)=>
+              String(n).padStart(2,'0');
+
+            const dateOnly=(value:string|Date)=>{
+              const date=
+                value instanceof Date?
+                  value:
+                  new Date(value);
+
+              return new Date(
+                date.getFullYear(),
+                date.getMonth(),
+                date.getDate()
+              );
+            };
+
+            const dateKey=(value:Date)=>{
+              return `${value.getFullYear()}-${
+                pad(value.getMonth()+1)
+              }-${pad(value.getDate())}`;
+            };
+
+            const formatTime=(value:string)=>{
+              const date=new Date(value);
+
+              return date.toLocaleTimeString(
+                'en-US',
+                {
+                  hour:'numeric',
+                  minute:'2-digit'
+                }
+              );
+            };
+
+            const eventTypeClass=(type:string)=>{
+              return (
+                'calendar-event calendar-event-' +
+                String(type||'Other')
+                  .toLowerCase()
+                  .replace(/[^a-z0-9]+/g,'-')
+              );
+            };
+
+            const eventInfo=(e:any,date:Date)=>{
+              const start=dateOnly(e.start_at);
+
+              const end=
+                e.end_at?
+                  dateOnly(e.end_at):
+                  start;
+
+              const current=dateOnly(date);
+
+              const startsToday=
+                current.getTime()===start.getTime();
+
+              const endsToday=
+                current.getTime()===end.getTime();
+
+              const multiDay=
+                start.getTime()!==end.getTime();
+
+              if(Number(e.all_day)){
+                return {
+                  bar:true,
+                  text:'All Day'
+                };
+              }
+
+              if(!multiDay){
+                return {
+                  bar:false,
+                  text:
+                    `${formatTime(e.start_at)} – `+
+                    `${formatTime(e.end_at)}`
+                };
+              }
+
+              if(startsToday){
+                return {
+                  bar:true,
+                  text:formatTime(e.start_at)
+                };
+              }
+
+              if(endsToday){
+                return {
+                  bar:true,
+                  text:formatTime(e.end_at)
+                };
+              }
+
+              return {
+                bar:true,
+                text:'All Day'
+              };
+            };
+
+            const today=dateOnly(new Date());
+
+            const days=
+              Array.from(
+                {length:7},
+                (_,i)=>
+                  new Date(
+                    today.getFullYear(),
+                    today.getMonth(),
+                    today.getDate()+i
+                  )
+              );
+
+            const eventsForDay=(date:Date)=>
+              (d.events||[])
+                .filter((e:any)=>{
+                  const start=
+                    dateOnly(e.start_at);
+
+                  const end=
+                    e.end_at?
+                      dateOnly(e.end_at):
+                      start;
+
+                  return (
+                    date.getTime()>=start.getTime()&&
+                    date.getTime()<=end.getTime()
+                  );
+                })
+                .sort((a:any,b:any)=>{
+                  const aInfo=
+                    eventInfo(a,date);
+
+                  const bInfo=
+                    eventInfo(b,date);
+
+                  if(aInfo.bar!==bInfo.bar)
+                    return aInfo.bar?
+                      -1:
+                      1;
+
+                  const startA=
+                    new Date(a.start_at).getTime();
+
+                  const startB=
+                    new Date(b.start_at).getTime();
+
+                  if(startA!==startB)
+                    return startA-startB;
+
+                  const endA=
+                    a.end_at?
+                      new Date(a.end_at).getTime():
+                      Number.MAX_SAFE_INTEGER;
+
+                  const endB=
+                    b.end_at?
+                      new Date(b.end_at).getTime():
+                      Number.MAX_SAFE_INTEGER;
+
+                  if(endA!==endB)
+                    return endA-endB;
+
+                  return String(a.title||'')
+                    .localeCompare(
+                      String(b.title||'')
+                    );
+                });
+
+            const cutoff=
+              new Date(
+                today.getFullYear(),
+                today.getMonth(),
+                today.getDate()+7
+              );
+
+            const laterEvents=
+              (d.events||[])
+                .filter((e:any)=>{
+                  const start=
+                    dateOnly(e.start_at);
+
+                  return start.getTime()>=cutoff.getTime();
+                })
+                .sort((a:any,b:any)=>{
+                  const startA=
+                    new Date(a.start_at).getTime();
+
+                  const startB=
+                    new Date(b.start_at).getTime();
+
+                  if(startA!==startB)
+                    return startA-startB;
+
+                  const endA=
+                    a.end_at?
+                      new Date(a.end_at).getTime():
+                      Number.MAX_SAFE_INTEGER;
+
+                  const endB=
+                    b.end_at?
+                      new Date(b.end_at).getTime():
+                      Number.MAX_SAFE_INTEGER;
+
+                  if(endA!==endB)
+                    return endA-endB;
+
+                  return String(a.title||'')
+                    .localeCompare(
+                      String(b.title||'')
+                    );
+                })
+                .slice(0,3);
+
+            const formatDay=(date:Date)=>{
+              return date.toLocaleDateString(
+                'en-US',
+                {
+                  weekday:'short'
+                }
+              );
+            };
+
+            const formatDateNumber=(date:Date)=>{
+              return date.toLocaleDateString(
+                'en-US',
+                {
+                  month:'numeric',
+                  day:'numeric'
+                }
+              );
+            };
+
+            return <>
+              <div className="home-upcoming-wrap">
+                <div className="home-upcoming-grid">
+
+                  {days.map(day=>{
+                    const events=
+                      eventsForDay(day);
+
+                    return <div
+                      className="home-upcoming-day"
+                      key={dateKey(day)}
+                    >
+                      <div className="home-upcoming-day-header">
+                        <span>
+                          {formatDay(day)}
+                        </span>
+                        <span>
+                          {formatDateNumber(day)}
+                        </span>
+                      </div>
+
+                      <div className="home-upcoming-day-events">
+                        {events.map((e:any)=>{
+                          const info=
+                            eventInfo(
+                              e,
+                              day
+                            );
+
+                          return <a
+                            href={'/calendar/'+e.id}
+                            className={
+                              eventTypeClass(
+                                e.event_type
+                              )+
+                              (
+                                info.bar?
+                                  ' calendar-event-bar':
+                                  ' calendar-event-timed'
+                              )
+                            }
+                            key={e.id}
+                          >
+                            <div className="calendar-event-title">
+                              {e.title}
+                            </div>
+
+                            <div className="calendar-event-time">
+                              {info.text}
+                            </div>
+                          </a>;
+                        })}
+                      </div>
+                    </div>;
+                  })}
+
+                </div>
               </div>
-            ):
-            <p className="muted">No upcoming events.</p>
-          }
+
+              {laterEvents.length>0&&
+                <div className="home-later-events">
+                  {laterEvents.map((e:any)=>
+                    <a
+                      href={'/calendar/'+e.id}
+                      className={
+                        eventTypeClass(
+                          e.event_type
+                        )+
+                        ' home-later-event'
+                      }
+                      key={e.id}
+                    >
+                      <b>{e.title}</b>
+
+                      <span>
+                        {Number(e.all_day)?
+                          'All Day':
+                          `${new Date(e.start_at).toLocaleDateString(
+                            'en-US',
+                            {
+                              month:'numeric',
+                              day:'numeric'
+                            }
+                          )} · ${formatTime(e.start_at)}`
+                        }
+                      </span>
+                    </a>
+                  )}
+                </div>
+              }
+            </>;
+          })()}
         </section>
 
         <section className="card">
