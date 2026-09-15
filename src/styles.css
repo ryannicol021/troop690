@@ -813,7 +813,7 @@ tbody tr:nth-child(even){
   align-items:center;
   justify-content:center;
   padding:20px;
-  background:rgba(0,0,0,.45);
+  background:rgba(0,0,0,.48);
   box-sizing:border-box
 }
 
@@ -821,11 +821,11 @@ tbody tr:nth-child(even){
   width:min(800px,100%);
   max-height:90vh;
   overflow:auto;
-  background:#fff;
+  background:var(--offwhite);
   border:1px solid var(--border);
+  border-radius:4px;
+  box-shadow:0 12px 36px rgba(0,0,0,.22);
   padding:22px;
-  border-radius:6px;
-  box-shadow:0 12px 40px rgba(0,0,0,.25);
   box-sizing:border-box
 }
 
@@ -834,11 +834,14 @@ tbody tr:nth-child(even){
   align-items:center;
   justify-content:space-between;
   gap:12px;
-  margin-bottom:18px
+  margin-bottom:18px;
+  padding-bottom:12px;
+  border-bottom:2px solid var(--khaki)
 }
 
 .modal-header h2{
-  margin:0
+  margin:0;
+  color:var(--navy)
 }
 
 .event-form{
@@ -846,16 +849,29 @@ tbody tr:nth-child(even){
   gap:14px
 }
 
+.event-form label{
+  display:grid;
+  gap:6px;
+  font-weight:600
+}
+
+.event-form input,
+.event-form select,
+.event-form textarea{
+  box-sizing:border-box;
+  width:100%
+}
+
+.event-form textarea{
+  min-height:110px;
+  resize:vertical
+}
+
 .event-form-row{
   display:grid;
   grid-template-columns:
     repeat(2,minmax(0,1fr));
   gap:14px
-}
-
-.event-form label{
-  display:grid;
-  gap:6px
 }
 
 .event-time{
@@ -868,10 +884,12 @@ tbody tr:nth-child(even){
   display:flex;
   justify-content:flex-end;
   gap:8px;
-  margin-top:4px
+  margin-top:6px;
+  padding-top:14px;
+  border-top:1px solid var(--border)
 }
 
-@media (max-width:700px){
+@media(max-width:700px){
   .modal-backdrop{
     align-items:flex-start;
     padding:10px
