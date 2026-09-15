@@ -136,8 +136,15 @@ function RouterPage({
     '/administration':'__ADMIN_ROLE__'
   };
 
-  const requiredPermission=
-    required[p]??(p.startsWith('/photos/')?'PHV':undefined);
+const requiredPermission=
+  required[p]??
+  (
+    p.startsWith('/calendar/')?
+      'CAL':
+      p.startsWith('/photos/')?
+        'PHV':
+        undefined
+  );
 
   if(!authReady&&requiredPermission)
     return <Page title=""><Loading/></Page>;
@@ -551,6 +558,7 @@ function Calendar({me}:{me:any}){
   const [viewDate,setViewDate]=useState(
     ()=>{
       const now=new Date();
+
       return new Date(
         now.getFullYear(),
         now.getMonth(),
@@ -558,23 +566,63 @@ function Calendar({me}:{me:any}){
       );
     }
   );
+
   const [showAddEvent,setShowAddEvent]=useState(false);
 
+  const canEdit=
+    !!me?.isAdministrator||
+    !!me?.permissions?.includes('EVT');
+
+  const load=async()=>{
+    try{
+      const x=await api('/calendar');
+      setD(x);
+    }catch(e:any){
+      setD({
+        events:[],
+        error:e?.message||
+          'Unable to load the calendar.'
+      });
+    }
+  };
+
   useEffect(()=>{
-    api('/calendar').then(setD)
+    load();
   },[]);
 
   if(!d)
     return <Page title="Calendar"><Loading/></Page>;
 
+  if(d.error)
+    return (
+      <Page title="Calendar">
+        <p className="error">{d.error}</p>
+      </Page>
+    );
+
   const year=viewDate.getFullYear();
   const month=viewDate.getMonth();
+
+  const minimumDate=
+    new Date(2020,0,1);
+
+  const canGoPrevious=
+    new Date(year,month-1,1)>=
+    minimumDate;
 
   const firstDay=
     new Date(year,month,1).getDay();
 
   const daysInMonth=
     new Date(year,month+1,0).getDate();
+
+  const weekCount=
+    Math.ceil(
+      (firstDay+daysInMonth)/7
+    );
+
+  const cellCount=
+    weekCount*7;
 
   const previousMonthDays=
     new Date(year,month,0).getDate();
@@ -604,173 +652,154 @@ function Calendar({me}:{me:any}){
 
   let nextDay=1;
 
-  while(cells.length%7!==0){
+  while(cells.length<cellCount){
     cells.push({
-      day:nextDay++,
+      day:nextDay,
       current:false,
-      date:new Date(year,month+1,nextDay-1)
+      date:new Date(
+        year,
+        month+1,
+        nextDay
+      )
     });
+
+    nextDay++;
   }
-
-  while(cells.length<35)
-    cells.push({
-      day:nextDay++,
-      current:false,
-      date:new Date(year,month+1,nextDay-1)
-    });
-
-  const monthName=
-    viewDate.toLocaleString(
-      undefined,
-      {month:'long'}
-    );
 
   const pad=(n:number)=>
     String(n).padStart(2,'0');
 
-  const dateKey=(date:Date)=>
-    `${date.getFullYear()}-${pad(date.getMonth()+1)}-${pad(date.getDate())}`;
+  const dateKey=(value:Date)=>{
+    const d=new Date(
+      value.getFullYear(),
+      value.getMonth(),
+      value.getDate()
+    );
 
-const eventDate=(e:any)=>
-  new Date(e.start_at);
+    return `${d.getFullYear()}-${
+      pad(d.getMonth()+1)
+    }-${pad(d.getDate())}`;
+  };
 
-const dateOnly=(value:string|Date)=>{
-  const d=
-    value instanceof Date?
-      value:
-      new Date(value);
+  const dateOnly=(value:string|Date)=>{
+    const date=
+      value instanceof Date?
+        value:
+        new Date(value);
 
-  return new Date(
-    d.getFullYear(),
-    d.getMonth(),
-    d.getDate()
-  );
-};
+    return new Date(
+      date.getFullYear(),
+      date.getMonth(),
+      date.getDate()
+    );
+  };
 
-const dayDifference=(a:Date,b:Date)=>{
-  const da=dateOnly(a).getTime();
-  const db=dateOnly(b).getTime();
+  const formatTime=(value:string)=>{
+    const date=new Date(value);
 
-  return Math.round(
-    (db-da)/86400000
-  );
-};
+    return date.toLocaleTimeString(
+      'en-US',
+      {
+        hour:'numeric',
+        minute:'2-digit'
+      }
+    );
+  };
 
-const eventTypeClass=(type:string)=>{
-  return (
-    'calendar-event calendar-event-' +
-    String(type||'Other')
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g,'-')
-  );
-};
+  const eventTypeClass=(type:string)=>{
+    return (
+      'calendar-event calendar-event-' +
+      String(type||'Other')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g,'-')
+    );
+  };
 
-const eventInfo=(e:any,date:Date)=>{
-  const start=
-    dateOnly(e.start_at);
+  const eventInfo=(e:any,date:Date)=>{
+    const start=dateOnly(e.start_at);
+    const end=
+      e.end_at?
+        dateOnly(e.end_at):
+        start;
 
-  const end=
-    e.end_at?
-      dateOnly(e.end_at):
-      start;
+    const current=dateOnly(date);
 
-  const current=
-    dateOnly(date);
+    const startsToday=
+      current.getTime()===start.getTime();
 
-  const startsToday=
-    current.getTime()===start.getTime();
+    const endsToday=
+      current.getTime()===end.getTime();
 
-  const endsToday=
-    current.getTime()===end.getTime();
+    const multiDay=
+      start.getTime()!==end.getTime();
 
-  const multiDay=
-    start.getTime()!==end.getTime();
+    if(Number(e.all_day)){
+      return {
+        bar:true,
+        text:'All Day'
+      };
+    }
 
-  if(Number(e.all_day)){
+    if(!multiDay){
+      return {
+        bar:false,
+        text:
+          `${formatTime(e.start_at)} – `+
+          `${formatTime(e.end_at)}`
+      };
+    }
+
+    if(startsToday){
+      return {
+        bar:true,
+        text:formatTime(e.start_at)
+      };
+    }
+
+    if(endsToday){
+      return {
+        bar:true,
+        text:formatTime(e.end_at)
+      };
+    }
+
     return {
       bar:true,
       text:'All Day'
     };
-  }
-
-  if(!multiDay){
-    return {
-      bar:false,
-      text:
-        `${formatTime(e.start_at)} – ${formatTime(e.end_at)}`
-    };
-  }
-
-  if(startsToday){
-    return {
-      bar:true,
-      text:`Starts ${formatTime(e.start_at)}`
-    };
-  }
-
-  if(endsToday){
-    return {
-      bar:true,
-      text:`Ends ${formatTime(e.end_at)}`
-    };
-  }
-
-  return {
-    bar:true,
-    text:'All Day'
   };
-};
 
-const formatTime=(value:string)=>{
-  const date=new Date(value);
+  const eventsForDay=(date:Date)=>
+    (d.events||[])
+      .filter((e:any)=>{
+        const start=
+          dateOnly(e.start_at);
 
-  return date.toLocaleTimeString(
-    undefined,
-    {
-      hour:'numeric',
-      minute:'2-digit'
-    }
-  );
-};
+        const end=
+          e.end_at?
+            dateOnly(e.end_at):
+            start;
 
-const eventsForDay=(date:Date)=>
-  d.events
-    .filter((e:any)=>{
-      const start=
-        dateOnly(e.start_at);
+        const current=
+          dateOnly(date);
 
-      const end=
-        e.end_at?
-          dateOnly(e.end_at):
-          start;
-
-      const current=
-        dateOnly(date);
-
-      if(Number(e.all_day))
         return (
-          current>=start &&
-          current<=end
+          current.getTime()>=start.getTime()&&
+          current.getTime()<=end.getTime()
         );
+      })
+      .sort((a:any,b:any)=>{
+        const aInfo=
+          eventInfo(a,date);
 
-      return (
-        current>=start &&
-        current<=end
-      );
-    })
-    .sort((a:any,b:any)=>{
-      const infoA=
-        eventInfo(a,date);
+        const bInfo=
+          eventInfo(b,date);
 
-      const infoB=
-        eventInfo(b,date);
+        if(aInfo.bar!==bInfo.bar)
+          return aInfo.bar?
+            -1:
+            1;
 
-      if(infoA.bar!==infoB.bar)
-        return infoA.bar?
-          -1:
-          1;
-
-      if(infoA.bar&&infoB.bar){
         const startA=
           new Date(a.start_at).getTime();
 
@@ -779,82 +808,90 @@ const eventsForDay=(date:Date)=>
 
         if(startA!==startB)
           return startA-startB;
-      }
 
-      const startA=
-        new Date(a.start_at).getTime();
+        const endA=
+          a.end_at?
+            new Date(a.end_at).getTime():
+            Number.MAX_SAFE_INTEGER;
 
-      const startB=
-        new Date(b.start_at).getTime();
+        const endB=
+          b.end_at?
+            new Date(b.end_at).getTime():
+            Number.MAX_SAFE_INTEGER;
 
-      if(startA!==startB)
-        return startA-startB;
+        if(endA!==endB)
+          return endA-endB;
 
-      const endA=
-        a.end_at?
-          new Date(a.end_at).getTime():
-          Number.MAX_SAFE_INTEGER;
+        return String(a.title||'')
+          .localeCompare(
+            String(b.title||'')
+          );
+      });
 
-      const endB=
-        b.end_at?
-          new Date(b.end_at).getTime():
-          Number.MAX_SAFE_INTEGER;
-
-      if(endA!==endB)
-        return endA-endB;
-
-      return String(a.title||'')
-        .localeCompare(
-          String(b.title||'')
-        );
-    });
+  const monthName=
+    viewDate.toLocaleString(
+      'en-US',
+      {month:'long'}
+    );
 
   const goMonth=(delta:number)=>{
-    setViewDate(
-      new Date(year,month+delta,1)
-    );
+    const next=
+      new Date(year,month+delta,1);
+
+    if(next<minimumDate)
+      return;
+
+    setViewDate(next);
   };
 
   const goYear=(delta:number)=>{
-    setViewDate(
-      new Date(year+delta,month,1)
-    );
+    const next=
+      new Date(year+delta,month,1);
+
+    if(next<minimumDate)
+      return;
+
+    setViewDate(next);
   };
 
   return <Page
-  title="Calendar"
-  actions={
-    me?.permissions?.includes('EVT')?
-      <button
-        type="button"
-        className="button"
-        onClick={()=>{
-          setShowAddEvent(true);
-        }}
-      >
-        Add Event
-      </button>:
-      undefined
-  }
->
+    title="Calendar"
+    actions={
+      canEdit?
+        <button
+          type="button"
+          className="button"
+          onClick={()=>{
+            setShowAddEvent(true);
+          }}
+        >
+          Add Event
+        </button>:
+        undefined
+    }
+  >
 
     <div className="calendar-navigation">
       <button
         type="button"
-        className="button"
+        className="button secondary"
+        disabled={!canGoPrevious}
         onClick={()=>{
           goYear(-1);
         }}
+        title="Previous year"
       >
         «
       </button>
 
       <button
         type="button"
-        className="button"
+        className="button secondary"
+        disabled={!canGoPrevious}
         onClick={()=>{
           goMonth(-1);
         }}
+        title="Previous month"
       >
         ‹
       </button>
@@ -865,123 +902,157 @@ const eventsForDay=(date:Date)=>
 
       <button
         type="button"
-        className="button"
+        className="button secondary"
         onClick={()=>{
           goMonth(1);
         }}
+        title="Next month"
       >
         ›
       </button>
 
       <button
         type="button"
-        className="button"
+        className="button secondary"
         onClick={()=>{
           goYear(1);
         }}
+        title="Next year"
       >
         »
       </button>
     </div>
 
-    <div className="calendar-grid">
-      {[
-        'Sun',
-        'Mon',
-        'Tue',
-        'Wed',
-        'Thu',
-        'Fri',
-        'Sat'
-      ].map(day=>
-        <div
-          className="calendar-weekday"
-          key={day}
-        >
-          {day}
-        </div>
-      )}
+    <div className="calendar-grid-wrap">
+      <div className="calendar-grid">
 
-      {cells.map((cell:any,i:number)=>{
-        const events=
-          cell.current?
-            eventsForDay(cell.date):
-            [];
-
-        return <div
-          className={
-            'calendar-day '+
-            (cell.current?
-              'calendar-day-current':
-              'calendar-day-adjacent')
-          }
-          key={i}
-        >
-          <div className="calendar-day-number">
-            {cell.day}
+        {[
+          'Sun',
+          'Mon',
+          'Tue',
+          'Wed',
+          'Thu',
+          'Fri',
+          'Sat'
+        ].map(day=>
+          <div
+            className="calendar-weekday"
+            key={day}
+          >
+            {day}
           </div>
+        )}
 
-          <div className="calendar-day-events">
-            {events.map((e:any)=>{
-              const info=
-                eventInfo(e,cell.date);
-            
-              return <a
-  href={'/calendar/'+e.id}
-  className={
-    eventTypeClass(e.event_type) +
-    (info.bar?
-      ' calendar-event-bar':
-      ' calendar-event-timed')
-  }
-  key={e.id}
->
-                <div className="calendar-event-title">
-                  {e.title}
-                </div>
-            
-                <div className="calendar-event-time">
-                  {info.text}
-                </div>
-              </a>;
-            })}
-          </div>
-        </div>;
-      })}
-    </div>
-{showAddEvent&&
-  <div className="modal-backdrop">
-    <div className="modal-card">
-      <div className="modal-header">
-        <h2>Add Event</h2>
+        {cells.map((cell:any,i:number)=>{
+          const events=
+            cell.current?
+              eventsForDay(cell.date):
+              [];
 
-        <button
-          type="button"
-          className="button secondary"
-          onClick={()=>{
-            setShowAddEvent(false);
-          }}
-        >
-          Cancel
-        </button>
+          return <div
+            className={
+              'calendar-day '+
+              (
+                cell.current?
+                  'calendar-day-current':
+                  'calendar-day-adjacent'
+              )
+            }
+            key={i}
+          >
+            <div className="calendar-day-number">
+              {cell.day}
+            </div>
+
+            {cell.current&&
+              <div className="calendar-day-events">
+                {events.map((e:any)=>{
+                  const info=
+                    eventInfo(
+                      e,
+                      cell.date
+                    );
+
+                  return <a
+                    href={
+                      '/calendar/'+e.id
+                    }
+                    className={
+                      eventTypeClass(
+                        e.event_type
+                      )+
+                      (
+                        info.bar?
+                          ' calendar-event-bar':
+                          ' calendar-event-timed'
+                      )
+                    }
+                    key={e.id}
+                  >
+                    <div className="calendar-event-title">
+                      {e.title}
+                    </div>
+
+                    <div className="calendar-event-time">
+                      {info.text}
+                    </div>
+                  </a>;
+                })}
+              </div>
+            }
+          </div>;
+        })}
       </div>
-
-      <EventForm
-        me={me}
-        onSaved={()=>{
-          setShowAddEvent(false);
-
-          api('/calendar')
-            .then(setD);
-        }}
-        onCancel={()=>{
-          setShowAddEvent(false);
-        }}
-      />
     </div>
-  </div>
-}
-</Page>
+
+    {showAddEvent&&
+      <div
+        className="modal-backdrop"
+        onMouseDown={e=>{
+          if(
+            e.target===
+            e.currentTarget
+          )
+            setShowAddEvent(false);
+        }}
+      >
+        <div
+          className="modal-card"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="add-event-title"
+        >
+          <div className="modal-header">
+            <h2 id="add-event-title">
+              Add Event
+            </h2>
+
+            <button
+              type="button"
+              className="modal-close"
+              onClick={()=>{
+                setShowAddEvent(false);
+              }}
+              aria-label="Close"
+            >
+              ×
+            </button>
+          </div>
+
+          <EventForm
+            me={me}
+            onSaved={()=>{
+              setShowAddEvent(false);
+              load();
+            }}
+            onCancel={()=>{
+              setShowAddEvent(false);
+            }}
+          />
+        </div>
+      </div>
+    }
+  </Page>
 }
 
 function CalendarEvent({
@@ -996,182 +1067,453 @@ function CalendarEvent({
   const [d,setD]=useState<any>();
   const nav=useNavigate();
 
+  const canEdit=
+    !!me?.isAdministrator||
+    !!me?.permissions?.includes('EVT');
+
+  const load=async()=>{
+    try{
+      setD(
+        await api(
+          '/events/'+id
+        )
+      );
+    }catch{
+      setD({
+        event:null
+      });
+    }
+  };
+
   useEffect(()=>{
-    api('/events/'+id)
-      .then(setD)
-      .catch(()=>setD({event:null}));
+    load();
   },[id]);
 
   if(!d)
-    return <Page title="Event"><Loading/></Page>;
+    return (
+      <Page title="Event">
+        <Loading/>
+      </Page>
+    );
 
   if(!d.event)
-    return <Page title="Event"><p className="error">Event not found.</p></Page>;
+    return (
+      <Page title="Event">
+        <p className="error">
+          Event not found.
+        </p>
+      </Page>
+    );
 
   const e=d.event;
 
-const canEdit=
-  !!me?.permissions?.includes('EVT');
+  const formatDate=(value:string)=>{
+    return new Date(value)
+      .toLocaleDateString(
+        'en-US',
+        {
+          month:'numeric',
+          day:'numeric',
+          year:'numeric'
+        }
+      );
+  };
+
+  const formatTime=(value:string)=>{
+    return new Date(value)
+      .toLocaleTimeString(
+        'en-US',
+        {
+          hour:'numeric',
+          minute:'2-digit'
+        }
+      );
+  };
+
+  const when=
+    Number(e.all_day)?
+      (
+        formatDate(e.start_at)===
+        formatDate(e.end_at)?
+          formatDate(e.start_at):
+          `${formatDate(e.start_at)} – `+
+          `${formatDate(e.end_at)}`
+      ):
+      (
+        formatDate(e.start_at)===
+        formatDate(e.end_at)?
+          `${formatDate(e.start_at)}, `+
+          `${formatTime(e.start_at)} – `+
+          `${formatTime(e.end_at)}`:
+          `${formatDate(e.start_at)}, `+
+          `${formatTime(e.start_at)} – `+
+          `${formatDate(e.end_at)}, `+
+          `${formatTime(e.end_at)}`
+      );
 
   if(edit&&canEdit){
-    return <Page
-      title="Edit Event"
-      actions={
-        <button
-          type="button"
-          className="button secondary"
-          onClick={()=>{
-            nav('/calendar/'+id);
-          }}
-        >
-          Cancel
-        </button>
-      }
-    >
-      <EventForm
-        me={me}
-        initialEvent={e}
-        onSaved={()=>{
-          nav('/calendar/'+id);
-        }}
-        onCancel={()=>{
-          nav('/calendar/'+id);
-        }}
-      />
-    </Page>;
+    return (
+      <Page
+        title="Edit Event"
+      >
+        <div className="event-editor-page">
+          <EventForm
+            me={me}
+            initialEvent={e}
+            onSaved={()=>{
+              nav(
+                '/calendar/'+id
+              );
+            }}
+            onCancel={()=>{
+              nav(
+                '/calendar/'+id
+              );
+            }}
+          />
+        </div>
+      </Page>
+    );
   }
 
-  return <Page
-    title={e.title}
-    actions={
-      canEdit?
-        <>
-          <button
-            className="button"
-            onClick={()=>{
-              nav('/calendar/'+id+'/edit');
-            }}
-          >
-            Edit Event
-          </button>
-
-          <button
-            className="button secondary"
-            onClick={async()=>{
-              if(!confirm(
-                'Delete this event?'
-              ))
-                return;
-
-              try{
-                await api(
-                  '/admin/events/'+id,
-                  {method:'DELETE'}
+  return (
+    <Page
+      title={e.title}
+      actions={
+        canEdit?
+          <>
+            <button
+              type="button"
+              className="button"
+              onClick={()=>{
+                nav(
+                  '/calendar/'+id+'/edit'
                 );
+              }}
+            >
+              Edit Event
+            </button>
 
-                nav('/calendar');
-              }catch(err:any){
-                alert(
-                  err?.message||
-                  'Unable to delete event.'
-                );
-              }
-            }}
-          >
-            Delete Event
-          </button>
-        </>:
-        undefined
+            <button
+              type="button"
+              className="button secondary"
+              onClick={async()=>{
+                if(!confirm(
+                  'Delete this event?'
+                ))
+                  return;
+
+                try{
+                  await api(
+                    '/admin/events/'+id,
+                    {
+                      method:'DELETE'
+                    }
+                  );
+
+                  nav('/calendar');
+                }catch(err:any){
+                  alert(
+                    err?.message||
+                    'Unable to delete event.'
+                  );
+                }
+              }}
+            >
+              Delete Event
+            </button>
+          </>:
+          undefined
+      }
+    >
+      <article className="event-details card">
+
+        <div className="event-detail-type">
+          {e.event_type||'Other'}
+        </div>
+
+        <dl>
+          <dt>When</dt>
+          <dd>{when}</dd>
+
+          {e.location_name&&
+            <>
+              <dt>Location</dt>
+              <dd>
+                <strong>
+                  {e.location_name}
+                </strong>
+
+                {e.location_address&&
+                  <>
+                    <br/>
+                    {e.location_address}
+                  </>
+                }
+              </dd>
+            </>
+          }
+
+          {e.departure_arrival_location_name&&
+            <>
+              <dt>
+                Departure / Arrival Location
+              </dt>
+              <dd>
+                <strong>
+                  {
+                    e
+                      .departure_arrival_location_name
+                  }
+                </strong>
+
+                {e
+                  .departure_arrival_location_address&&
+                  <>
+                    <br/>
+                    {
+                      e
+                        .departure_arrival_location_address
+                    }
+                  </>
+                }
+              </dd>
+            </>
+          }
+
+          {e.dress_code&&
+            <>
+              <dt>Dress Code</dt>
+              <dd>{e.dress_code}</dd>
+            </>
+          }
+
+          {e.estimated_cost!==''&&
+            e.estimated_cost!=null&&
+            <>
+              <dt>Estimated Cost</dt>
+              <dd>
+                ${
+                  Number(e.estimated_cost)
+                    .toFixed(2)
+                }
+              </dd>
+            </>
+          }
+
+          {e.service_hours!=null&&
+            <>
+              <dt>Service Hours</dt>
+              <dd>{e.service_hours}</dd>
+            </>
+          }
+
+          {e.camping_nights!=null&&
+            <>
+              <dt>Camping Nights</dt>
+              <dd>{e.camping_nights}</dd>
+            </>
+          }
+
+          {e.hiking_miles!=null&&
+            <>
+              <dt>Hiking Miles</dt>
+              <dd>{e.hiking_miles}</dd>
+            </>
+          }
+
+          {(e.leader_1_name||
+            e.leader_2_name)&&
+            <>
+              <dt>Leaders</dt>
+              <dd>
+                {e.leader_1_name||''}
+
+                {e.leader_1_name&&
+                  e.leader_2_name&&
+                  <br/>
+                }
+
+                {e.leader_2_name||''}
+              </dd>
+            </>
+          }
+
+          {e.description&&
+            <>
+              <dt>Description</dt>
+              <dd>
+                {e.description}
+              </dd>
+            </>
+          }
+        </dl>
+      </article>
+    </Page>
+  );
+}
+
+function PlaceSearch({
+  label,
+  value,
+  address,
+  onChange,
+  optional
+}:{
+  label:string,
+  value:string,
+  address:string,
+  onChange:(name:string,address:string)=>void,
+  optional?:boolean
+}){
+  const [query,setQuery]=useState(value||'');
+  const [results,setResults]=useState<any[]>([]);
+  const [open,setOpen]=useState(false);
+  const [loading,setLoading]=useState(false);
+
+  useEffect(()=>{
+    setQuery(value||'');
+  },[value]);
+
+  useEffect(()=>{
+    const text=query.trim();
+
+    if(text.length<3){
+      setResults([]);
+      setOpen(false);
+      return;
     }
-  >
-    
-    <article className="card">
-      <p>
-        <strong>Type</strong><br/>
-        {e.event_type||'Other'}
-      </p>
 
-      <p>
-        <strong>When</strong><br/>
-        {e.all_day?
-          'All Day':
-          `${new Date(e.start_at).toLocaleString()} – ${new Date(e.end_at).toLocaleString()}`
+    const timer=setTimeout(async()=>{
+      setLoading(true);
+
+      try{
+        const r=await api(
+          '/admin/event-location-search?q='+
+          encodeURIComponent(text)
+        );
+
+        setResults(r.results||[]);
+        setOpen(true);
+      }catch{
+        setResults([]);
+      }finally{
+        setLoading(false);
+      }
+    },300);
+
+    return()=>{
+      clearTimeout(timer);
+    };
+  },[query]);
+
+  const manual=()=>{
+    setOpen(false);
+    onChange(query,'');
+  };
+
+  return <div className="place-search">
+
+    <label>
+      {label}
+      {optional&&
+        <span className="event-optional">
+          Optional
+        </span>
+      }
+
+      <input
+        value={query}
+        placeholder={
+          optional?
+            'Search for a place or address':
+            'Search for a place or address'
         }
-      </p>
+        onFocus={()=>{
+          if(results.length)
+            setOpen(true);
+        }}
+        onBlur={()=>{
+          setTimeout(()=>{
+            setOpen(false);
+          },150);
+        }}
+        onChange={e=>{
+          setQuery(e.target.value);
 
-      {e.location_name&&
-        <p>
-          <strong>Location</strong><br/>
-          {e.location_name}
-          {e.location_address&&
-            <><br/>{e.location_address}</>
-          }
-        </p>
-      }
+          if(!e.target.value)
+            onChange('','');
+        }}
+      />
+    </label>
 
-      {e.departure_arrival_location_name&&
-        <p>
-          <strong>Departure / Arrival Location</strong><br/>
-          {e.departure_arrival_location_name}
-          {e.departure_arrival_location_address&&
-            <><br/>{e.departure_arrival_location_address}</>
-          }
-        </p>
-      }
+    {address&&
+      <div className="place-selected-address">
+        {address}
+      </div>
+    }
 
-      {e.dress_code&&
-        <p>
-          <strong>Dress Code</strong><br/>
-          {e.dress_code}
-        </p>
-      }
+    {open&&
+      <div className="place-results">
 
-      {e.estimated_cost!==''&&
-        e.estimated_cost!=null&&
-        <p>
-          <strong>Estimated Cost</strong><br/>
-          ${Number(e.estimated_cost).toFixed(2)}
-        </p>
-      }
+        <button
+          type="button"
+          className="place-result place-manual"
+          onMouseDown={e=>{
+            e.preventDefault();
+            manual();
+          }}
+        >
+          <strong>
+            Use “{query}”
+          </strong>
+          <span>Manual entry</span>
+        </button>
 
-      {e.service_hours!=null&&
-        <p>
-          <strong>Service Hours</strong><br/>
-          {e.service_hours}
-        </p>
-      }
+        {results.map((x:any,i:number)=>
+          <button
+            type="button"
+            className="place-result"
+            key={
+              x.place_id||
+              i
+            }
+            onMouseDown={e=>{
+              e.preventDefault();
 
-      {e.camping_nights!=null&&
-        <p>
-          <strong>Camping Nights</strong><br/>
-          {e.camping_nights}
-        </p>
-      }
+              setQuery(x.name||'');
+              setOpen(false);
 
-      {e.hiking_miles!=null&&
-        <p>
-          <strong>Hiking Miles</strong><br/>
-          {e.hiking_miles}
-        </p>
-      }
+              onChange(
+                x.name||'',
+                x.address||''
+              );
+            }}
+          >
+            <strong>
+              {x.name}
+            </strong>
 
-      {(e.leader_1_name||e.leader_2_name)&&
-        <p>
-          <strong>Leaders</strong><br/>
-          {e.leader_1_name||''}
-          {e.leader_1_name&&e.leader_2_name&&<><br/></>}
-          {e.leader_2_name||''}
-        </p>
-      }
+            {x.address&&
+              <span>
+                {x.address}
+              </span>
+            }
+          </button>
+        )}
 
-      {e.description&&
-        <p>
-          <strong>Description</strong><br/>
-          {e.description}
-        </p>
-      }
-    </article>
-  </Page>
+        {loading&&
+          <div className="place-loading">
+            Searching…
+          </div>
+        }
+
+        <div className="place-attribution">
+          Powered by Google
+        </div>
+      </div>
+    }
+  </div>;
 }
 
 function EventForm({
@@ -1187,6 +1529,10 @@ function EventForm({
 }){
   const [saving,setSaving]=useState(false);
   const [error,setError]=useState('');
+  const [leaders,setLeaders]=useState<any[]>([]);
+
+  const isEdit=
+    initialEvent!=null;
 
   const [form,setForm]=useState<any>({
     title:'',
@@ -1212,37 +1558,33 @@ function EventForm({
     description:''
   });
 
-    const [leaders,setLeaders]=useState<any[]>([]);
-
   useEffect(()=>{
     api('/admin/event-options')
-      .then(x=>{
-        setLeaders(
-          x.leaders??[]
-        );
-      });
+      .then((x:any)=>{
+        setLeaders(x.leaders||[]);
+      })
+      .catch(()=>{});
   },[]);
 
   useEffect(()=>{
     if(!initialEvent)
       return;
 
-    const datePart=(value:any)=>{
-      if(!value)
-        return '';
-
-      return String(value).slice(0,10);
+    const parseDate=(value:any)=>{
+      return value?
+        String(value).slice(0,10):
+        '';
     };
 
-    const timePart=(value:any)=>{
+    const parseTime=(value:any)=>{
       if(!value)
         return {
           time:'',
           ampm:'p.m.'
         };
 
-      const date=new Date(value);
-      let hour=date.getHours();
+      const d=new Date(value);
+      let hour=d.getHours();
 
       const ampm=
         hour>=12?
@@ -1257,19 +1599,18 @@ function EventForm({
       return {
         time:
           `${hour}:${
-            String(date.getMinutes()).padStart(2,'0')
+            String(d.getMinutes())
+              .padStart(2,'0')
           }`,
         ampm
       };
     };
 
-    const start=timePart(
-      initialEvent.start_at
-    );
+    const start=
+      parseTime(initialEvent.start_at);
 
-    const end=timePart(
-      initialEvent.end_at
-    );
+    const end=
+      parseTime(initialEvent.end_at);
 
     setForm({
       title:String(
@@ -1294,36 +1635,44 @@ function EventForm({
           initialEvent
             .departure_arrival_location_address||''
         ),
-      start_date:datePart(
-        initialEvent.start_at
-      ),
+      start_date:
+        parseDate(initialEvent.start_at),
       start_time:start.time,
       start_ampm:start.ampm,
-      end_date:datePart(
-        initialEvent.end_at
-      ),
+      end_date:
+        parseDate(initialEvent.end_at),
       end_time:end.time,
       end_ampm:end.ampm,
       all_day:
         Number(initialEvent.all_day)===1,
-      dress_code:String(
-        initialEvent.dress_code||''
-      ),
+      dress_code:
+        String(initialEvent.dress_code||''),
       estimated_cost:
-        initialEvent.estimated_cost??'',
+        initialEvent.estimated_cost==null?
+          '':
+          String(initialEvent.estimated_cost),
       service_hours:
-        initialEvent.service_hours??'',
+        initialEvent.service_hours==null?
+          '':
+          String(initialEvent.service_hours),
       camping_nights:
-        initialEvent.camping_nights??'',
+        initialEvent.camping_nights==null?
+          '':
+          String(initialEvent.camping_nights),
       hiking_miles:
-        initialEvent.hiking_miles??'',
+        initialEvent.hiking_miles==null?
+          '':
+          String(initialEvent.hiking_miles),
       leader_1_id:
-        initialEvent.leader_1_id??'',
+        initialEvent.leader_1_id==null?
+          '':
+          String(initialEvent.leader_1_id),
       leader_2_id:
-        initialEvent.leader_2_id??'',
-      description:String(
-        initialEvent.description||''
-      )
+        initialEvent.leader_2_id==null?
+          '':
+          String(initialEvent.leader_2_id),
+      description:
+        String(initialEvent.description||'')
     });
   },[initialEvent]);
 
@@ -1334,127 +1683,216 @@ function EventForm({
     }));
   };
 
-const formatTimeInput=(value:string)=>{
-  const digits=
-    String(value||'')
-      .replace(/\D/g,'')
-      .slice(0,4);
+  const formatTimeInput=(value:string)=>{
+    const digits=
+      String(value||'')
+        .replace(/\D/g,'')
+        .slice(0,4);
 
-  if(digits.length<=2)
-    return digits;
+    if(digits.length<=2)
+      return digits;
 
-  return (
-    digits.slice(0,-2)+
-    ':'+
-    digits.slice(-2)
-  );
-};
+    return (
+      digits.slice(0,-2)+
+      ':'+
+      digits.slice(-2)
+    );
+  };
 
-const validTime=(value:string)=>{
-  return /^(1[0-2]|[1-9]):[0-5][0-9]$/
-    .test(value);
-};
-  
+  const validTime=(value:string)=>{
+    return /^(1[0-2]|[1-9]):[0-5][0-9]$/
+      .test(value);
+  };
+
+  const convertTime=(
+    date:string,
+    time:string,
+    ampm:string
+  )=>{
+    let [hour,minute]=
+      time.split(':').map(Number);
+
+    if(ampm==='a.m.'){
+      if(hour===12)
+        hour=0;
+    }else{
+      if(hour!==12)
+        hour+=12;
+    }
+
+    return `${date}T${
+      String(hour).padStart(2,'0')
+    }:${
+      String(minute).padStart(2,'0')
+    }:00`;
+  };
+
   const save=async()=>{
     setError('');
 
     if(!form.title.trim()){
-      setError('Event Name is required.');
+      setError(
+        'Event Name is required.'
+      );
       return;
     }
 
-    if(!form.start_date||!form.end_date){
-      setError('Start and End dates are required.');
+    if(
+      !form.start_date||
+      !form.end_date
+    ){
+      setError(
+        'Start and End dates are required.'
+      );
       return;
     }
 
-if(!form.all_day&&
-  (
-    !form.start_time||
-    !form.end_time
-  )){
-  setError('Start and end times are required.');
-  return;
-}
+    if(
+      !form.all_day&&
+      (
+        !form.start_time||
+        !form.end_time
+      )
+    ){
+      setError(
+        'Start and End times are required.'
+      );
+      return;
+    }
 
-if(
-  !form.all_day&&
-  (
-    !validTime(form.start_time)||
-    !validTime(form.end_time)
-  )
-){
-  setError(
-    'Times must be entered as h:mm or hh:mm.'
-  );
-  return;
-}
+    if(
+      !form.all_day&&
+      (
+        !validTime(form.start_time)||
+        !validTime(form.end_time)
+      )
+    ){
+      setError(
+        'Times must be entered as h:mm or hh:mm.'
+      );
+      return;
+    }
 
     setSaving(true);
 
     try{
-      const toDateTime=(
-        date:string,
-        time:string
-      )=>{
-        if(!time)
-          return date+'T00:00:00';
-      
-        return `${date}T${time}:00`;
-      };
-
-      await post('/admin/events',{
+      const payload={
         title:form.title.trim(),
-        description:form.description.trim(),
-        event_type:form.event_type,
-        location_name:form.location_name.trim(),
-        location_address:form.location_address.trim(),
+        description:
+          form.description.trim(),
+        event_type:
+          form.event_type,
+
+        location_name:
+          form.location_name.trim(),
+        location_address:
+          form.location_address.trim(),
+
         departure_arrival_location_name:
-          form.departure_arrival_location_name.trim(),
+          form
+            .departure_arrival_location_name
+            .trim(),
+
         departure_arrival_location_address:
-          form.departure_arrival_location_address.trim(),
-        start_at:toDateTime(
-          form.start_date,
-          form.all_day?'00:00':form.start_time
-        ),
-        end_at:toDateTime(
-          form.end_date,
-          form.all_day?'23:59':form.end_time
-        ),
-        all_day:form.all_day?1:0,
-        dress_code:form.dress_code,
+          form
+            .departure_arrival_location_address
+            .trim(),
+
+        start_at:
+          form.all_day?
+            `${form.start_date}T00:00:00`:
+            convertTime(
+              form.start_date,
+              form.start_time,
+              form.start_ampm
+            ),
+
+        end_at:
+          form.all_day?
+            `${form.end_date}T23:59:59`:
+            convertTime(
+              form.end_date,
+              form.end_time,
+              form.end_ampm
+            ),
+
+        all_day:
+          form.all_day?1:0,
+
+        dress_code:
+          form.dress_code,
+
         estimated_cost:
           form.estimated_cost===''?
             '':
-            Number(form.estimated_cost).toFixed(2),
+            Number(
+              form.estimated_cost
+            ).toFixed(2),
+
         service_hours:
           form.service_hours===''?
             null:
             Number(form.service_hours),
+
         camping_nights:
           form.camping_nights===''?
             null:
             Number(form.camping_nights),
+
         hiking_miles:
           form.hiking_miles===''?
             null:
             Number(form.hiking_miles),
+
         leader_1_id:
           form.leader_1_id||null,
+
         leader_2_id:
           form.leader_2_id||null
-      });
+      };
+
+      if(isEdit){
+        await put(
+          '/admin/events/'+
+          initialEvent.id,
+          payload
+        );
+      }else{
+        await post(
+          '/admin/events',
+          payload
+        );
+      }
 
       onSaved();
+
     }catch(err:any){
       setError(
         err?.message||
-        'Unable to save event.'
+        (
+          isEdit?
+            'Unable to update event.':
+            'Unable to add event.'
+        )
       );
     }finally{
       setSaving(false);
     }
   };
+
+  const peopleOptions=leaders.map(
+    (x:any)=>(
+      <option
+        key={x.id}
+        value={x.id}
+      >
+        {x.last_name}, {x.first_name}
+        {x.middle_name?
+          ` ${x.middle_name}`:
+          ''}
+      </option>
+    )
+  );
 
   return <div className="event-form">
 
@@ -1469,8 +1907,12 @@ if(
       <input
         value={form.title}
         onChange={e=>{
-          set('title',e.target.value);
+          set(
+            'title',
+            e.target.value
+          );
         }}
+        autoFocus={!isEdit}
       />
     </label>
 
@@ -1479,83 +1921,72 @@ if(
       <select
         value={form.event_type}
         onChange={e=>{
-          set('event_type',e.target.value);
+          set(
+            'event_type',
+            e.target.value
+          );
         }}
       >
-        {[
-          'Ceremony',
-          'Court of Honor',
-          'Fundraiser',
-          'Mass',
-          'Meeting',
-          'Service',
-          'Summer Camp',
-          'Trip',
-          'Other'
-        ].map(x=>
-          <option key={x}>{x}</option>
-        )}
+        <option>Ceremony</option>
+        <option>Court of Honor</option>
+        <option>Fundraiser</option>
+        <option>Mass</option>
+        <option>Meeting</option>
+        <option>Service</option>
+        <option>Summer Camp</option>
+        <option>Trip</option>
+        <option>Other</option>
       </select>
     </label>
 
-    <label>
-      Location
-      <input
-        value={form.location_name}
-        placeholder="Search for a place or address"
-        onChange={e=>{
-          set('location_name',e.target.value);
-        }}
-      />
-    </label>
+    <PlaceSearch
+      label="Location"
+      value={form.location_name}
+      address={form.location_address}
+      onChange={(name,address)=>{
+        set(
+          'location_name',
+          name
+        );
+        set(
+          'location_address',
+          address
+        );
+      }}
+    />
 
-    <label>
-      Location Address
-      <input
-        value={form.location_address}
-        onChange={e=>{
-          set('location_address',e.target.value);
-        }}
-      />
-    </label>
+    <PlaceSearch
+      label="Departure / Arrival Location"
+      value={
+        form
+          .departure_arrival_location_name
+      }
+      address={
+        form
+          .departure_arrival_location_address
+      }
+      onChange={(name,address)=>{
+        set(
+          'departure_arrival_location_name',
+          name
+        );
+        set(
+          'departure_arrival_location_address',
+          address
+        );
+      }}
+      optional
+    />
 
-    <label>
-      Departure / Arrival Location
-      <input
-        value={
-          form.departure_arrival_location_name
-        }
-        placeholder="Optional"
-        onChange={e=>{
-          set(
-            'departure_arrival_location_name',
-            e.target.value
-          );
-        }}
-      />
-    </label>
-
-    <label>
-      Departure / Arrival Address
-      <input
-        value={
-          form.departure_arrival_location_address
-        }
-        onChange={e=>{
-          set(
-            'departure_arrival_location_address',
-            e.target.value
-          );
-        }}
-      />
-    </label>
-
-    <label>
+    <label className="checkbox-label">
       <input
         type="checkbox"
         checked={form.all_day}
         onChange={e=>{
-          set('all_day',e.target.checked);
+          set(
+            'all_day',
+            e.target.checked
+          );
         }}
       />
       All Day
@@ -1563,19 +1994,22 @@ if(
 
     <div className="event-form-row">
       <label>
-        Start Date
+        Start
         <input
           type="date"
           value={form.start_date}
           onChange={e=>{
-            set('start_date',e.target.value);
+            set(
+              'start_date',
+              e.target.value
+            );
           }}
         />
       </label>
 
       {!form.all_day&&
         <label>
-          Start Time
+          Time
           <div className="event-time">
             <input
               type="text"
@@ -1586,14 +2020,20 @@ if(
               onChange={e=>{
                 set(
                   'start_time',
-                  formatTimeInput(e.target.value)
+                  formatTimeInput(
+                    e.target.value
+                  )
                 );
               }}
             />
+
             <select
               value={form.start_ampm}
               onChange={e=>{
-                set('start_ampm',e.target.value);
+                set(
+                  'start_ampm',
+                  e.target.value
+                );
               }}
             >
               <option>a.m.</option>
@@ -1606,19 +2046,22 @@ if(
 
     <div className="event-form-row">
       <label>
-        End Date
+        End
         <input
           type="date"
           value={form.end_date}
           onChange={e=>{
-            set('end_date',e.target.value);
+            set(
+              'end_date',
+              e.target.value
+            );
           }}
         />
       </label>
 
       {!form.all_day&&
         <label>
-          End Time
+          Time
           <div className="event-time">
             <input
               type="text"
@@ -1629,14 +2072,20 @@ if(
               onChange={e=>{
                 set(
                   'end_time',
-                  formatTimeInput(e.target.value)
+                  formatTimeInput(
+                    e.target.value
+                  )
                 );
               }}
             />
+
             <select
               value={form.end_ampm}
               onChange={e=>{
-                set('end_ampm',e.target.value);
+                set(
+                  'end_ampm',
+                  e.target.value
+                );
               }}
             >
               <option>a.m.</option>
@@ -1652,10 +2101,13 @@ if(
       <select
         value={form.dress_code}
         onChange={e=>{
-          set('dress_code',e.target.value);
+          set(
+            'dress_code',
+            e.target.value
+          );
         }}
       >
-        <option value="">None</option>
+        <option value=""></option>
         <option>Class A</option>
         <option>Class B</option>
         <option>Casual</option>
@@ -1665,16 +2117,33 @@ if(
 
     <label>
       Estimated Cost
-      <input
-        type="number"
-        min="0"
-        step="0.01"
-        value={form.estimated_cost}
-        placeholder="$"
-        onChange={e=>{
-          set('estimated_cost',e.target.value);
-        }}
-      />
+      <div className="event-money-input">
+        <span>$</span>
+        <input
+          type="number"
+          min="0"
+          step="0.01"
+          value={form.estimated_cost}
+          onChange={e=>{
+            set(
+              'estimated_cost',
+              e.target.value
+            );
+          }}
+          onBlur={()=>{
+            if(
+              form.estimated_cost!==''
+            ){
+              set(
+                'estimated_cost',
+                Number(
+                  form.estimated_cost
+                ).toFixed(2)
+              );
+            }
+          }}
+        />
+      </div>
     </label>
 
     <label>
@@ -1685,7 +2154,10 @@ if(
         step="0.1"
         value={form.service_hours}
         onChange={e=>{
-          set('service_hours',e.target.value);
+          set(
+            'service_hours',
+            e.target.value
+          );
         }}
       />
     </label>
@@ -1698,7 +2170,10 @@ if(
         step="1"
         value={form.camping_nights}
         onChange={e=>{
-          set('camping_nights',e.target.value);
+          set(
+            'camping_nights',
+            e.target.value
+          );
         }}
       />
     </label>
@@ -1731,18 +2206,7 @@ if(
         }}
       >
         <option value="">None</option>
-
-        {leaders.map((x:any)=>
-          <option
-            key={x.id}
-            value={x.id}
-          >
-            {x.last_name}, {x.first_name}
-            {x.middle_name?
-              ` ${x.middle_name}`:
-              ''}
-          </option>
-        )}
+        {peopleOptions}
       </select>
     </label>
 
@@ -1758,18 +2222,7 @@ if(
         }}
       >
         <option value="">None</option>
-
-        {leaders.map((x:any)=>
-          <option
-            key={x.id}
-            value={x.id}
-          >
-            {x.last_name}, {x.first_name}
-            {x.middle_name?
-              ` ${x.middle_name}`:
-              ''}
-          </option>
-        )}
+        {peopleOptions}
       </select>
     </label>
 
@@ -1778,7 +2231,10 @@ if(
       <textarea
         value={form.description}
         onChange={e=>{
-          set('description',e.target.value);
+          set(
+            'description',
+            e.target.value
+          );
         }}
       />
     </label>
@@ -1799,7 +2255,12 @@ if(
         onClick={save}
         disabled={saving}
       >
-        {saving?'Saving…':'Save Event'}
+        {saving?
+          'Saving…':
+          isEdit?
+            'Save Changes':
+            'Add Event'
+        }
       </button>
     </div>
   </div>;
