@@ -4334,26 +4334,23 @@ app.get('/api/admin/event-location-search',async c=>{
   if(!c.env.GOOGLE_MAPS_API_KEY)
     return json(c,{results:[]});
 
-  const response=await fetch(
-    'https://places.googleapis.com/v1/places:autocomplete',
-    {
-      method:'POST',
-      headers:{
-        'Content-Type':'application/json',
-        'X-Goog-Api-Key':
-          c.env.GOOGLE_MAPS_API_KEY,
-            'X-Goog-FieldMask':
-              'suggestions.placePrediction.placeId,'+
-              'suggestions.placePrediction.structuredFormat.mainText,'+
-              'suggestions.placePrediction.structuredFormat.secondaryText,'+
-              'suggestions.placePrediction.text.text'
-      },
-      body:JSON.stringify({
-        input:q,
-        includedRegionCodes:['us']
-      })
-    }
-  );
+const response=await fetch(
+  'https://places.googleapis.com/v1/places:autocomplete',
+  {
+    method:'POST',
+    headers:{
+      'Content-Type':'application/json',
+      'X-Goog-Api-Key':
+        c.env.GOOGLE_MAPS_API_KEY||'',
+      'X-Goog-FieldMask':
+        'suggestions.placePrediction.*'
+    },
+    body:JSON.stringify({
+      input:q,
+      regionCode:'us'
+    })
+  }
+);
 
   if(!response.ok){
     const body=await response.text();
@@ -4372,34 +4369,55 @@ app.get('/api/admin/event-location-search',async c=>{
   const data=
     await response.json() as any;
 
-  const results=
-    (data.suggestions||[])
-      .map((x:any)=>{
-        const p=x.placePrediction;
+const results=
+  (data.suggestions||[])
+    .map((x:any)=>{
+      const p=x.placePrediction;
 
-        if(!p)
-          return null;
+      if(!p)
+        return null;
 
-        return {
-          place_id:
-            p.placeId||'',
-          name:
-            p
-              .structuredFormat
-              ?.mainText
-              ?.text||
-            p.text?.text||
-            '',
-          address:
-            p
-              .structuredFormat
-              ?.secondaryText
-              ?.text||
-            ''
-        };
-      })
-      .filter(Boolean);
+      const fullText=
+        p.text?.text||'';
 
+      const mainText=
+        p
+          .structuredFormat
+          ?.mainText
+          ?.text||
+        fullText;
+
+      const secondaryText=
+        p
+          .structuredFormat
+          ?.secondaryText
+          ?.text||
+        '';
+
+      return {
+        place_id:
+          p.placeId||
+          '',
+        name:mainText,
+        address:secondaryText||
+          (
+            fullText.startsWith(
+              mainText
+            )?
+              fullText.slice(
+                mainText.length
+              )
+                .replace(/^,\s*/,''):
+              fullText
+          )
+      };
+    })
+    .filter(
+      (x:any)=>
+        x&&
+        x.name
+    );
+  
   return json(c,{results});
 });
 
