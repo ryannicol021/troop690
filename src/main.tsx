@@ -1002,19 +1002,47 @@ function Claim(){
 }
 
 function UpdateInfo({me}:{me:any}){
-  const [x,setX]=useState({
-    phone:me?.person?.phone||'',
-    email:me?.person?.email||'',
-    street:me?.person?.street||'',
-    town:me?.person?.town||'',
-    zip:me?.person?.zip||''
-  });
-
+  const [rows,setRows]=useState<any[]>([]);
+  const [values,setValues]=useState<Record<number,any>>({});
   const [error,setError]=useState('');
   const [saved,setSaved]=useState(false);
 
+  const load=async()=>{
+    try{
+      const x=await api('/update-info');
+
+      const members=x.members||[];
+
+      setRows(members);
+
+      const next:any={};
+
+      members.forEach((m:any)=>{
+        next[m.id]={
+          phone:m.phone||'',
+          email:m.email||'',
+          street:m.street||'',
+          town:m.town||'',
+          zip:m.zip||''
+        };
+      });
+
+      setValues(next);
+    }catch(e:any){
+      setError(e.message);
+    }
+  };
+
+  useEffect(()=>{
+    if(me)
+      load();
+  },[me]);
+
   const formatPhone=(value:string)=>{
-    const digits=value.replace(/\D/g,'').slice(0,10);
+    const digits=
+      value
+        .replace(/\D/g,'')
+        .slice(0,10);
 
     if(!digits)
       return '';
@@ -1028,116 +1056,226 @@ function UpdateInfo({me}:{me:any}){
     return `(${digits.slice(0,3)}) ${digits.slice(3,6)}-${digits.slice(6)}`;
   };
 
+  const suffixRank=(suffix:string)=>{
+    const value=
+      String(suffix||'')
+        .trim()
+        .toUpperCase();
+
+    if(value==='SR.')
+      return 0;
+
+    if(value==='JR.')
+      return 1;
+
+    const roman:any={
+      I:2,
+      II:3,
+      III:4,
+      IV:5,
+      V:6,
+      VI:7,
+      VII:8,
+      VIII:9,
+      IX:10,
+      X:11
+    };
+
+    if(value in roman)
+      return roman[value];
+
+    return 100;
+  };
+
+  const displayName=(m:any)=>{
+    return [
+      m.prefix,
+      m.first_name,
+      m.middle_name,
+      m.last_name,
+      m.suffix
+    ]
+      .map((x:any)=>String(x||'').trim())
+      .filter(Boolean)
+      .join(' ');
+  };
+
+  const sortedRows=
+    [...rows].sort((a:any,b:any)=>
+      String(a.last_name||'').localeCompare(
+        String(b.last_name||'')
+      )||
+      String(a.first_name||'').localeCompare(
+        String(b.first_name||'')
+      )||
+      String(a.middle_name||'').localeCompare(
+        String(b.middle_name||'')
+      )||
+      suffixRank(a.suffix)-
+      suffixRank(b.suffix)
+    );
+
   if(!me)
     return <Login setMe={()=>{}}/>;
 
   return <Page title="Update Info">
-    <form
-      className="form member-editor"
-      onSubmit={async e=>{
-        e.preventDefault();
-        setError('');
-        setSaved(false);
 
-        try{
-          await put('/update-info',x);
-          setSaved(true);
-        }catch(e:any){
-          setError(e.message);
-        }
-      }}
-    >
-      <div className="member-form-card">
-        <div className="member-info-grid">
-          <label>
-            Phone
-            <input
-              type="tel"
-              inputMode="numeric"
-              maxLength={14}
-              value={formatPhone(x.phone)}
-              onChange={e=>
-                setX({
-                  ...x,
-                  phone:formatPhone(e.target.value)
-                })
-              }
-            />
-          </label>
+    {error&&
+      <p className="error">{error}</p>
+    }
 
-          <label>
-            Email
-            <input
-              type="email"
-              value={x.email}
-              onChange={e=>
-                setX({
-                  ...x,
-                  email:e.target.value
-                })
-              }
-            />
-          </label>
+    {sortedRows.map((member:any)=>
+      <section
+        className="update-info-member"
+        key={member.id}
+      >
+        <h2>{displayName(member)}</h2>
+
+        <div className="member-form-card">
+          <div className="member-info-grid">
+            <label>
+              Phone
+              <input
+                type="tel"
+                inputMode="numeric"
+                maxLength={14}
+                value={formatPhone(
+                  values[member.id]?.phone||''
+                )}
+                onChange={e=>
+                  setValues({
+                    ...values,
+                    [member.id]:{
+                      ...values[member.id],
+                      phone:formatPhone(
+                        e.target.value
+                      )
+                    }
+                  })
+                }
+              />
+            </label>
+
+            <label>
+              Email
+              <input
+                type="email"
+                value={
+                  values[member.id]?.email||''
+                }
+                onChange={e=>
+                  setValues({
+                    ...values,
+                    [member.id]:{
+                      ...values[member.id],
+                      email:e.target.value
+                    }
+                  })
+                }
+              />
+            </label>
+          </div>
         </div>
-      </div>
 
-      <div className="member-form-card">
-        <div className="member-address-grid">
-          <label>
-            Street Address
-            <input
-              value={x.street}
-              onChange={e=>
-                setX({
-                  ...x,
-                  street:e.target.value
-                })
-              }
-            />
-          </label>
+        <div className="member-form-card">
+          <div className="member-address-grid">
+            <label>
+              Street Address
+              <input
+                value={
+                  values[member.id]?.street||''
+                }
+                onChange={e=>
+                  setValues({
+                    ...values,
+                    [member.id]:{
+                      ...values[member.id],
+                      street:e.target.value
+                    }
+                  })
+                }
+              />
+            </label>
 
-          <label>
-            Town
-            <input
-              value={x.town}
-              onChange={e=>
-                setX({
-                  ...x,
-                  town:e.target.value
-                })
-              }
-            />
-          </label>
+            <label>
+              Town
+              <input
+                value={
+                  values[member.id]?.town||''
+                }
+                onChange={e=>
+                  setValues({
+                    ...values,
+                    [member.id]:{
+                      ...values[member.id],
+                      town:e.target.value
+                    }
+                  })
+                }
+              />
+            </label>
 
-          <label>
-            ZIP Code
-            <input
-              value={x.zip}
-              onChange={e=>
-                setX({
-                  ...x,
-                  zip:e.target.value
-                })
-              }
-            />
-          </label>
+            <label>
+              ZIP Code
+              <input
+                value={
+                  values[member.id]?.zip||''
+                }
+                onChange={e=>
+                  setValues({
+                    ...values,
+                    [member.id]:{
+                      ...values[member.id],
+                      zip:e.target.value
+                    }
+                  })
+                }
+              />
+            </label>
+          </div>
         </div>
+      </section>
+    )}
+
+    <div className="button-row">
+      <button
+        className="primary"
+        onClick={async()=>{
+          setError('');
+
+          try{
+            await put(
+              '/update-info',
+              {
+                members:sortedRows.map(
+                  (member:any)=>({
+                    id:member.id,
+                    ...(values[member.id]||{})
+                  })
+                )
+              }
+            );
+
+            setSaved(true);
+
+            window.setTimeout(()=>{
+              setSaved(false);
+            },2000);
+          }catch(e:any){
+            setError(e.message);
+          }
+        }}
+      >
+        Save
+      </button>
+    </div>
+
+    {saved&&
+      <div className="toast">
+        Saved
       </div>
+    }
 
-      {error&&
-        <p className="error">{error}</p>
-      }
-
-      {saved&&
-        <p className="muted">Information updated.</p>
-      }
-
-      <div className="button-row">
-        <button className="primary">
-          Save
-        </button>
-      </div>
-    </form>
   </Page>
 }
 
