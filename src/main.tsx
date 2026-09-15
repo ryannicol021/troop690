@@ -8,18 +8,53 @@ const nav=[['/','Home','public'],['/eagles','Eagle Scouts','public'],['/calendar
 const adminNav=[['/member-info','Member Info','MIV'],['/email','Email','EML'],['/administration','Administration','__ADMIN_ROLE__']];
 
 function App(){
-  const [me,setMe]=useState<any>(null);
+  const [actualMe,setActualMe]=useState<any>(null);
+  const [viewAs,setViewAs]=useState('Administrator');
+  const [viewAsPermissions,setViewAsPermissions]=
+    useState<Record<string,string[]>>({});
   const [authReady,setAuthReady]=useState(false);
   const [open,setOpen]=useState<'account'|'nav'|null>(null);
   const navg=useNavigate();
   const loc=useLocation();
 
-  useEffect(()=>{
-    api('/me')
-      .then(x=>setMe(x.user))
-      .catch(()=>{})
-      .finally(()=>setAuthReady(true));
-  },[]);
+useEffect(()=>{
+  api('/me')
+    .then(async x=>{
+      setActualMe(x.user);
+
+      if(x.user?.isAdministrator){
+        try{
+          const options=
+            await api('/admin/view-as-options');
+
+          setViewAsPermissions(
+            options.roles||{}
+          );
+        }catch{}
+      }
+    })
+    .catch(()=>{})
+    .finally(()=>setAuthReady(true));
+},[]);
+
+const me=
+  actualMe?.isAdministrator&&
+  viewAs!=='Administrator'?
+    {
+      ...actualMe,
+      isAdministrator:false,
+      permissions:
+        viewAsPermissions[
+          viewAs==='Adult Leader'?
+            'ADULTL':
+          viewAs.toUpperCase()
+        ]||[],
+      person:
+        viewAs==='Guest'?
+          null:
+          actualMe.person
+    }:
+    actualMe;
 
     const can=(p:string)=>
     !!me &&
@@ -44,26 +79,58 @@ function App(){
           >
             <span className="person-icon" aria-hidden="true"></span>
           </button>
-          {open==='account'&&
-            <div className="menu account-menu">
-              <button onClick={()=>{
-                setOpen(null);
-                me?navg('/settings'):navg('/login')
-              }}>
-                {me?'Settings':'Log In'}
-              </button>
-              {me&&
-                <button onClick={async()=>{
-                  await post('/logout',{});
-                  setMe(null);
-                  setOpen(null);
-                  navg('/');
-                }}>
-                  Log Out
-                </button>
-              }
-            </div>
-          }
+{open==='account'&&
+  <div className="menu account-menu">
+    <button onClick={()=>{
+      setOpen(null);
+      actualMe?navg('/settings'):navg('/login')
+    }}>
+      {actualMe?'Settings':'Log In'}
+    </button>
+
+    {actualMe?.isAdministrator&&
+      <div className="view-as-section">
+        <div className="view-as-label">
+          View As
+        </div>
+
+        {[
+          'Administrator',
+          'Guest',
+          'Youth',
+          'Adult',
+          'Adult Leader'
+        ].map(role=>
+          <button
+            key={role}
+            className={
+              viewAs===role?
+                'active':
+                ''
+            }
+            onClick={()=>{
+              setViewAs(role);
+            }}
+          >
+            {role}
+          </button>
+        )}
+      </div>
+    }
+
+    {actualMe&&
+      <button onClick={async()=>{
+        await post('/logout',{});
+        setActualMe(null);
+        setViewAs('Administrator');
+        setOpen(null);
+        navg('/');
+      }}>
+        Log Out
+      </button>
+    }
+  </div>
+}
         </div>
 
         <div className="drop">
