@@ -297,11 +297,79 @@ function Home({me}:{me:any}){
 
   return <Page title="Troop 690">
     <div className="hero-image">
-      {d.content.troop_photo?
-        <img src={'/files/'+d.content.troop_photo} alt="Troop 690"/>:
-        <div className="image-slot">Troop picture</div>
-      }
+      <img
+        src="/images/home/troop-690.png"
+        alt="Troop 690"
+      />
     </div>
+
+        <section className="card home-contact-card">
+      <h2>Contact</h2>
+
+      {!me?
+        <>
+          <div className="home-contact-option">
+            <div>
+              <h3>Interested in Joining?</h3>
+            </div>
+            <a
+              className="button"
+              href="mailto:committee@troop690.org?cc=scoutmaster@troop690.org"
+            >
+              committee@troop690.org
+            </a>
+          </div>
+
+          <div className="home-contact-option">
+            <div>
+              <h3>Any Questions?</h3>
+            </div>
+            <a
+              className="button"
+              href="mailto:scoutmaster@troop690.org?cc=committee@troop690.org"
+            >
+              scoutmaster@troop690.org
+            </a>
+          </div>
+
+          <div className="home-contact-option">
+            <div>
+              <h3>Website Help</h3>
+            </div>
+            <a
+              className="button"
+              href="mailto:website@troop690.org?cc=scoutmaster@troop690.org"
+            >
+              website@troop690.org
+            </a>
+          </div>
+        </>:
+        <>
+          <div className="home-contact-option">
+            <div>
+              <h3>Any Questions?</h3>
+            </div>
+            <a
+              className="button"
+              href="mailto:scoutmaster@troop690.org?cc=committee@troop690.org"
+            >
+              scoutmaster@troop690.org
+            </a>
+          </div>
+
+          <div className="home-contact-option">
+            <div>
+              <h3>Website Feedback</h3>
+            </div>
+            <a
+              className="button"
+              href="mailto:website@troop690.org?cc=scoutmaster@troop690.org"
+            >
+              website@troop690.org
+            </a>
+          </div>
+        </>
+    </section>
 
     <section>
       <h2>History</h2>
