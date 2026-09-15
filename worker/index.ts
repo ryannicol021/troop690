@@ -759,6 +759,18 @@ async function ensureFamilySchema(c: Context<AppEnv>) {
   ).run();
 }
 
+async function ensureAnnouncementSchema(c:Context<AppEnv>){
+  await c.env.DB.prepare(`
+    CREATE TABLE IF NOT EXISTS announcements(
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      title TEXT NOT NULL,
+      body TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )
+  `).run();
+}
+
 async function ensureSiteAdministratorSchema(c: Context<AppEnv>){
   await c.env.DB.prepare(`
     CREATE TABLE IF NOT EXISTS site_administrator(
@@ -938,6 +950,7 @@ app.use('/api/*',async(c,next)=>{
           await ensureFamilySchema(c);
           await ensurePatrolSchema(c);
           await ensureSiteAdministratorSchema(c);
+          await ensureAnnouncementSchema(c);
           await ensureEventSchema(c);
           await ensureAccountLinkSchema(c);
         })();
@@ -1162,6 +1175,153 @@ app.post('/api/bootstrap',async c=>{
   });
 });
 
+app.get('/api/announcements',async c=>{
+  const rows=await c.env.DB
+    .prepare(`
+      SELECT
+        id,
+        title,
+        body,
+        created_at,
+        updated_at
+      FROM announcements
+      ORDER BY created_at DESC,id DESC
+    `)
+    .all<any>();
+
+  return json(c,{
+    announcements:rows.results??[]
+  });
+});
+
+app.get('/api/admin/announcements',async c=>{
+  const d=admin(c,'HOME');
+  if(d)return d;
+
+  const rows=await c.env.DB
+    .prepare(`
+      SELECT
+        id,
+        title,
+        body,
+        created_at,
+        updated_at
+      FROM announcements
+      ORDER BY created_at DESC,id DESC
+    `)
+    .all<any>();
+
+  return json(c,{
+    announcements:rows.results??[]
+  });
+});
+
+app.post('/api/admin/announcements',async c=>{
+  const d=admin(c,'HOME');
+  if(d)return d;
+
+  const body=await c.req.json<any>();
+  const title=String(body.title||'').trim();
+  const text=String(body.body||'').trim();
+
+  if(!title||!text)
+    return json(
+      c,
+      {error:'Title and body are required.'},
+      400
+    );
+
+  const row=await c.env.DB
+    .prepare(`
+      INSERT INTO announcements(
+        title,
+        body
+      )
+      VALUES(?,?)
+      RETURNING
+        id,
+        title,
+        body,
+        created_at,
+        updated_at
+    `)
+    .bind(title,text)
+    .first<any>();
+
+  return json(c,{
+    announcement:row
+  },201);
+});
+
+app.put('/api/admin/announcements/:id',async c=>{
+  const d=admin(c,'HOME');
+  if(d)return d;
+
+  const id=Number(c.req.param('id'));
+  const body=await c.req.json<any>();
+  const title=String(body.title||'').trim();
+  const text=String(body.body||'').trim();
+
+  if(!title||!text)
+    return json(
+      c,
+      {error:'Title and body are required.'},
+      400
+    );
+
+  const row=await c.env.DB
+    .prepare(`
+      UPDATE announcements
+      SET
+        title=?,
+        body=?,
+        updated_at=CURRENT_TIMESTAMP
+      WHERE id=?
+      RETURNING
+        id,
+        title,
+        body,
+        created_at,
+        updated_at
+    `)
+    .bind(title,text,id)
+    .first<any>();
+
+  if(!row)
+    return json(
+      c,
+      {error:'Announcement not found.'},
+      404
+    );
+
+  return json(c,{
+    announcement:row
+  });
+});
+
+app.delete('/api/admin/announcements/:id',async c=>{
+  const d=admin(c,'HOME');
+  if(d)return d;
+
+  const id=Number(c.req.param('id'));
+
+  const result=await c.env.DB
+    .prepare(
+      'DELETE FROM announcements WHERE id=?'
+    )
+    .bind(id)
+    .run();
+
+  if(!result.meta.changes)
+    return json(
+      c,
+      {error:'Announcement not found.'},
+      404
+    );
+
+  return json(c,{ok:true});
+});
+
 app.get('/api/home',async c=>{
   const user=c.get('user');
 
@@ -1171,10 +1331,24 @@ app.get('/api/home',async c=>{
 
   let events:any[]=[];
   let recent:any[]=[];
+  let announcements:any[]=[];
 
-  // Public visitors only need homepage content. Keep member-only queries
-  // out of the public request path so a problem with optional event/photo
-  // data cannot prevent the homepage itself from loading.
+  const announcementRows=await c.env.DB
+    .prepare(`
+      SELECT
+        id,
+        title,
+        body,
+        created_at,
+        updated_at
+      FROM announcements
+      ORDER BY created_at DESC,id DESC
+    `)
+    .all<any>();
+
+  announcements=
+    announcementRows.results??[];
+  
   if(user){
     const eventRows=await c.env.DB
       .prepare(`
@@ -1229,6 +1403,7 @@ app.get('/api/home',async c=>{
         x=>[x.key,x.value]
       )
     ),
+    announcements,
     events,
     recent
   });
