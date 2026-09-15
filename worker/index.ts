@@ -1926,6 +1926,55 @@ app.get('/api/admin/members',async c=>{
   });
 });
 
+app.get('/api/admin/view-as-options',async c=>{
+  const d=admin(c,'PMAP');
+  if(d)return d;
+
+  const codes=[
+    'GUEST',
+    'YOUTH',
+    'ADULT',
+    'ADULTL'
+  ];
+
+  const roles:any={};
+
+  for(const code of codes){
+    const rows=await c.env.DB
+      .prepare(`
+        WITH RECURSIVE role_tree(id) AS(
+          SELECT id
+          FROM positions
+          WHERE code=?
+
+          UNION
+
+          SELECT br.base_position_id
+          FROM position_base_roles br
+          JOIN role_tree rt
+            ON rt.id=br.position_id
+        )
+        SELECT DISTINCT pt.code
+        FROM role_tree rt
+        JOIN position_permissions pp
+          ON pp.position_id=rt.id
+        JOIN permission_titles pt
+          ON pt.id=pp.permission_id
+        WHERE
+          pt.code IS NOT NULL
+          AND pt.code<>'ADMIN'
+      `)
+      .bind(code)
+      .all<any>();
+
+    roles[code]=
+      (rows.results??[])
+        .map((x:any)=>String(x.code));
+  }
+
+  return json(c,{roles});
+});
+
 app.get('/api/admin/positions',async c=>{
   const d=admin(c,'POS');
   if(d)return d;
