@@ -1395,28 +1395,12 @@ if(
     try{
       const toDateTime=(
         date:string,
-        time:string,
-        ampm:string
+        time:string
       )=>{
         if(!time)
           return date+'T00:00:00';
-
-        let [hour,minute]=
-          time.split(':').map(Number);
-
-        if(ampm==='a.m.'){
-          if(hour===12)
-            hour=0;
-        }else{
-          if(hour!==12)
-            hour+=12;
-        }
-
-        return `${date}T${
-          String(hour).padStart(2,'0')
-        }:${
-          String(minute).padStart(2,'0')
-        }:00`;
+      
+        return `${date}T${time}:00`;
       };
 
       await post('/admin/events',{
@@ -1431,13 +1415,11 @@ if(
           form.departure_arrival_location_address.trim(),
         start_at:toDateTime(
           form.start_date,
-          form.all_day?'00:00':form.start_time,
-          form.start_ampm
+          form.all_day?'00:00':form.start_time
         ),
         end_at:toDateTime(
           form.end_date,
-          form.all_day?'23:59':form.end_time,
-          form.end_ampm
+          form.all_day?'23:59':form.end_time
         ),
         all_day:form.all_day?1:0,
         dress_code:form.dress_code,
