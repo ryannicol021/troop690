@@ -261,15 +261,17 @@ function Page({
   children,
   actions
 }:{
-  title:string,
+  title?:string,
   children:React.ReactNode,
   actions?:React.ReactNode
 }){
   return <section className="page">
-    <div className="page-head">
-      <h1>{title}</h1>
-      {actions}
-    </div>
+    {(title||actions)&&
+      <div className="page-head">
+        {title&&<h1>{title}</h1>}
+        {actions}
+      </div>
+    }
     {children}
   </section>
 }
@@ -289,12 +291,12 @@ function Home({me}:{me:any}){
   },[]);
 
   if(error)
-    return <Page title="Troop 690"><p className="error">{error}</p></Page>;
+    return <Page><p className="error">{error}</p></Page>;
 
   if(!d)
-    return <Page title="Troop 690"><Loading/></Page>;
+    return <Page><Loading/></Page>;
 
-  return <Page title="Troop 690">
+  return <Page>
     <div className="hero-image">
       <img
         src="/images/home/troop-690.png"
