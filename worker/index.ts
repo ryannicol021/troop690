@@ -4355,8 +4355,19 @@ app.get('/api/admin/event-location-search',async c=>{
     }
   );
 
-  if(!response.ok)
-    return json(c,{results:[]});
+  if(!response.ok){
+    const body=await response.text();
+  
+    return json(
+      c,
+      {
+        error:
+          `Google Places error ${response.status}: `+
+          body
+      },
+      502
+    );
+  }
 
   const data=
     await response.json() as any;
