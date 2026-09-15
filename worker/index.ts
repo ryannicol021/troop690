@@ -4835,6 +4835,158 @@ app.post('/api/admin/events',async c=>{
   });
 });
 
+app.post('/api/admin/events/copy',async c=>{
+  const d=admin(c,'EVT');
+  if(d)return d;
+
+  const x=await c.req.json();
+
+  const sourceId=
+    Number(x.source_event_id);
+
+  const dates=
+    Array.isArray(x.dates)?
+      [...new Set(
+        x.dates.map(
+          (value:any)=>
+            String(value||'').trim()
+        )
+      )]:
+      [];
+
+  if(!Number.isInteger(sourceId)){
+    return json(
+      c,
+      {error:'A source event is required.'},
+      400
+    );
+  }
+
+  if(!dates.length){
+    return json(
+      c,
+      {error:'At least one destination date is required.'},
+      400
+    );
+  }
+
+  if(
+    dates.some(
+      (date:string)=>
+        !/^\d{4}-\d{2}-\d{2}$/.test(date)
+    )
+  ){
+    return json(
+      c,
+      {error:'Invalid destination date.'},
+      400
+    );
+  }
+
+  const source=await c.env.DB
+    .prepare(`
+      SELECT *
+      FROM events
+      WHERE id=?
+    `)
+    .bind(sourceId)
+    .first<any>();
+
+  if(!source){
+    return json(
+      c,
+      {error:'Source event not found.'},
+      404
+    );
+  }
+
+  const sourceStart=
+    String(source.start_at||'');
+
+  const sourceEnd=
+    String(source.end_at||'');
+
+  if(
+    !sourceStart||
+    !sourceEnd||
+    sourceStart.slice(0,10)!==
+      sourceEnd.slice(0,10)
+  ){
+    return json(
+      c,
+      {
+        error:
+          'Only one-day events can be copied.'
+      },
+      400
+    );
+  }
+
+  const insert=await c.env.DB.prepare(`
+    INSERT INTO events(
+      title,
+      description,
+      start_at,
+      end_at,
+      all_day,
+      leader_person_id,
+      uniform,
+      estimated_cost,
+      location,
+      departure_location,
+      return_location,
+      event_type,
+      location_name,
+      location_address,
+      departure_arrival_location_name,
+      departure_arrival_location_address,
+      dress_code,
+      service_hours,
+      camping_nights,
+      hiking_miles,
+      leader_1_id,
+      leader_2_id
+    )
+    VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+  `);
+
+  for(const date of dates){
+    await insert.bind(
+      source.title,
+      source.description,
+      `${date}T${
+        sourceStart.slice(11)
+      }`,
+      `${date}T${
+        sourceEnd.slice(11)
+      }`,
+      Number(source.all_day)?1:0,
+      source.leader_person_id,
+      source.uniform,
+      source.estimated_cost,
+      source.location,
+      source.departure_location,
+      source.return_location,
+      source.event_type,
+      source.location_name,
+      source.location_address,
+      source.departure_arrival_location_name,
+      source.departure_arrival_location_address,
+      source.dress_code,
+      source.service_hours,
+      source.camping_nights,
+      source.hiking_miles,
+      source.leader_1_id,
+      source.leader_2_id
+    ).run();
+  }
+
+  return json(c,{
+    ok:true,
+    copied:dates.length
+  });
+});
+
 app.put('/api/admin/events/:id',async c=>{
   const d=admin(c,'EVT');
   if(d)return d;
