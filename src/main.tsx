@@ -2168,47 +2168,53 @@ function PlaceSearch({
   const [results,setResults]=useState<any[]>([]);
   const [open,setOpen]=useState(false);
   const [loading,setLoading]=useState(false);
+  const skipSearchRef=useRef(false);
 
   useEffect(()=>{
     setQuery(value||'');
   },[value]);
 
-  useEffect(()=>{
-    const text=query.trim();
+useEffect(()=>{
+  if(skipSearchRef.current){
+    skipSearchRef.current=false;
+    return;
+  }
 
-    if(text.length<3){
+  const text=query.trim();
+
+  if(text.length<3){
+    setResults([]);
+    setOpen(false);
+    return;
+  }
+
+  const timer=setTimeout(async()=>{
+    setLoading(true);
+
+    try{
+      const r=await api(
+        '/admin/event-location-search?q='+
+        encodeURIComponent(text)
+      );
+
+      setResults(r.results||[]);
+      setOpen(true);
+    }catch(err:any){
       setResults([]);
-      setOpen(false);
-      return;
+
+      console.error(
+        'Event location search failed:',
+        err
+      );
+    }finally{
+      setLoading(false);
     }
+  },1000);
 
-    const timer=setTimeout(async()=>{
-      setLoading(true);
-
-      try{
-        const r=await api(
-          '/admin/event-location-search?q='+
-          encodeURIComponent(text)
-        );
-
-        setResults(r.results||[]);
-        setOpen(true);
-}catch(err:any){
-  setResults([]);
-
-  console.error(
-    'Event location search failed:',
-    err
-  );
-}finally{
-        setLoading(false);
-      }
-    },1000);
-
-    return()=>{
-      clearTimeout(timer);
-    };
-  },[query]);
+  return()=>{
+    clearTimeout(timer);
+  };
+},[query]);
 
   const manual=()=>{
     setOpen(false);
@@ -2281,17 +2287,19 @@ function PlaceSearch({
               x.place_id||
               i
             }
-            onMouseDown={e=>{
-              e.preventDefault();
+onMouseDown={e=>{
+  e.preventDefault();
 
-              setQuery(x.name||'');
-              setOpen(false);
+  skipSearchRef.current=true;
 
-              onChange(
-                x.name||'',
-                x.address||''
-              );
-            }}
+  setQuery(x.name||'');
+  setOpen(false);
+
+  onChange(
+    x.name||'',
+    x.address||''
+  );
+}}
           >
             <strong>
               {x.name}
