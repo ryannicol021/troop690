@@ -520,6 +520,7 @@ tbody tr:nth-child(even){
   grid-template-columns:repeat(3,120px);
   justify-content:center;
   gap:8px;
+  margin-bottom:18px;
 }
 
 .calendar-top-actions .button{
