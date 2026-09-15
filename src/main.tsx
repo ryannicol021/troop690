@@ -1176,10 +1176,12 @@ const canEdit=
 
 function EventForm({
   me,
+  initialEvent,
   onSaved,
   onCancel
 }:{
   me:any,
+  initialEvent?:any,
   onSaved:()=>void,
   onCancel:()=>void
 }){
@@ -1209,6 +1211,121 @@ function EventForm({
     leader_2_id:'',
     description:''
   });
+
+    const [leaders,setLeaders]=useState<any[]>([]);
+
+  useEffect(()=>{
+    api('/admin/event-options')
+      .then(x=>{
+        setLeaders(
+          x.leaders??[]
+        );
+      });
+  },[]);
+
+  useEffect(()=>{
+    if(!initialEvent)
+      return;
+
+    const datePart=(value:any)=>{
+      if(!value)
+        return '';
+
+      return String(value).slice(0,10);
+    };
+
+    const timePart=(value:any)=>{
+      if(!value)
+        return {
+          time:'',
+          ampm:'p.m.'
+        };
+
+      const date=new Date(value);
+      let hour=date.getHours();
+
+      const ampm=
+        hour>=12?
+          'p.m.':
+          'a.m.';
+
+      hour=hour%12;
+
+      if(hour===0)
+        hour=12;
+
+      return {
+        time:
+          `${hour}:${
+            String(date.getMinutes()).padStart(2,'0')
+          }`,
+        ampm
+      };
+    };
+
+    const start=timePart(
+      initialEvent.start_at
+    );
+
+    const end=timePart(
+      initialEvent.end_at
+    );
+
+    setForm({
+      title:String(
+        initialEvent.title||''
+      ),
+      event_type:String(
+        initialEvent.event_type||'Other'
+      ),
+      location_name:String(
+        initialEvent.location_name||''
+      ),
+      location_address:String(
+        initialEvent.location_address||''
+      ),
+      departure_arrival_location_name:
+        String(
+          initialEvent
+            .departure_arrival_location_name||''
+        ),
+      departure_arrival_location_address:
+        String(
+          initialEvent
+            .departure_arrival_location_address||''
+        ),
+      start_date:datePart(
+        initialEvent.start_at
+      ),
+      start_time:start.time,
+      start_ampm:start.ampm,
+      end_date:datePart(
+        initialEvent.end_at
+      ),
+      end_time:end.time,
+      end_ampm:end.ampm,
+      all_day:
+        Number(initialEvent.all_day)===1,
+      dress_code:String(
+        initialEvent.dress_code||''
+      ),
+      estimated_cost:
+        initialEvent.estimated_cost??'',
+      service_hours:
+        initialEvent.service_hours??'',
+      camping_nights:
+        initialEvent.camping_nights??'',
+      hiking_miles:
+        initialEvent.hiking_miles??'',
+      leader_1_id:
+        initialEvent.leader_1_id??'',
+      leader_2_id:
+        initialEvent.leader_2_id??'',
+      description:String(
+        initialEvent.description||''
+      )
+    });
+  },[initialEvent]);
 
   const set=(name:string,value:any)=>{
     setForm((x:any)=>({
@@ -1564,9 +1681,66 @@ function EventForm({
         step="0.1"
         value={form.hiking_miles}
         onChange={e=>{
-          set('hiking_miles',e.target.value);
+          set(
+            'hiking_miles',
+            e.target.value
+          );
         }}
       />
+    </label>
+
+    <label>
+      Leader 1
+      <select
+        value={form.leader_1_id}
+        onChange={e=>{
+          set(
+            'leader_1_id',
+            e.target.value
+          );
+        }}
+      >
+        <option value="">None</option>
+
+        {leaders.map((x:any)=>
+          <option
+            key={x.id}
+            value={x.id}
+          >
+            {x.last_name}, {x.first_name}
+            {x.middle_name?
+              ` ${x.middle_name}`:
+              ''}
+          </option>
+        )}
+      </select>
+    </label>
+
+    <label>
+      Leader 2
+      <select
+        value={form.leader_2_id}
+        onChange={e=>{
+          set(
+            'leader_2_id',
+            e.target.value
+          );
+        }}
+      >
+        <option value="">None</option>
+
+        {leaders.map((x:any)=>
+          <option
+            key={x.id}
+            value={x.id}
+          >
+            {x.last_name}, {x.first_name}
+            {x.middle_name?
+              ` ${x.middle_name}`:
+              ''}
+          </option>
+        )}
+      </select>
     </label>
 
     <label>
