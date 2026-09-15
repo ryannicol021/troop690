@@ -3,16 +3,7 @@ import type { Context } from 'hono';
 import { setCookie, getCookie, deleteCookie } from 'hono/cookie';
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
 
-type Env = {
-  DB:D1Database;
-  FILES:R2Bucket;
-  ASSETS:Fetcher;
-  PUBLIC_SITE_URL:string;
-  INTERIM_SITE_URL:string;
-  SESSION_TTL_DAYS:string;
-  BOOTSTRAP_SECRET?:string;
-  GOOGLE_MAPS_API_KEY?:string;
-};
+type Env = { DB: D1Database; FILES: R2Bucket; ASSETS: Fetcher; PUBLIC_SITE_URL:string; INTERIM_SITE_URL:string; SESSION_TTL_DAYS:string; BOOTSTRAP_SECRET?:string; GEOAPIFY_API_KEY?:string };
 type User = {
   accountId:number;
   personId:number|null;
@@ -4466,6 +4457,95 @@ app.get('/api/admin/event-options',async c=>{
       )
     }))
   });
+});
+
+app.get('/api/admin/event-location-search',async c=>{
+  const d=admin(c,'EVT');
+  if(d)return d;
+
+  const q=String(
+    c.req.query('q')||''
+  ).trim();
+
+  if(q.length<3)
+    return json(c,{results:[]});
+
+  if(!c.env.GEOAPIFY_API_KEY)
+    return json(c,{results:[]});
+
+  const url=new URL(
+    'https://api.geoapify.com/v1/geocode/autocomplete'
+  );
+
+  url.searchParams.set('text',q);
+  url.searchParams.set('format','json');
+  url.searchParams.set('limit','5');
+  url.searchParams.set(
+    'filter',
+    'countrycode:us'
+  );
+  url.searchParams.set(
+    'apiKey',
+    c.env.GEOAPIFY_API_KEY
+  );
+
+  const response=await fetch(
+    url.toString()
+  );
+
+  if(!response.ok){
+    const body=await response.text();
+
+    return json(
+      c,
+      {
+        error:
+          `Geoapify error ${response.status}: `+
+          body
+      },
+      502
+    );
+  }
+
+  const data=await response.json() as any;
+
+  const results=(data.results||[])
+    .map((x:any)=>{
+      const name=String(
+        x.name||
+        x.address_line1||
+        (
+          [x.housenumber,x.street]
+            .filter(Boolean)
+            .join(' ')
+        )||
+        x.formatted||
+        ''
+      ).trim();
+
+      const address=String(
+        x.address_line2||
+        [
+          x.city,
+          x.state_code||x.state,
+          x.postcode
+        ]
+          .filter(Boolean)
+          .join(', ')||
+        ''
+      ).trim();
+
+      if(!name)
+        return null;
+
+      return {
+        name,
+        address
+      };
+    })
+    .filter((x:any)=>x);
+
+  return json(c,{results});
 });
 
 app.post('/api/admin/events',async c=>{
