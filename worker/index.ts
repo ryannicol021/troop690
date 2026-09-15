@@ -4342,10 +4342,11 @@ app.get('/api/admin/event-location-search',async c=>{
         'Content-Type':'application/json',
         'X-Goog-Api-Key':
           c.env.GOOGLE_MAPS_API_KEY,
-        'X-Goog-FieldMask':
-          'suggestions.placePrediction.placeId,'+
-          'suggestions.placePrediction.structuredFormat,'+
-          'suggestions.placePrediction.text'
+            'X-Goog-FieldMask':
+              'suggestions.placePrediction.placeId,'+
+              'suggestions.placePrediction.structuredFormat.mainText,'+
+              'suggestions.placePrediction.structuredFormat.secondaryText,'+
+              'suggestions.placePrediction.text.text'
       },
       body:JSON.stringify({
         input:q,
