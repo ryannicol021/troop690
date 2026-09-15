@@ -519,7 +519,7 @@ tbody tr:nth-child(even){
   display:grid;
   grid-template-columns:repeat(3,124px);
   justify-content:center;
-  gap:8px;
+  gap:7px;
   margin-bottom:18px;
 }
 
