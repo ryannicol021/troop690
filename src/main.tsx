@@ -1407,9 +1407,14 @@ function PlaceSearch({
 
         setResults(r.results||[]);
         setOpen(true);
-      }catch{
-        setResults([]);
-      }finally{
+}catch(err:any){
+  setResults([]);
+
+  console.error(
+    'Event location search failed:',
+    err
+  );
+}finally{
         setLoading(false);
       }
     },300);
