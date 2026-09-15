@@ -3,7 +3,16 @@ import type { Context } from 'hono';
 import { setCookie, getCookie, deleteCookie } from 'hono/cookie';
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
 
-type Env = { DB: D1Database; FILES: R2Bucket; ASSETS: Fetcher; PUBLIC_SITE_URL:string; INTERIM_SITE_URL:string; SESSION_TTL_DAYS:string; BOOTSTRAP_SECRET?:string };
+type Env = {
+  DB:D1Database;
+  FILES:R2Bucket;
+  ASSETS:Fetcher;
+  PUBLIC_SITE_URL:string;
+  INTERIM_SITE_URL:string;
+  SESSION_TTL_DAYS:string;
+  BOOTSTRAP_SECRET?:string;
+  GOOGLE_MAPS_API_KEY?:string;
+};
 type User = {
   accountId:number;
   personId:number|null;
@@ -4309,6 +4318,77 @@ app.get('/files/:key{.+}',async c=>{
       }
     }
   );
+});
+
+app.get('/api/admin/event-location-search',async c=>{
+  const d=admin(c,'EVT');
+  if(d)return d;
+
+  const q=String(
+    c.req.query('q')||''
+  ).trim();
+
+  if(q.length<3)
+    return json(c,{results:[]});
+
+  if(!c.env.GOOGLE_MAPS_API_KEY)
+    return json(c,{results:[]});
+
+  const response=await fetch(
+    'https://places.googleapis.com/v1/places:autocomplete',
+    {
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'X-Goog-Api-Key':
+          c.env.GOOGLE_MAPS_API_KEY,
+        'X-Goog-FieldMask':
+          'suggestions.placePrediction.placeId,'+
+          'suggestions.placePrediction.structuredFormat,'+
+          'suggestions.placePrediction.text'
+      },
+      body:JSON.stringify({
+        input:q,
+        includedRegionCodes:['us']
+      })
+    }
+  );
+
+  if(!response.ok)
+    return json(c,{results:[]});
+
+  const data=
+    await response.json() as any;
+
+  const results=
+    (data.suggestions||[])
+      .map((x:any)=>{
+        const p=x.placePrediction;
+
+        if(!p)
+          return null;
+
+        return {
+          place_id:
+            p.placeId||'',
+          name:
+            p
+              .structuredFormat
+              ?.mainText
+              ?.text||
+            p.text?.text||
+            '',
+          address:
+            p
+              .structuredFormat
+              ?.secondaryText
+              ?.text||
+            ''
+        };
+      })
+      .filter(Boolean);
+
+  return json(c,{results});
 });
 
 app.get('/api/admin/event-options',async c=>{
