@@ -330,7 +330,7 @@ function Page({
 }
 
 function Loading(){
-  return <div className="muted">Loading...</div>
+  return <div className="muted"></div>
 }
 
 function Home({me}:{me:any}){
