@@ -564,6 +564,90 @@ tbody tr:nth-child(even){
   color:var(--navy)
 }
 
+.copy-event-modal{
+  width:min(650px,100%)
+}
+
+.copy-event-modal>label{
+  display:grid;
+  gap:6px;
+  margin-bottom:18px;
+  font-weight:600
+}
+
+.copy-event-modal select{
+  width:100%;
+  box-sizing:border-box
+}
+
+.copy-event-calendar-head{
+  display:grid;
+  grid-template-columns:42px 1fr 42px;
+  align-items:center;
+  gap:8px;
+  margin-bottom:10px;
+  text-align:center;
+  font-size:1.05rem;
+  font-weight:600;
+  color:var(--navy)
+}
+
+.copy-event-calendar{
+  display:grid;
+  grid-template-columns:
+    repeat(7,minmax(0,1fr));
+  gap:1px;
+  border-top:1px solid var(--border);
+  border-left:1px solid var(--border);
+  background:var(--border)
+}
+
+.copy-event-weekday{
+  padding:7px 4px;
+  background:var(--khaki-light);
+  text-align:center;
+  font-size:.72rem;
+  font-weight:600;
+  text-transform:uppercase;
+  letter-spacing:.04em;
+  color:var(--muted)
+}
+
+.copy-event-day{
+  position:relative;
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  justify-content:space-between;
+  min-height:58px;
+  padding:6px;
+  box-sizing:border-box;
+  background:var(--offwhite);
+  cursor:pointer
+}
+
+.copy-event-day-adjacent{
+  background:#f2f0ea;
+  color:#aaa397;
+  cursor:default
+}
+
+.copy-event-day-selected{
+  outline:2px solid var(--navy);
+  outline-offset:-2px
+}
+
+.copy-event-day>span{
+  font-size:.82rem;
+  font-weight:600
+}
+
+.copy-event-day input{
+  margin:4px 0 0 auto;
+  width:16px;
+  height:16px
+}
+
 .calendar-grid-wrap{
   width:100%;
   max-width:100%;
@@ -1851,6 +1935,15 @@ footer a:hover{
     grid-template-columns:1fr
   }
 
+.copy-event-modal{
+  width:100%
+}
+
+.copy-event-day{
+  min-height:48px;
+  padding:5px
+}
+  
   .list-row{
     grid-template-columns:1fr
   }
