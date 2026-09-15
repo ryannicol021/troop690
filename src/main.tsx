@@ -1417,7 +1417,7 @@ function PlaceSearch({
 }finally{
         setLoading(false);
       }
-    },300);
+    },1000);
 
     return()=>{
       clearTimeout(timer);
@@ -1526,7 +1526,7 @@ function PlaceSearch({
         }
 
         <div className="place-attribution">
-          Powered by Google
+          Powered by Geoapify
         </div>
       </div>
     }
