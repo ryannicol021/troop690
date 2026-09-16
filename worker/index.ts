@@ -1752,8 +1752,8 @@ const dtLocal=(s:string)=>
         ]
       ),
       `SUMMARY:${String(e.title).replace(/[\\,;]/g,'\\$&')}`,
-      `DESCRIPTION:${String(e.description||'').replace(/[\\,;]/g,'\\$&')}`,
-      `LOCATION:${String(e.location||'').replace(/[\\,;]/g,'\\$&')}`,
+      `DESCRIPTION:${String(e.description||'').replace(/\\/g,'\\\\').replace(/([,;])/g,'\\$1').replace(/\r?\n/g,'\\n')}`,
+      `LOCATION:${String(e.location||'').replace(/\\/g,'\\\\').replace(/([,;])/g,'\\$1').replace(/\r?\n/g,'\\n')}`,
       'END:VEVENT'
     );
   }
