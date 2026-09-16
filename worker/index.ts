@@ -1765,18 +1765,17 @@ const ics=[
   'END:VTIMEZONE'
 ];
 
+  const dtUtc=(s:string)=>
+    new Date(s).toISOString()
+      .replace(/[-:]/g,'')
+      .replace(/\.\d{3}Z$/,'Z');
+
+  const dtLocal=(s:string)=>
+    s.slice(0,19)
+      .replace(/[-:]/g,'')
+      .replace('T','T');
+
   for(const e of rows.results??[]){
-const dtUtc=(s:string)=>
-  new Date(s).toISOString()
-    .replace(/[-:]/g,'')
-    .replace(/\.\d{3}Z$/,'Z');
-
-const dtLocal=(s:string)=>
-  s.slice(0,19)
-    .replace(/[-:]/g,'')
-    .replace('T','T');
-};
-
     ics.push(
       'BEGIN:VEVENT',
       `UID:troop690-event-${e.id}`,
