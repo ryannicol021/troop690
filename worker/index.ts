@@ -1710,38 +1710,44 @@ app.post('/api/admin/events/:id/attendance/confirm',async c=>{
 });
 
 app.get('/api/calendar.ics',async c=>{
-  const deny=requirePerm('CAL')(c);
-  if(deny)return deny;
-
   const rows=await c.env.DB
     .prepare('SELECT * FROM events ORDER BY start_at')
     .all<any>();
 
-  const ics=[
-    'BEGIN:VCALENDAR',
-    'VERSION:2.0',
-    'PRODID:-//Troop 690//Calendar//EN'
-  ];
+const ics=[
+  'BEGIN:VCALENDAR',
+  'VERSION:2.0',
+  'PRODID:-//Troop 690//Calendar//EN',
+  'X-WR-CALNAME:Troop 690 Calendar',
+  'X-WR-TIMEZONE:America/New_York'
+];
 
   for(const e of rows.results??[]){
-    const dt=(s:string)=>
-      s.replace(/[-:]/g,'')
-       .replace(/\.\d+$/,'')+'Z';
+const dtUtc=(s:string)=>
+  new Date(s).toISOString()
+    .replace(/[-:]/g,'')
+    .replace(/\.\d{3}Z$/,'Z');
+
+const dtLocal=(s:string)=>
+  s.slice(0,19)
+    .replace(/[-:]/g,'')
+    .replace('T','T');
 
     ics.push(
       'BEGIN:VEVENT',
       `UID:troop690-${e.id}@troop690.org`,
-      `DTSTAMP:${dt(new Date().toISOString())}`,
-      `DTSTART:${e.all_day?
-        dt(e.start_at.slice(0,10)+'T00:00:00'):
-        dt(e.start_at)
-      }`,
-      ...(e.end_at?
-        [`DTEND:${e.all_day?
-          dt(e.end_at.slice(0,10)+'T00:00:00'):
-          dt(e.end_at)
-        }`]:
-        []
+      `DTSTAMP:${dtUtc(new Date().toISOString())}`,
+      ...(e.all_day?
+        [
+          `DTSTART;VALUE=DATE:${e.start_at.slice(0,10).replace(/-/g,'')}`
+        ]:
+        [
+          `DTSTART;TZID=America/New_York:${dtLocal(e.start_at)}`,
+          ...(e.end_at?
+            [`DTEND;TZID=America/New_York:${dtLocal(e.end_at)}`]:
+            []
+          )
+        ]
       ),
       `SUMMARY:${String(e.title).replace(/[\\,;]/g,'\\$&')}`,
       `DESCRIPTION:${String(e.description||'').replace(/[\\,;]/g,'\\$&')}`,
