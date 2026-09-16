@@ -1718,6 +1718,8 @@ const ics=[
   'BEGIN:VCALENDAR',
   'VERSION:2.0',
   'PRODID:-//Troop 690//Calendar//EN',
+  'CALSCALE:GREGORIAN',
+  'METHOD:PUBLISH',
   'X-WR-CALNAME:Troop 690 Calendar',
   'X-WR-TIMEZONE:America/New_York'
 ];
@@ -1735,7 +1737,7 @@ const dtLocal=(s:string)=>
 
     ics.push(
       'BEGIN:VEVENT',
-      `UID:troop690-${e.id}@troop690.org`,
+      `UID:troop690-event-${e.id}`,
       `DTSTAMP:${dtUtc(new Date().toISOString())}`,
       ...(e.all_day?
         [
