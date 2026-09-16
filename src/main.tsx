@@ -2434,7 +2434,7 @@ function CalendarEvent({
 
   if(!d)
     return (
-      <Page title="Event">
+      <Page>
         <Loading/>
       </Page>
     );
