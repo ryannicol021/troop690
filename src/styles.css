@@ -1624,6 +1624,8 @@ tbody tr:nth-child(even){
   border:1px solid var(--border);
   border-radius:3px;
   padding:16px;
+  min-width:0;
+  max-width:100%;
   transition:
     padding .15s ease,
     transform .15s ease
