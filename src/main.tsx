@@ -1337,6 +1337,8 @@ function Calendar({me}:{me:any}){
 
   const [showAddEvent,setShowAddEvent]=useState(false);
   const [showCopyEvent,setShowCopyEvent]=useState(false);
+  const [showSubscribe,setShowSubscribe]=useState(false);
+  const [calendarUrlCopied,setCalendarUrlCopied]=useState(false);
 
   const canEdit=
     !!me?.isAdministrator||
@@ -1709,7 +1711,10 @@ function Calendar({me}:{me:any}){
   <button
     type="button"
     className="button"
-    disabled
+    onClick={()=>{
+      setCalendarUrlCopied(false);
+      setShowSubscribe(true);
+    }}
   >
     Subscribe
   </button>
@@ -1856,6 +1861,110 @@ function Calendar({me}:{me:any}){
       setShowCopyEvent(false);
     }}
   />
+}
+
+    {showSubscribe&&
+  <div
+    className="modal-backdrop"
+    onMouseDown={e=>{
+      if(
+        e.target===
+        e.currentTarget
+      )
+        setShowSubscribe(false);
+    }}
+  >
+    <div
+      className="modal-card"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="subscribe-calendar-title"
+    >
+      <div className="modal-header">
+        <h2 id="subscribe-calendar-title">
+          Subscribe to Troop 690 Calendar
+        </h2>
+
+        <button
+          type="button"
+          className="modal-close"
+          onClick={()=>{
+            setShowSubscribe(false);
+          }}
+          aria-label="Close"
+        >
+          ×
+        </button>
+      </div>
+
+      <section className="calendar-subscribe-section">
+        <h3>Apple Calendar</h3>
+
+        <ol>
+          <li>
+            Tap <strong>Subscribe with Apple Calendar</strong>.
+          </li>
+          <li>
+            Follow the prompt to subscribe.
+          </li>
+        </ol>
+
+        <a
+          className="button"
+          href={
+            'webcal://'+
+            window.location.host+
+            '/api/calendar.ics'
+          }
+        >
+          Subscribe with Apple Calendar
+        </a>
+      </section>
+
+      <section className="calendar-subscribe-section">
+        <h3>Google Calendar</h3>
+
+        <ol>
+          <li>
+            Visit <strong>calendar.google.com on a computer</strong>.
+          </li>
+          <li>
+            Go to <strong>Other calendars → + → From URL</strong>.
+          </li>
+          <li>
+            Enter the Troop 690 calendar address.
+          </li>
+          <li>
+            Click <strong>Add calendar</strong>.
+          </li>
+        </ol>
+
+        <button
+          type="button"
+          className="button"
+          onClick={async()=>{
+            try{
+              await navigator.clipboard.writeText(
+                window.location.origin+
+                '/api/calendar.ics'
+              );
+              setCalendarUrlCopied(true);
+              setTimeout(()=>{
+                setCalendarUrlCopied(false);
+              },2000);
+            }catch{
+              setCalendarUrlCopied(false);
+            }
+          }}
+        >
+          {calendarUrlCopied?
+            'Calendar Address Copied':
+            'Copy Calendar Address'
+          }
+        </button>
+      </section>
+    </div>
+  </div>
 }
   </Page>
 }
