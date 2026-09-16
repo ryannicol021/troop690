@@ -1176,6 +1176,11 @@ app.post('/api/bootstrap',async c=>{
 });
 
 app.get('/api/announcements',async c=>{
+  const user=c.get('user');
+
+  if(!user)
+    return json(c,{error:'Login required'},401);
+
   const rows=await c.env.DB
     .prepare(`
       SELECT
@@ -1332,24 +1337,24 @@ app.get('/api/home',async c=>{
   let events:any[]=[];
   let recent:any[]=[];
   let announcements:any[]=[];
-
-  const announcementRows=await c.env.DB
-    .prepare(`
-      SELECT
-        id,
-        title,
-        body,
-        created_at,
-        updated_at
-      FROM announcements
-      ORDER BY created_at DESC,id DESC
-    `)
-    .all<any>();
-
-  announcements=
-    announcementRows.results??[];
   
   if(user){
+    const announcementRows=await c.env.DB
+      .prepare(`
+        SELECT
+          id,
+          title,
+          body,
+          created_at,
+          updated_at
+        FROM announcements
+        ORDER BY created_at DESC,id DESC
+      `)
+      .all<any>();
+
+    announcements=
+      announcementRows.results??[];
+    
     const eventRows=await c.env.DB
       .prepare(`
         SELECT
