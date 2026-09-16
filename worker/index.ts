@@ -1710,6 +1710,30 @@ app.post('/api/admin/events/:id/attendance/confirm',async c=>{
 });
 
 app.get('/api/calendar.ics',async c=>{
+  const foldIcsLine=(line:string)=>{
+    const encoder=new TextEncoder();
+    const parts:string[]=[];
+    let current='';
+    let bytes=0;
+  
+    for(const ch of line){
+      const size=encoder.encode(ch).length;
+  
+      if(current && bytes+size>75){
+        parts.push(current);
+        current=' '+ch;
+        bytes=1+size;
+      }else{
+        current+=ch;
+        bytes+=size;
+      }
+    }
+  
+    if(current)parts.push(current);
+  
+    return parts;
+  };
+  
   const rows=await c.env.DB
     .prepare('SELECT * FROM events ORDER BY start_at')
     .all<any>();
@@ -1751,29 +1775,6 @@ const dtLocal=(s:string)=>
   s.slice(0,19)
     .replace(/[-:]/g,'')
     .replace('T','T');
-
-    const foldIcsLine=(line:string)=>{
-  const encoder=new TextEncoder();
-  const parts:string[]=[];
-  let current='';
-  let bytes=0;
-
-  for(const ch of line){
-    const size=encoder.encode(ch).length;
-
-    if(current && bytes+size>75){
-      parts.push(current);
-      current=' '+ch;
-      bytes=1+size;
-    }else{
-      current+=ch;
-      bytes+=size;
-    }
-  }
-
-  if(current)parts.push(current);
-
-  return parts;
 };
 
     ics.push(
