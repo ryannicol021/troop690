@@ -567,6 +567,32 @@ tbody tr:nth-child(even){
   color:var(--navy)
 }
 
+.calendar-subscribe-section{
+  padding:0 0 18px;
+  margin:0 0 18px;
+  border-bottom:1px solid var(--border)
+}
+
+.calendar-subscribe-section:last-child{
+  padding-bottom:0;
+  margin-bottom:0;
+  border-bottom:0
+}
+
+.calendar-subscribe-section h3{
+  margin:0 0 10px;
+  color:var(--navy)
+}
+
+.calendar-subscribe-section ol{
+  margin:0 0 14px;
+  padding-left:22px
+}
+
+.calendar-subscribe-section li{
+  margin-bottom:7px
+}
+
 .copy-event-modal{
   width:min(650px,100%)
 }
