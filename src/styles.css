@@ -1616,7 +1616,9 @@ tbody tr:nth-child(even){
 
 .families-page{
   display:grid;
-  gap:18px
+  gap:18px;
+  min-width:0;
+  max-width:100%
 }
 
 .family-section{
