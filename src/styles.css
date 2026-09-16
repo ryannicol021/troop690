@@ -298,10 +298,7 @@ section>h2{
   margin-bottom:18px
 }
 
-.home-announcements-card,
-.home-events-card,
-.home-photos-card,
-.home-history-card{
+.home-announcements-card{
   margin-bottom:18px
 }
 
@@ -421,6 +418,10 @@ section>h2{
 .card h3{
   margin-top:0;
   color:var(--navy)
+}
+
+.card + .card{
+  margin-top:18px
 }
 
 .list-row{
