@@ -1752,6 +1752,30 @@ const dtLocal=(s:string)=>
     .replace(/[-:]/g,'')
     .replace('T','T');
 
+    const foldIcsLine=(line:string)=>{
+  const encoder=new TextEncoder();
+  const parts:string[]=[];
+  let current='';
+  let bytes=0;
+
+  for(const ch of line){
+    const size=encoder.encode(ch).length;
+
+    if(current && bytes+size>75){
+      parts.push(current);
+      current=' '+ch;
+      bytes=1+size;
+    }else{
+      current+=ch;
+      bytes+=size;
+    }
+  }
+
+  if(current)parts.push(current);
+
+  return parts;
+};
+
     ics.push(
       'BEGIN:VEVENT',
       `UID:troop690-event-${e.id}`,
@@ -1777,11 +1801,17 @@ const dtLocal=(s:string)=>
 
   ics.push('END:VCALENDAR');
 
-  return c.text(
-    ics.join('\r\n'),
-    200,
-    {'Content-Type':'text/calendar; charset=utf-8'}
-  );
+const folded:string[]=[];
+
+for(const line of ics){
+  folded.push(...foldIcsLine(line));
+}
+
+return c.text(
+  folded.join('\r\n'),
+  200,
+  {'Content-Type':'text/calendar; charset=utf-8'}
+);
 });
 
 app.get('/api/photos',async c=>{
