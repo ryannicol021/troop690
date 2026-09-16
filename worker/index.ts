@@ -1744,7 +1744,7 @@ const ics=[
   'PRODID:-//Troop 690//Calendar//EN',
   'CALSCALE:GREGORIAN',
   'METHOD:PUBLISH',
-  'X-WR-CALNAME:Troop 690 Calendar',
+  'X-WR-CALNAME:Troop 690',
   'X-WR-TIMEZONE:America/New_York',
   'BEGIN:VTIMEZONE',
   'TZID:America/New_York',
