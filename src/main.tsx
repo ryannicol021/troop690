@@ -3911,10 +3911,7 @@ function PhotoViewer({
       <img
         className="photo-viewer-image"
         src={'/files/'+photo.storage_key}
-        alt={
-          photo.caption||
-          'Troop photo'
-        }
+        alt={`Photo ${current+1}`}
         style={{
           transform:`scale(${zoom})`
         }}
@@ -4189,115 +4186,6 @@ function AddPhotoModal({
             {saving?
               'Adding…':
               'Add Photos'}
-          </button>
-
-          <button
-            type="button"
-            onClick={onCancel}
-            disabled={saving}
-          >
-            Cancel
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>;
-}
-
-function EditPhotoModal({
-  photo,
-  onSaved,
-  onCancel
-}:{
-  photo:any,
-  onSaved:()=>void,
-  onCancel:()=>void
-}){
-  const [caption,setCaption]=
-    useState(photo.caption||'');
-
-  const [saving,setSaving]=
-    useState(false);
-
-  const [error,setError]=
-    useState('');
-
-  const save=async()=>{
-    setError('');
-    setSaving(true);
-
-    try{
-      await put(
-        '/admin/photos/'+photo.id,
-        {caption}
-      );
-
-      onSaved();
-    }catch(e:any){
-      setError(
-        e?.message||
-        'Unable to save the photo.'
-      );
-    }finally{
-      setSaving(false);
-    }
-  };
-
-  return <div
-    className="modal-backdrop"
-    onMouseDown={e=>{
-      if(e.target===e.currentTarget)
-        onCancel();
-    }}
-  >
-    <div
-      className="modal-card"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="edit-photo-title"
-    >
-      <div className="modal-header">
-        <h2 id="edit-photo-title">
-          Edit Photo
-        </h2>
-
-        <button
-          type="button"
-          className="modal-close"
-          aria-label="Close"
-          onClick={onCancel}
-        >
-          ×
-        </button>
-      </div>
-
-      {error&&
-        <div className="error">
-          {error}
-        </div>
-      }
-
-      <div className="form">
-        <label>
-          Caption
-          <input
-            value={caption}
-            onChange={e=>
-              setCaption(e.target.value)
-            }
-          />
-        </label>
-
-        <div className="button-row">
-          <button
-            type="button"
-            className="primary"
-            onClick={save}
-            disabled={saving}
-          >
-            {saving?
-              'Saving…':
-              'Save Changes'}
           </button>
 
           <button
@@ -4607,9 +4495,6 @@ function PhotoAlbum({
 
   const [showAdd,setShowAdd]=
     useState(false);
-
-  const [editingPhoto,setEditingPhoto]=
-    useState<any>(null);
 
   const [selectMode,setSelectMode]=
     useState(false);
@@ -5003,10 +4888,7 @@ function PhotoAlbum({
                     '/files/'+
                     x.storage_key
                   }
-                  alt={
-                    x.caption||
-                    'Troop photo'
-                  }
+                  alt={`Photo ${i+1} from ${d.event.title}`}
                   className="photo-grid-image"
                 />
               </button>
@@ -5033,33 +4915,6 @@ function PhotoAlbum({
                   />
                 </label>
               }
-
-              {(x.caption||
-                canManage&&
-                !selectMode)&&
-                <figcaption
-                  className="photo-caption-row"
-                >
-                  {x.caption&&
-                    <span>
-                      {x.caption}
-                    </span>
-                  }
-
-                  {canManage&&
-                    !selectMode&&
-                    <button
-                      type="button"
-                      className="photo-edit-button"
-                      onClick={()=>
-                        setEditingPhoto(x)
-                      }
-                    >
-                      Edit
-                    </button>
-                  }
-                </figcaption>
-              }
             </figure>
         )}
       </div>
@@ -5074,19 +4929,6 @@ function PhotoAlbum({
         }}
         onCancel={()=>
           setShowAdd(false)
-        }
-      />
-    }
-
-    {editingPhoto&&
-      <EditPhotoModal
-        photo={editingPhoto}
-        onSaved={async()=>{
-          setEditingPhoto(null);
-          await load();
-        }}
-        onCancel={()=>
-          setEditingPhoto(null)
         }
       />
     }
