@@ -3140,7 +3140,7 @@ function EventForm({
 
   const [form,setForm]=useState<any>({
     title:'',
-    event_type:'Ceremony',
+    event_type:'',
     location_name:'',
     location_address:'',
     departure_arrival_location_name:'',
@@ -3341,12 +3341,19 @@ function EventForm({
       return;
     }
 
+    if(!String(form.event_type||'').trim()){
+      setError(
+        'Event Type is required.'
+      );
+      return;
+    }
+
     if(
       !form.start_date||
       !form.end_date
     ){
       setError(
-        'Start and End dates are required.'
+        'Start and End are required.'
       );
       return;
     }
@@ -3520,28 +3527,50 @@ function EventForm({
       />
     </label>
 
-    <label>
-      Event Type
-      <select
-        value={form.event_type}
-        onChange={e=>{
-          set(
-            'event_type',
-            e.target.value
-          );
-        }}
-      >
-        <option>Ceremony</option>
-        <option>Court of Honor</option>
-        <option>Fundraiser</option>
-        <option>Mass</option>
-        <option>Meeting</option>
-        <option>Service</option>
-        <option>Summer Camp</option>
-        <option>Trip</option>
-        <option>Other</option>
-      </select>
-    </label>
+<label>
+  Event Type
+  <select
+    value={form.event_type}
+    required
+    onChange={e=>{
+      set(
+        'event_type',
+        e.target.value
+      );
+    }}
+  >
+    <option value="" disabled>
+      Select event type
+    </option>
+    <option value="Ceremony">
+      Ceremony
+    </option>
+    <option value="Court of Honor">
+      Court of Honor
+    </option>
+    <option value="Fundraiser">
+      Fundraiser
+    </option>
+    <option value="Mass">
+      Mass
+    </option>
+    <option value="Meeting">
+      Meeting
+    </option>
+    <option value="Service">
+      Service
+    </option>
+    <option value="Summer Camp">
+      Summer Camp
+    </option>
+    <option value="Trip">
+      Trip
+    </option>
+    <option value="Other">
+      Other
+    </option>
+  </select>
+</label>
 
     <PlaceSearch
       label="Location"
@@ -3559,28 +3588,27 @@ function EventForm({
       }}
     />
 
-    <PlaceSearch
-      label="Departure / Arrival Location"
-      value={
-        form
-          .departure_arrival_location_name
-      }
-      address={
-        form
-          .departure_arrival_location_address
-      }
-      onChange={(name,address)=>{
-        set(
-          'departure_arrival_location_name',
-          name
-        );
-        set(
-          'departure_arrival_location_address',
-          address
-        );
-      }}
-      optional
-    />
+<PlaceSearch
+  label="Departure / Arrival Location"
+  value={
+    form
+      .departure_arrival_location_name
+  }
+  address={
+    form
+      .departure_arrival_location_address
+  }
+  onChange={(name,address)=>{
+    set(
+      'departure_arrival_location_name',
+      name
+    );
+    set(
+      'departure_arrival_location_address',
+      address
+    );
+  }}
+/>
 
     <label className="checkbox-label">
       <input
