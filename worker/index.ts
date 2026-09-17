@@ -1397,6 +1397,7 @@ app.get('/api/home',async c=>{
           e.id,
           e.title,
           e.start_at,
+          e.event_type,
           (
             SELECT storage_key
             FROM photos ph
