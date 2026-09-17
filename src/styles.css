@@ -318,9 +318,9 @@ section>h2{
 }
 
 .home-add-button{
-  width:34px;
-  height:34px;
-  min-width:34px;
+  width:calc(1.45rem * 1.5);
+  height:calc(1.45rem * 1.5);
+  min-width:calc(1.45rem * 1.5);
   padding:0;
   border:1px solid var(--border);
   border-radius:3px;
@@ -361,6 +361,11 @@ section>h2{
   display:flex;
   gap:6px;
   flex-shrink:0
+}
+
+.home-announcement-actions .button{
+  min-height:0;
+  padding:.42rem .72rem
 }
 
 .home-contact-option .button{
