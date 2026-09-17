@@ -900,9 +900,13 @@ setShowAnnouncementModal(true);
               type="button"
               className="modal-close"
               aria-label="Close"
-              onClick={()=>{
-                setShowAnnouncementModal(false);
-              }}
+onClick={()=>{
+  setEditingAnnouncement(null);
+  setAnnouncementTitle('');
+  setAnnouncementBody('');
+  setAnnouncementError('');
+  setShowAnnouncementModal(false);
+}}
             >
               ×
             </button>
@@ -991,14 +995,18 @@ if(editingAnnouncement){
                 Add Announcement
               </button>
 
-              <button
-                type="button"
-                onClick={()=>{
-                  setShowAnnouncementModal(false);
-                }}
-              >
-                Cancel
-              </button>
+<button
+  type="button"
+  onClick={()=>{
+    setEditingAnnouncement(null);
+    setAnnouncementTitle('');
+    setAnnouncementBody('');
+    setAnnouncementError('');
+    setShowAnnouncementModal(false);
+  }}
+>
+  Cancel
+</button>
             </div>
           </form>
         </div>
