@@ -4874,6 +4874,47 @@ function PhotoAlbum({
           Set Cover Photo
         </button>
       }
+
+      {canManage&&
+        <button
+          type="button"
+          className="button"
+          onClick={async()=>{
+            const confirmed=
+              window.confirm(
+                'Remove this event from Photos? All photos for this event will also be permanently deleted from the site and storage. The Calendar event will not be deleted. This cannot be undone.'
+              );
+
+            if(!confirmed)
+              return;
+
+            setMessage('');
+            setBusy(true);
+
+            try{
+              await api(
+                '/admin/photo-albums/'+
+                id,
+                {
+                  method:'DELETE'
+                }
+              );
+
+              window.location.href='/photos';
+            }catch(e:any){
+              setMessage(
+                e?.message||
+                'Unable to remove the event from Photos.'
+              );
+
+              setBusy(false);
+            }
+          }}
+          disabled={busy}
+        >
+          Remove from Photos
+        </button>
+      }
     </div>
 
     {message&&
