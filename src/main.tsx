@@ -4,7 +4,7 @@ import {BrowserRouter,useNavigate,useLocation} from 'react-router-dom';
 import './styles.css';
 import {api,post,put} from './lib/api';
 
-const nav=[['/','Home','public'],['/eagles','Eagle Scouts','public'],['/calendar','Calendar','CAL'],['/photos','Photos','PHV'],['/documents','Documents','DOCV'],['/leadership','Leadership','public'],['/advancement','Advancement','public'],['/summer-camp','Summer Camp','public'],['/uniform','Scout Uniform','public']];
+const nav=[['/','Home','public'],['/eagles','Eagle Scouts','public'],['/calendar','Calendar','CAL'],['/photos','Photos','PHV'],['/leadership','Leadership','public'],['/advancement','Advancement','public'],['/summer-camp','Summer Camp','public'],['/uniform','Scout Uniform','public']];
 const adminNav=[['/email','Email','EML'],['/member-info','Member Info','MIV'],['/administration','Administration','__ADMIN_ROLE__']];
 
 function App(){
@@ -251,7 +251,6 @@ function RouterPage({
     '/update-info':'SET',
     '/calendar':'CAL',
     '/photos':'PHV',
-    '/documents':'DOCV',
     '/member-info':'MIV',
     '/email':'EML',
     '/administration':'__ADMIN_ROLE__'
@@ -301,7 +300,6 @@ const requiredPermission=
       id={p.split('/')[2]}
       me={me}
     />;
-  if(p==='/documents')return <Documents/>;
   if(p==='/leadership')return <Leadership/>;
   if(p==='/advancement')return <Advancement/>;
   if(p==='/summer-camp')return <SummerCamp/>;
@@ -5549,46 +5547,6 @@ const formatStoragePercent=(
   </Page>;
 }
 
-function Documents(){
-  const [d,setD]=useState<any>();
-
-  useEffect(()=>{
-    api('/documents').then(setD)
-  },[]);
-
-  if(!d)
-    return <Page title="Documents"><Loading/></Page>;
-
-  return <Page title="Documents">
-    <div className="folder-grid">
-      {d.documents.map((x:any)=>
-        <article className="card" key={x.id}>
-          <h2>{x.name}</h2>
-          <p>{x.event_title||'Standalone document'}</p>
-
-          {x.external_url?
-            <a
-              className="button"
-              target="_blank"
-              rel="noreferrer"
-              href={x.external_url}
-            >
-              Open URL
-            </a>:
-            <a
-              className="button"
-              target="_blank"
-              href={'/files/'+x.storage_key}
-            >
-              Open file
-            </a>
-          }
-        </article>
-      )}
-    </div>
-  </Page>
-}
-
 function Leadership(){
   const [d,setD]=useState<any>();
 
@@ -5769,32 +5727,6 @@ function SummerCamp(){
     <p>
       <b>Deadlines:</b> {d.camp.deadlines}
     </p>
-
-    <div className="folder-grid">
-      {d.documents.map((x:any)=>
-        <article className="card" key={x.id}>
-          <h3>{x.name}</h3>
-
-          {x.external_url?
-            <a
-              className="button"
-              target="_blank"
-              rel="noreferrer"
-              href={x.external_url}
-            >
-              Open
-            </a>:
-            <a
-              className="button"
-              target="_blank"
-              href={'/files/'+x.storage_key}
-            >
-              Open
-            </a>
-          }
-        </article>
-      )}
-    </div>
   </Page>
 }
 
