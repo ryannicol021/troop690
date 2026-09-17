@@ -1383,17 +1383,14 @@ app.get('/api/home',async c=>{
           (
             SELECT storage_key
             FROM photos ph
-            WHERE ph.event_id=e.id
-            ORDER BY ph.id DESC
+            WHERE ph.id=pa.cover_photo_id
             LIMIT 1
           ) photo
-        FROM events e
-        WHERE EXISTS(
-          SELECT 1
-          FROM photos ph
-          WHERE ph.event_id=e.id
-        )
-        ORDER BY e.start_at DESC
+        FROM photo_albums pa
+        JOIN events e
+          ON e.id=pa.event_id
+        WHERE pa.cover_photo_id IS NOT NULL
+        ORDER BY e.start_at DESC,e.id DESC
         LIMIT 6
       `)
       .all<any>();
@@ -1826,25 +1823,30 @@ app.get('/api/photos',async c=>{
   const rows=await c.env.DB
     .prepare(`
       SELECT
-        e.id,
+        pa.id,
+        e.id event_id,
         e.title,
         e.start_at,
+        e.event_type,
+        (
+          SELECT storage_key
+          FROM photos p
+          WHERE p.id=pa.cover_photo_id
+          LIMIT 1
+        ) cover_storage_key,
         (
           SELECT COUNT(*)
           FROM photos p
           WHERE p.event_id=e.id
         ) photo_count
-      FROM events e
-      WHERE EXISTS(
-        SELECT 1
-        FROM photos p
-        WHERE p.event_id=e.id
-      )
-      ORDER BY e.start_at DESC
+      FROM photo_albums pa
+      JOIN events e
+        ON e.id=pa.event_id
+      ORDER BY e.start_at DESC,e.id DESC
     `)
     .all<any>();
 
-  return json(c,{albums:rows.results});
+  return json(c,{albums:rows.results??[]});
 });
 
 app.get('/api/photos/:eventId',async c=>{
@@ -1853,6 +1855,26 @@ app.get('/api/photos/:eventId',async c=>{
 
   const id=Number(c.req.param('eventId'));
 
+  const event=await c.env.DB
+    .prepare(`
+      SELECT
+        pa.id,
+        e.id event_id,
+        e.title,
+        e.start_at,
+        e.event_type,
+        pa.cover_photo_id
+      FROM photo_albums pa
+      JOIN events e
+        ON e.id=pa.event_id
+      WHERE pa.event_id=?
+    `)
+    .bind(id)
+    .first<any>();
+
+  if(!event)
+    return json(c,{error:'Photo event not found.'},404);
+
   const photos=await c.env.DB
     .prepare(
       'SELECT * FROM photos WHERE event_id=? ORDER BY id'
@@ -1860,7 +1882,86 @@ app.get('/api/photos/:eventId',async c=>{
     .bind(id)
     .all<any>();
 
-  return json(c,{photos:photos.results});
+  return json(c,{event,photos:photos.results??[]});
+});
+
+app.get('/api/admin/photo-events',async c=>{
+  const d=admin(c,'PHOTO');
+  if(d)return d;
+
+  const rows=await c.env.DB
+    .prepare(`
+      SELECT
+        e.id,
+        e.title,
+        e.start_at,
+        e.event_type
+      FROM events e
+      WHERE date(e.start_at)<=date('now','localtime')
+        AND NOT EXISTS(
+          SELECT 1
+          FROM photo_albums pa
+          WHERE pa.event_id=e.id
+        )
+      ORDER BY e.start_at DESC,e.id DESC
+    `)
+    .all<any>();
+
+  return json(c,{events:rows.results??[]});
+});
+
+app.post('/api/admin/photo-albums',async c=>{
+  const d=admin(c,'PHOTO');
+  if(d)return d;
+
+  const x=await c.req.json();
+  const eventId=Number(x.event_id);
+
+  if(!Number.isInteger(eventId))
+    return json(c,{error:'An event is required.'},400);
+
+  const event=await c.env.DB
+    .prepare(
+      "SELECT id,start_at FROM events WHERE id=?"
+    )
+    .bind(eventId)
+    .first<any>();
+
+  if(!event)
+    return json(c,{error:'Event not found.'},404);
+
+  const eligible=await c.env.DB
+    .prepare(
+      "SELECT id FROM events WHERE id=? AND date(start_at)<=date('now','localtime')"
+    )
+    .bind(eventId)
+    .first<any>();
+
+  if(!eligible)
+    return json(
+      c,
+      {error:'Only events on or before today can be added to Photos.'},
+      400
+    );
+
+  const existing=await c.env.DB
+    .prepare(
+      'SELECT id FROM photo_albums WHERE event_id=?'
+    )
+    .bind(eventId)
+    .first<any>();
+
+  if(existing)
+    return json(c,{error:'That event is already on Photos.'},409);
+
+  const r=await c.env.DB
+    .prepare(
+      'INSERT INTO photo_albums(event_id) VALUES(?)'
+    )
+    .bind(eventId)
+    .run();
+
+  return json(c,{id:r.meta.last_row_id});
 });
 
 app.get('/api/documents',async c=>{
@@ -5239,10 +5340,30 @@ app.post('/api/admin/photos',async c=>{
     form.get('caption')||''
   );
 
+  if(!Number.isInteger(eventId))
+    return json(c,{error:'Event required.'},400);
+
+  const album=await c.env.DB
+    .prepare(
+      'SELECT id,cover_photo_id FROM photo_albums WHERE event_id=?'
+    )
+    .bind(eventId)
+    .first<any>();
+
+  if(!album)
+    return json(c,{error:'Photo event not found.'},404);
+
   if(!(file instanceof File))
     return json(
       c,
       {error:'File required'},
+      400
+    );
+
+  if(!String(file.type||'').startsWith('image/'))
+    return json(
+      c,
+      {error:'File must be an image.'},
       400
     );
 
@@ -5278,10 +5399,175 @@ app.post('/api/admin/photos',async c=>{
     )
     .run();
 
+  const id=r.meta.last_row_id as number;
+
+  if(album.cover_photo_id==null){
+    await c.env.DB
+      .prepare(
+        'UPDATE photo_albums SET cover_photo_id=? WHERE event_id=?'
+      )
+      .bind(id,eventId)
+      .run();
+  }
+
+  return json(c,{id,key});
+});
+
+app.put('/api/admin/photos/:id',async c=>{
+  const d=admin(c,'PHOTO');
+  if(d)return d;
+
+  const id=Number(c.req.param('id'));
+  const x=await c.req.json();
+  const caption=String(x.caption||'');
+
+  const photo=await c.env.DB
+    .prepare('SELECT id FROM photos WHERE id=?')
+    .bind(id)
+    .first<any>();
+
+  if(!photo)
+    return json(c,{error:'Photo not found.'},404);
+
+  await c.env.DB
+    .prepare('UPDATE photos SET caption=? WHERE id=?')
+    .bind(caption,id)
+    .run();
+
+  return json(c,{ok:true});
+});
+
+app.post('/api/admin/photos/delete',async c=>{
+  const d=admin(c,'PHOTO');
+  if(d)return d;
+
+  const x=await c.req.json();
+  const eventId=Number(x.event_id);
+
+  const photoIds=Array.isArray(x.photo_ids)?
+    [...new Set(
+      x.photo_ids
+        .map((value:any)=>Number(value))
+        .filter((value:any)=>Number.isInteger(value))
+    )]:
+    [];
+
+  if(!Number.isInteger(eventId)||!photoIds.length)
+    return json(c,{error:'Selected photos are required.'},400);
+
+  const album=await c.env.DB
+    .prepare(
+      'SELECT id,cover_photo_id FROM photo_albums WHERE event_id=?'
+    )
+    .bind(eventId)
+    .first<any>();
+
+  if(!album)
+    return json(c,{error:'Photo event not found.'},404);
+
+  const placeholders=photoIds.map(()=>'?').join(',');
+
+  const rows=await c.env.DB
+    .prepare(
+      `SELECT id,storage_key FROM photos WHERE event_id=? AND id IN (${placeholders})`
+    )
+    .bind(eventId,...photoIds)
+    .all<any>();
+
+  const found=rows.results??[];
+
+  if(found.length!==photoIds.length)
+    return json(
+      c,
+      {error:'One or more selected photos were not found.'},
+      400
+    );
+
+  for(const photo of found)
+    await c.env.FILES.delete(photo.storage_key);
+
+  await c.env.DB
+    .prepare(
+      `DELETE FROM photos WHERE event_id=? AND id IN (${placeholders})`
+    )
+    .bind(eventId,...photoIds)
+    .run();
+
+  let coverId=album.cover_photo_id;
+
+  if(
+    coverId!=null&&
+    photoIds.includes(Number(coverId))
+  ){
+    const replacement=await c.env.DB
+      .prepare(
+        'SELECT id FROM photos WHERE event_id=? ORDER BY id LIMIT 1'
+      )
+      .bind(eventId)
+      .first<any>();
+
+    coverId=replacement?.id??null;
+
+    await c.env.DB
+      .prepare(
+        'UPDATE photo_albums SET cover_photo_id=? WHERE event_id=?'
+      )
+      .bind(coverId,eventId)
+      .run();
+  }
+
   return json(c,{
-    id:r.meta.last_row_id,
-    key
+    ok:true,
+    deleted:found.length
   });
+});
+
+app.put('/api/admin/photo-albums/:eventId/cover',async c=>{
+  const d=admin(c,'PHOTO');
+  if(d)return d;
+
+  const eventId=Number(c.req.param('eventId'));
+  const x=await c.req.json();
+  const photoId=Number(x.photo_id);
+
+  if(
+    !Number.isInteger(eventId)||
+    !Number.isInteger(photoId)
+  )
+    return json(c,{error:'A photo is required.'},400);
+
+  const album=await c.env.DB
+    .prepare(
+      'SELECT id FROM photo_albums WHERE event_id=?'
+    )
+    .bind(eventId)
+    .first<any>();
+
+  if(!album)
+    return json(c,{error:'Photo event not found.'},404);
+
+  const photo=await c.env.DB
+    .prepare(
+      'SELECT id FROM photos WHERE id=? AND event_id=?'
+    )
+    .bind(photoId,eventId)
+    .first<any>();
+
+  if(!photo)
+    return json(
+      c,
+      {error:'That photo does not belong to this event.'},
+      400
+    );
+
+  await c.env.DB
+    .prepare(
+      'UPDATE photo_albums SET cover_photo_id=? WHERE event_id=?'
+    )
+    .bind(photoId,eventId)
+    .run();
+
+  return json(c,{ok:true});
 });
 
 app.delete('/api/admin/photos/:id',async c=>{
@@ -5292,15 +5578,17 @@ app.delete('/api/admin/photos/:id',async c=>{
 
   const p=await c.env.DB
     .prepare(
-      'SELECT storage_key FROM photos WHERE id=?'
+      'SELECT storage_key,event_id FROM photos WHERE id=?'
     )
     .bind(id)
     .first<any>();
 
-  if(p)
-    await c.env.FILES.delete(
-      p.storage_key
-    );
+  if(!p)
+    return json(c,{error:'Photo not found.'},404);
+
+  await c.env.FILES.delete(
+    p.storage_key
+  );
 
   await c.env.DB
     .prepare(
@@ -5308,6 +5596,35 @@ app.delete('/api/admin/photos/:id',async c=>{
     )
     .bind(id)
     .run();
+
+  const album=await c.env.DB
+    .prepare(
+      'SELECT cover_photo_id FROM photo_albums WHERE event_id=?'
+    )
+    .bind(p.event_id)
+    .first<any>();
+
+  if(
+    album&&
+    Number(album.cover_photo_id)===id
+  ){
+    const replacement=await c.env.DB
+      .prepare(
+        'SELECT id FROM photos WHERE event_id=? ORDER BY id LIMIT 1'
+      )
+      .bind(p.event_id)
+      .first<any>();
+
+    await c.env.DB
+      .prepare(
+        'UPDATE photo_albums SET cover_photo_id=? WHERE event_id=?'
+      )
+      .bind(
+        replacement?.id??null,
+        p.event_id
+      )
+      .run();
+  }
 
   return json(c,{ok:true});
 });
