@@ -2046,6 +2046,49 @@ app.delete('/api/admin/photo-albums/:eventId',async c=>{
   return json(c,{ok:true});
 });
 
+app.get('/api/admin/r2-storage',async c=>{
+  const user=c.get('user') as User|null;
+
+  if(!user)
+    return json(
+      c,
+      {error:'Login required'},
+      401
+    );
+
+  if(!user.isAdministrator)
+    return json(
+      c,
+      {error:'Forbidden'},
+      403
+    );
+
+  let usedBytes=0;
+  let cursor:string|undefined;
+
+  do{
+    const page=await c.env.FILES.list({
+      limit:1000,
+      ...(cursor?
+        {cursor}:
+        {})
+    });
+
+    for(const object of page.objects){
+      usedBytes+=object.size;
+    }
+
+    cursor=
+      page.truncated?
+        page.cursor:
+        undefined;
+  }while(cursor);
+
+  return json(c,{
+    usedBytes
+  });
+});
+
 app.get('/api/documents',async c=>{
   const deny=requirePerm('DOCV')(c);
   if(deny)return deny;
