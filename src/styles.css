@@ -307,6 +307,10 @@ section>h2{
   align-items:center;
   justify-content:space-between;
   gap:12px;
+  border-left:4px solid var(--red);
+  padding-left:11px;
+  margin:28px 0 14px;
+  color:var(--navy);
 }
 
 .home-section-head h2{
