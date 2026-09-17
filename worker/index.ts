@@ -4759,6 +4759,18 @@ app.get('/files/:key{.+}',async c=>{
   const key=c.req.param('key');
 
   if(key.startsWith('photos/')){
+    try{
+      c.set(
+        'user',
+        await userFromRequest(c)
+      );
+    }catch{
+      c.set(
+        'user',
+        null
+      );
+    }
+
     const deny=requirePerm('PHV')(c);
     if(deny)return deny;
   }
