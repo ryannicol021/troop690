@@ -2741,7 +2741,7 @@ actions={
         nav('/calendar');
       }}
     >
-      ← Back to Calendar
+      ←
     </button>
 
     {canEdit&&
@@ -4626,6 +4626,8 @@ function PhotoAlbum({
   const [busy,setBusy]=
     useState(false);
 
+  const nav=useNavigate();
+  
   const canManage=
     !!me?.isAdministrator||
     !!me?.permissions?.includes(
@@ -4821,7 +4823,17 @@ function PhotoAlbum({
 
   return <Page
     title={d.event.title}
-  >
+    actions={
+      <>
+        <button
+          type="button"
+          className="button secondary"
+          onClick={()=>{
+            nav('/photos');
+          }}
+        >
+          ←
+        </button>
     <div className="photo-page-actions">
       {canManage&&
         <button
