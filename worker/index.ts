@@ -1538,20 +1538,8 @@ app.get('/api/events/:id',async c=>{
     .bind(id)
     .first<any>();
 
-  const docs=await c.env.DB
-    .prepare(`
-      SELECT d.*
-      FROM documents d
-      JOIN event_documents ed
-        ON ed.document_id=d.id
-      WHERE ed.event_id=?
-    `)
-    .bind(id)
-    .all<any>();
-
   return json(c,{
-    event:e,
-    documents:docs.results
+    event:e
   });
 });
 
@@ -2089,34 +2077,6 @@ app.get('/api/admin/r2-storage',async c=>{
   });
 });
 
-app.get('/api/documents',async c=>{
-  const deny=requirePerm('DOCV')(c);
-  if(deny)return deny;
-
-  const u=c.get('user');
-
-  const vis=u?.permissions.includes('DOC')?
-    "d.visibility IN ('public','member','admin')":
-    "d.visibility IN ('member','public')";
-
-  const rows=await c.env.DB
-    .prepare(`
-      SELECT
-        d.*,
-        e.title event_title
-      FROM documents d
-      LEFT JOIN event_documents ed
-        ON ed.document_id=d.id
-      LEFT JOIN events e
-        ON e.id=ed.event_id
-      WHERE ${vis}
-      ORDER BY d.name
-    `)
-    .all<any>();
-
-  return json(c,{documents:rows.results});
-});
-
 app.get('/api/leadership',async c=>{
   const u=c.get('user');
 
@@ -2195,28 +2155,8 @@ app.get('/api/summer-camp',async c=>{
     )
     .first<any>();
 
-  const u=c.get('user');
-
-  const docs=await c.env.DB
-    .prepare(`
-      SELECT *
-      FROM documents
-      WHERE
-        source_type='summer_camp'
-        AND visibility IN (
-          'public'
-          ${u&&u.permissions.includes('DOCV')?
-            ",'member'":
-            ''
-          }
-        )
-      ORDER BY name
-    `)
-    .all<any>();
-
   return json(c,{
-    camp,
-    documents:docs.results
+    camp
   });
 });
 
@@ -4745,59 +4685,6 @@ app.get('/api/admin/emergency-contacts.csv',async c=>{
   );
 });
 
-app.post('/api/admin/upload',async c=>{
-  const d=admin(c,'DOC');
-  if(d)return d;
-
-  const form=await c.req.formData();
-  const file=form.get('file');
-  const kind=String(
-    form.get('kind')||'file'
-  );
-
-  if(!(file instanceof File))
-    return json(
-      c,
-      {error:'File required'},
-      400
-    );
-
-  const key=
-    `${kind}/${Date.now()}-${file.name.replace(
-      /[^A-Za-z0-9._-]/g,
-      '_'
-    )}`;
-
-  await c.env.FILES.put(
-    key,
-    file.stream(),
-    {
-      httpMetadata:{
-        contentType:file.type
-      }
-    }
-  );
-
-  if(kind.startsWith('site:')){
-    const keyName=kind.slice(5);
-
-    await c.env.DB
-      .prepare(`
-        INSERT INTO site_content(key,value)
-        VALUES(?,?)
-        ON CONFLICT(key)
-        DO UPDATE SET value=excluded.value
-      `)
-      .bind(
-        keyName,
-        key
-      )
-      .run();
-  }
-
-  return json(c,{key});
-});
-
 app.get('/files/:key{.+}',async c=>{
   const key=c.req.param('key');
 
@@ -5845,99 +5732,6 @@ app.delete('/api/admin/photos/:id',async c=>{
       )
       .run();
   }
-
-  return json(c,{ok:true});
-});
-
-app.post('/api/admin/documents',async c=>{
-  const d=admin(c,'DOC');
-  if(d)return d;
-
-  const form=await c.req.formData();
-  const name=String(
-    form.get('name')||''
-  );
-
-  const visibility=String(
-    form.get('visibility')||'member'
-  );
-
-  const url=String(
-    form.get('url')||''
-  );
-
-  const file=form.get('file');
-  let key:string|null=null;
-
-  if(file instanceof File){
-    key=
-      `documents/${Date.now()}-${file.name.replace(
-        /[^A-Za-z0-9._-]/g,
-        '_'
-      )}`;
-
-    await c.env.FILES.put(
-      key,
-      file.stream(),
-      {
-        httpMetadata:{
-          contentType:file.type
-        }
-      }
-    );
-  }
-
-  const r=await c.env.DB
-    .prepare(`
-      INSERT INTO documents(
-        name,
-        external_url,
-        storage_key,
-        visibility,
-        source_type,
-        source_id
-      )
-      VALUES(?,?,?,?,?,?)
-    `)
-    .bind(
-      name,
-      url||null,
-      key,
-      visibility,
-      'standalone',
-      null
-    )
-    .run();
-
-  return json(c,{
-    id:r.meta.last_row_id
-  });
-});
-
-app.delete('/api/admin/documents/:id',async c=>{
-  const d=admin(c,'DOC');
-  if(d)return d;
-
-  const id=Number(c.req.param('id'));
-
-  const doc=await c.env.DB
-    .prepare(
-      'SELECT storage_key FROM documents WHERE id=?'
-    )
-    .bind(id)
-    .first<any>();
-
-  if(doc?.storage_key)
-    await c.env.FILES.delete(
-      doc.storage_key
-    );
-
-  await c.env.DB
-    .prepare(
-      'DELETE FROM documents WHERE id=?'
-    )
-    .bind(id)
-    .run();
 
   return json(c,{ok:true});
 });
