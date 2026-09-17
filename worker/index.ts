@@ -3,7 +3,7 @@ import type { Context } from 'hono';
 import { setCookie, getCookie, deleteCookie } from 'hono/cookie';
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
 
-type Env = { DB: D1Database; FILES: R2Bucket; ASSETS: Fetcher; PUBLIC_SITE_URL:string; INTERIM_SITE_URL:string; SESSION_TTL_DAYS:string; BOOTSTRAP_SECRET?:string; GEOAPIFY_API_KEY?:string };
+type Env = { DB: D1Database; FILES: R2Bucket; ASSETS: Fetcher; PUBLIC_SITE_URL:string; INTERIM_SITE_URL:string; SESSION_TTL_DAYS:string; BOOTSTRAP_SECRET?:string; GEOAPIFY_API_KEY?:string; CLOUDFLARE_ACCOUNT_ID?:string; CLOUDFLARE_API_TOKEN?:string };
 type User = {
   accountId:number;
   personId:number|null;
@@ -2050,29 +2050,144 @@ app.get('/api/admin/r2-storage',async c=>{
       403
     );
 
-  let usedBytes=0;
-  let cursor:string|undefined;
+  if(
+    !c.env.CLOUDFLARE_ACCOUNT_ID||
+    !c.env.CLOUDFLARE_API_TOKEN
+  ){
+    return json(
+      c,
+      {error:'Cloudflare analytics credentials are not configured'},
+      500
+    );
+  }
 
-  do{
-    const page=await c.env.FILES.list({
-      limit:1000,
-      ...(cursor?
-        {cursor}:
-        {})
-    });
+  const now=new Date();
 
-    for(const object of page.objects){
-      usedBytes+=object.size;
+  const start=new Date(
+    now.getTime()-24*60*60*1000
+  );
+
+  const query=`
+    query R2StorageExample(
+      $accountTag: string!
+      $startDate: Time
+      $endDate: Time
+      $bucketName: string
+    ){
+      viewer{
+        accounts(
+          filter:{
+            accountTag:$accountTag
+          }
+        ){
+          r2StorageAdaptiveGroups(
+            limit:10000
+            filter:{
+              datetime_geq:$startDate
+              datetime_leq:$endDate
+              bucketName:$bucketName
+            }
+            orderBy:[datetime_DESC]
+          ){
+            max{
+              objectCount
+              uploadCount
+              payloadSize
+              metadataSize
+            }
+            dimensions{
+              datetime
+            }
+          }
+        }
+      }
     }
+  `;
 
-    cursor=
-      page.truncated?
-        page.cursor:
-        undefined;
-  }while(cursor);
+  const response=await fetch(
+    'https://api.cloudflare.com/client/v4/graphql',
+    {
+      method:'POST',
+      headers:{
+        'Authorization':
+          `Bearer ${c.env.CLOUDFLARE_API_TOKEN}`,
+        'Accept':
+          'application/json',
+        'Content-Type':
+          'application/json'
+      },
+      body:JSON.stringify({
+        query,
+        variables:{
+          accountTag:
+            c.env.CLOUDFLARE_ACCOUNT_ID,
+          startDate:
+            start.toISOString(),
+          endDate:
+            now.toISOString(),
+          bucketName:
+            'troop690-files'
+        }
+      })
+    }
+  );
+
+  if(!response.ok){
+    const detail=
+      await response.text();
+
+    return json(
+      c,
+      {
+        error:
+          `Cloudflare analytics request failed (${response.status})`,
+        detail
+      },
+      502
+    );
+  }
+
+  const data=
+    await response.json() as any;
+
+  if(data.errors?.length){
+    return json(
+      c,
+      {
+        error:
+          'Cloudflare analytics query failed',
+        detail:data.errors
+      },
+      502
+    );
+  }
+
+  const rows=
+    data.data?.viewer?.accounts?.[0]
+      ?.r2StorageAdaptiveGroups||[];
+
+  const latest=rows[0];
+
+  if(!latest){
+    return json(c,{
+      usedBytes:0
+    });
+  }
+
+  const payloadSize=
+    Number(
+      latest.max?.payloadSize||0
+    );
+
+  const metadataSize=
+    Number(
+      latest.max?.metadataSize||0
+    );
 
   return json(c,{
-    usedBytes
+    usedBytes:
+      payloadSize+
+      metadataSize
   });
 });
 
