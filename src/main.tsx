@@ -5356,38 +5356,36 @@ function Photos({
         '-'
       );
 
-  const maxStorageBytes=
-    10*1024*1024*1024;
+const maxStorageBytes=
+  10*1000*1000*1000;
 
-  const storagePercent=
-    storageBytes===null?
-      0:
-      Math.min(
-        100,
-        (storageBytes/
-          maxStorageBytes)*100
-      );
+const storagePercent=
+  storageBytes===null?
+    0:
+    Math.min(
+      100,
+      (storageBytes/
+        maxStorageBytes)*100
+    );
 
-  const formatStorage=(
-    bytes:number
-  )=>{
-    if(bytes<1024)
-      return `${bytes.toFixed(2)} B`;
+const formatStorage=(bytes:number)=>{
+  if(bytes<1000)
+    return `${bytes.toFixed(2)} B`;
 
-    if(bytes<1024*1024)
-      return `${(
-        bytes/1024
-      ).toFixed(2)} KB`;
-
-    if(bytes<1024*1024*1024)
-      return `${(
-        bytes/(1024*1024)
-      ).toFixed(2)} MB`;
-
+  if(bytes<1000*1000)
     return `${(
-      bytes/(1024*1024*1024)
-    ).toFixed(2)} GB`;
-  };
+      bytes/1000
+    ).toFixed(2)} KB`;
+
+  if(bytes<1000*1000*1000)
+    return `${(
+      bytes/(1000*1000)
+    ).toFixed(2)} MB`;
+
+  return `${(
+    bytes/(1000*1000*1000)
+  ).toFixed(2)} GB`;
+};
 
 const formatStoragePercent=(
   bytes:number
@@ -5416,10 +5414,10 @@ const formatStoragePercent=(
 
   const storageFillClass=
     storageBytes!==null&&
-    storageBytes>=9*1024*1024*1024?
+    storageBytes>=9*1000*1000*1000?
       'red':
     storageBytes!==null&&
-    storageBytes>=6*1024*1024*1024?
+    storageBytes>=6*1000*1000*1000?
       'yellow':
       'blue';
   
