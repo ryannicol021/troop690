@@ -4824,16 +4824,17 @@ function PhotoAlbum({
   return <Page
     title={d.event.title}
     actions={
-      <>
-        <button
-          type="button"
-          className="button secondary"
-          onClick={()=>{
-            nav('/photos');
-          }}
-        >
-          ←
-        </button>
+      <button
+        type="button"
+        className="button secondary"
+        onClick={()=>{
+          nav('/photos');
+        }}
+      >
+        ←
+      </button>
+    }
+  >
     <div className="photo-page-actions">
       {canManage&&
         <button
