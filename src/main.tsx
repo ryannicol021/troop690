@@ -8945,53 +8945,6 @@ function Administration({me}:{me:any}){
   </Page>
 }
 
-function Upload({
-  label,
-  kind
-}:{
-  label:string,
-  kind:string
-}){
-  const [file,setFile]=useState<File|null>(null);
-  const [msg,setMsg]=useState('');
-
-  return <div className="upload">
-    <label>
-      {label}
-
-      <input
-        type="file"
-        onChange={e=>
-          setFile(e.target.files?.[0]||null)
-        }
-      />
-    </label>
-
-    <button onClick={async()=>{
-      if(!file)return;
-
-      const f=new FormData();
-      f.append('file',file);
-      f.append('kind',kind);
-
-      const r=await fetch(
-        '/api/admin/upload',
-        {
-          method:'POST',
-          body:f,
-          credentials:'include'
-        }
-      );
-
-      setMsg(r.ok?'Uploaded':'Upload failed')
-    }}>
-      Upload
-    </button>
-
-    <span>{msg}</span>
-  </div>
-}
-
 function NotFound(){
   return <Page title="Page not found">
     <p>The requested page does not exist.</p>
