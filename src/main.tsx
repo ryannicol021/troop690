@@ -4774,7 +4774,7 @@ function PhotoAlbum({
   };
 
   if(!d)
-    return <Page title="Photos">
+    return <Page title="">
       <Loading/>
     </Page>;
 
