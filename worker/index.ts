@@ -1987,6 +1987,65 @@ const eligible=await c.env.DB
   return json(c,{id:r.meta.last_row_id});
 });
 
+app.delete('/api/admin/photo-albums/:eventId',async c=>{
+  const d=admin(c,'PHOTO');
+  if(d)return d;
+
+  const eventId=Number(c.req.param('eventId'));
+
+  if(!Number.isInteger(eventId))
+    return json(
+      c,
+      {error:'Invalid event.'},
+      400
+    );
+
+  const album=await c.env.DB
+    .prepare(
+      'SELECT id FROM photo_albums WHERE event_id=?'
+    )
+    .bind(eventId)
+    .first<any>();
+
+  if(!album)
+    return json(
+      c,
+      {error:'Photo event not found.'},
+      404
+    );
+
+  const photos=await c.env.DB
+    .prepare(
+      'SELECT storage_key FROM photos WHERE event_id=?'
+    )
+    .bind(eventId)
+    .all<any>();
+
+  for(const photo of (photos.results??[])){
+    if(photo.storage_key){
+      await c.env.FILES.delete(
+        photo.storage_key
+      );
+    }
+  }
+
+  await c.env.DB
+    .prepare(
+      'DELETE FROM photos WHERE event_id=?'
+    )
+    .bind(eventId)
+    .run();
+
+  await c.env.DB
+    .prepare(
+      'DELETE FROM photo_albums WHERE event_id=?'
+    )
+    .bind(eventId)
+    .run();
+
+  return json(c,{ok:true});
+});
+
 app.get('/api/documents',async c=>{
   const deny=requirePerm('DOCV')(c);
   if(deny)return deny;
