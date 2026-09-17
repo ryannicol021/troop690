@@ -4025,16 +4025,23 @@ function AddPhotoModal({
   onSaved:()=>void,
   onCancel:()=>void
 }){
-  const [file,setFile]=useState<File|null>(null);
-  const [caption,setCaption]=useState('');
-  const [saving,setSaving]=useState(false);
-  const [error,setError]=useState('');
+  const [files,setFiles]=
+    useState<File[]>([]);
+
+  const [caption,setCaption]=
+    useState('');
+
+  const [saving,setSaving]=
+    useState(false);
+
+  const [error,setError]=
+    useState('');
 
   const save=async()=>{
     setError('');
 
-    if(!file){
-      setError('Choose a photo.');
+    if(!files.length){
+      setError('Choose at least one photo.');
       return;
     }
 
@@ -4048,10 +4055,12 @@ function AddPhotoModal({
         eventId
       );
 
-      form.append(
-        'file',
-        file
-      );
+      for(const file of files){
+        form.append(
+          'file',
+          file
+        );
+      }
 
       form.append(
         'caption',
@@ -4072,14 +4081,14 @@ function AddPhotoModal({
       if(!r.ok)
         throw new Error(
           data?.error||
-          'Unable to add the photo.'
+          'Unable to add the photos.'
         );
 
       onSaved();
     }catch(e:any){
       setError(
         e?.message||
-        'Unable to add the photo.'
+        'Unable to add the photos.'
       );
     }finally{
       setSaving(false);
@@ -4097,11 +4106,11 @@ function AddPhotoModal({
       className="modal-card"
       role="dialog"
       aria-modal="true"
-      aria-labelledby="add-photo-title"
+      aria-labelledby="add-photos-title"
     >
       <div className="modal-header">
-        <h2 id="add-photo-title">
-          Add Photo
+        <h2 id="add-photos-title">
+          Add Photos
         </h2>
 
         <button
@@ -4109,6 +4118,7 @@ function AddPhotoModal({
           className="modal-close"
           aria-label="Close"
           onClick={onCancel}
+          disabled={saving}
         >
           ×
         </button>
@@ -4122,26 +4132,47 @@ function AddPhotoModal({
 
       <div className="form">
         <label>
-          Photo
+          Photos
           <input
             type="file"
             accept="image/*"
+            multiple
             onChange={e=>
-              setFile(
-                e.target.files?.[0]||
-                null
+              setFiles(
+                Array.from(
+                  e.target.files||[]
+                )
               )
             }
+            disabled={saving}
           />
         </label>
 
+        {files.length>0&&
+          <p className="muted">
+            {files.length} photo{
+              files.length===1?
+                '':
+                's'
+            } selected.
+          </p>
+        }
+
         <label>
           Caption
+          {files.length>1&&
+            <span className="muted">
+              {' '}Applied to all selected photos.
+            </span>
+          }
           <input
             value={caption}
             onChange={e=>
-              setCaption(e.target.value)
+              setCaption(
+                e.target.value
+              )
             }
+            disabled={saving}
           />
         </label>
 
@@ -4150,11 +4181,14 @@ function AddPhotoModal({
             type="button"
             className="primary"
             onClick={save}
-            disabled={saving}
+            disabled={
+              saving||
+              !files.length
+            }
           >
             {saving?
               'Adding…':
-              'Add Photo'}
+              'Add Photos'}
           </button>
 
           <button
@@ -4797,7 +4831,7 @@ function PhotoAlbum({
             setShowAdd(true)
           }
         >
-          Add
+          Add Photos
         </button>
       }
 
