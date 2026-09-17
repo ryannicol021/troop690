@@ -239,7 +239,7 @@ main{
 }
 
 .page-head h1{
-  margin:0;
+  margin:0 auto 0 0;
   font-family:"Roboto Slab",Georgia,serif;
   font-size:clamp(1.85rem,3vw,2.5rem);
   line-height:1.15;
