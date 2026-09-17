@@ -899,6 +899,7 @@ setShowAnnouncementModal(true);
       </>
     }
 
+    {me&&
     <section className="card home-history-card">
       <h2>History</h2>
       <p>
@@ -907,7 +908,8 @@ setShowAnnouncementModal(true);
         }
       </p>
     </section>
-
+    }
+      
         {showAnnouncementModal&&
       <div
         className="modal-backdrop"
