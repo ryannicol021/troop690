@@ -1394,7 +1394,13 @@ tbody tr:nth-child(even){
 }
 
 .photo-filter-option input{
-  margin:0
+  width:18px;
+  min-width:18px;
+  height:18px;
+  min-height:18px;
+  padding:0;
+  margin:0;
+  flex:0 0 18px
 }
 
 .photo-viewer{
