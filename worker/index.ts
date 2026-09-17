@@ -1020,7 +1020,7 @@ app.post('/api/login',async c=>{
 
     const a=await c.env.DB
       .prepare(
-        'SELECT * FROM accounts WHERE username=? AND active=1'
+        'SELECT * FROM accounts WHERE username=? COLLATE NOCASE AND active=1'
       )
       .bind(String(username??''))
       .first<any>();
@@ -4393,7 +4393,7 @@ app.post('/api/admin/invite/:id',async c=>{
   while(
     await c.env.DB
       .prepare(
-        'SELECT id FROM accounts WHERE username=?'
+        'SELECT id FROM accounts WHERE username=? COLLATE NOCASE'
       )
       .bind(u)
       .first()
@@ -6800,15 +6800,46 @@ app.put('/api/admin/account-logins/:id',async c=>{
   const id=Number(c.req.param('id'));
   const x=await c.req.json();
 
-  await c.env.DB
-    .prepare(
-      'UPDATE accounts SET username=? WHERE id=?'
-    )
-    .bind(
-      x.username,
-      id
-    )
-    .run();
+const username=String(
+  x.username||''
+).trim();
+
+if(!username)
+  return json(
+    c,
+    {error:'Username is required.'},
+    400
+  );
+
+const duplicate=await c.env.DB
+  .prepare(`
+    SELECT id
+    FROM accounts
+    WHERE username=? COLLATE NOCASE
+      AND id<>?
+  `)
+  .bind(
+    username,
+    id
+  )
+  .first<any>();
+
+if(duplicate)
+  return json(
+    c,
+    {error:'That username is already in use.'},
+    409
+  );
+
+await c.env.DB
+  .prepare(
+    'UPDATE accounts SET username=? WHERE id=?'
+  )
+  .bind(
+    username,
+    id
+  )
+  .run();
 
   return json(c,{ok:true});
 });
