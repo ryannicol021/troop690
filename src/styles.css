@@ -338,6 +338,10 @@ section>h2{
   border-bottom:1px solid var(--border)
 }
 
+.announcement-modal{
+  width:min(620px,100%)
+}
+
 .home-contact-option .button{
   display:inline-block;
   margin-top:8px;
