@@ -127,7 +127,7 @@ async function ensurePermissionSchema(c: Context<AppEnv>) {
 
 const permissions=[
   ['CAL','View Calendar','View Calendar'],
-  ['PHV','View Photo Gallery','View Photo Gallery'],
+  ['PHV','View Photos','View Photos'],
   ['DOCV','View Documents','View Documents'],
   ['LDV','View Member Leadership','View Member Leadership'],
   ['HSTV','View Leadership History','View Leadership History'],
