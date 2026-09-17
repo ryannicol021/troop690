@@ -5230,6 +5230,16 @@ function Photos({
   const [error,setError]=
     useState('');
 
+  const [
+    storageBytes,
+    setStorageBytes
+  ]=useState<number|null>(null);
+
+  const [
+    storageError,
+    setStorageError
+  ]=useState('');
+  
   const canManage=
     !!me?.isAdministrator||
     !!me?.permissions?.includes(
@@ -5257,6 +5267,30 @@ function Photos({
   useEffect(()=>{
     load();
   },[]);
+
+    useEffect(()=>{
+    if(!me?.isAdministrator){
+      setStorageBytes(null);
+      setStorageError('');
+      return;
+    }
+
+    api('/admin/r2-storage')
+      .then(x=>{
+        setStorageBytes(
+          Number(x.usedBytes)||0
+        );
+        setStorageError('');
+      })
+      .catch((e:any)=>{
+        setStorageError(
+          e?.message||
+          'Unable to load storage usage.'
+        );
+      });
+  },[
+    me?.isAdministrator
+  ]);
 
   const openAddEvent=
     async()=>{
@@ -5296,20 +5330,109 @@ function Photos({
         '-'
       );
 
+  const maxStorageBytes=
+    10*1024*1024*1024;
+
+  const storagePercent=
+    storageBytes===null?
+      0:
+      Math.min(
+        100,
+        (storageBytes/
+          maxStorageBytes)*100
+      );
+
+  const formatStorage=(
+    bytes:number
+  )=>{
+    if(bytes<1024)
+      return `${bytes.toFixed(2)} B`;
+
+    if(bytes<1024*1024)
+      return `${(
+        bytes/1024
+      ).toFixed(2)} KB`;
+
+    if(bytes<1024*1024*1024)
+      return `${(
+        bytes/(1024*1024)
+      ).toFixed(2)} MB`;
+
+    return `${(
+      bytes/(1024*1024*1024)
+    ).toFixed(2)} GB`;
+  };
+
+  const storageFillClass=
+    storageBytes!==null&&
+    storageBytes>=9*1024*1024*1024?
+      'red':
+    storageBytes!==null&&
+    storageBytes>=6*1024*1024*1024?
+      'yellow':
+      'blue';
+  
   return <Page
     title="Photos"
     actions={
-      canManage&&
-      <button
-        type="button"
-        className="button"
-        onClick={openAddEvent}
-        disabled={loadingOptions}
-      >
-        {loadingOptions?
-          'Loading…':
-          'Add New Event'}
-      </button>
+      <div className="photos-page-head-actions">
+
+        {me?.isAdministrator&&
+          <div className="storage-usage">
+            <div className="storage-usage-label">
+              {storageError?
+                'Unavailable':
+                storageBytes===null?
+                  'Loading…':
+                  formatStorage(
+                    storageBytes
+                  )}
+            </div>
+
+            <div
+              className="storage-usage-bar"
+              role="progressbar"
+              aria-label="R2 storage used"
+              aria-valuemin={0}
+              aria-valuemax={10}
+              aria-valuenow={
+                storageBytes===null?
+                  0:
+                  Math.min(
+                    10,
+                    storageBytes/
+                    (1024*1024*1024)
+                  )
+              }
+            >
+              <div
+                className={
+                  'storage-usage-fill '+
+                  storageFillClass
+                }
+                style={{
+                  width:
+                    `${storagePercent}%`
+                }}
+              />
+            </div>
+          </div>
+        }
+
+        {canManage&&
+          <button
+            type="button"
+            className="button"
+            onClick={openAddEvent}
+            disabled={loadingOptions}
+          >
+            {loadingOptions?
+              'Loading…':
+              'Add New Event'}
+          </button>
+        }
+
+      </div>
     }
   >
     {error&&
