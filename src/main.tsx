@@ -842,28 +842,47 @@ setShowAnnouncementModal(true);
         <section className="card">
           <h2>Recent Photos</h2>
           {d.recent.length?
-            d.recent.map((e:any)=>
-              <a
-                className="home-photo-row"
-                key={e.id}
-                href={'/photos/'+e.id}
-              >
-                {e.photo&&
-                  <img
-                    className="home-photo-thumb"
-                    src={'/files/'+e.photo}
-                    alt=""
-                  />
-                }
+            <div className="home-photo-grid">
+              {d.recent.map((e:any)=>
+                <a
+                  className="home-photo-card"
+                  key={e.id}
+                  href={'/photos/'+e.id}
+                >
+                  {e.photo&&
+                    <img
+                      className="home-photo-card-image"
+                      src={'/files/'+e.photo}
+                      alt=""
+                    />
+                  }
 
-                <div className="home-photo-info">
-                  <b>{e.title}</b>
-                  <span>
-                    {new Date(e.start_at).toLocaleDateString()}
-                  </span>
-                </div>
-              </a>
-            ):
+                  <div className="home-photo-card-date">
+                    {new Date(
+                      e.start_at
+                    ).toLocaleDateString(
+                      'en-US',
+                      {
+                        month:'numeric',
+                        day:'numeric',
+                        year:'numeric'
+                      }
+                    )}
+                  </div>
+
+                  <div
+                    className={
+                      'home-photo-card-title '+
+                      eventTypeClass(
+                        e.event_type
+                      )
+                    }
+                  >
+                    {e.title}
+                  </div>
+                </a>
+              )}
+            </div>:
             <p className="muted">No photos.</p>
           }
         </section>
