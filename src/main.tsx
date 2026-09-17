@@ -4521,12 +4521,22 @@ async function downloadPhotosZip(
     zipU16(0)
   ]);
 
+  const zipData=zipConcat([
+    ...chunks,
+    ...central,
+    end
+  ]);
+  
+  const zipBuffer=new ArrayBuffer(
+    zipData.byteLength
+  );
+  
+  new Uint8Array(zipBuffer).set(
+    zipData
+  );
+  
   const blob=new Blob(
-    [
-      ...chunks,
-      ...central,
-      end
-    ],
+    [zipBuffer],
     {
       type:'application/zip'
     }
