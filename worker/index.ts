@@ -5315,15 +5315,40 @@ app.put('/api/admin/events/:id',async c=>{
 
   return json(c,{ok:true});
 });
+
 app.delete('/api/admin/events/:id',async c=>{
   const d=admin(c,'EVT');
   if(d)return d;
+
+  const eventId=Number(c.req.param('id'));
+
+  if(!Number.isInteger(eventId))
+    return json(
+      c,
+      {error:'Invalid event.'},
+      400
+    );
+
+  const photos=await c.env.DB
+    .prepare(
+      'SELECT storage_key FROM photos WHERE event_id=?'
+    )
+    .bind(eventId)
+    .all<any>();
+
+  for(const photo of (photos.results??[])){
+    if(photo.storage_key){
+      await c.env.FILES.delete(
+        photo.storage_key
+      );
+    }
+  }
 
   await c.env.DB
     .prepare(
       'DELETE FROM events WHERE id=?'
     )
-    .bind(Number(c.req.param('id')))
+    .bind(eventId)
     .run();
 
   return json(c,{ok:true});
