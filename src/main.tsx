@@ -295,8 +295,12 @@ const requiredPermission=
       me={me}
       edit={p.split('/')[3]==='edit'}
     />;
-  if(p==='/photos')return <Photos/>;
-  if(p.startsWith('/photos/'))return <PhotoAlbum id={p.split('/')[2]}/>;
+  if(p==='/photos')return <Photos me={me}/>;
+  if(p.startsWith('/photos/'))
+    return <PhotoAlbum
+      id={p.split('/')[2]}
+      me={me}
+    />;
   if(p==='/documents')return <Documents/>;
   if(p==='/leadership')return <Leadership/>;
   if(p==='/advancement')return <Advancement/>;
@@ -3840,58 +3844,1641 @@ function EventForm({
   </div>;
 }
 
-function PhotoAlbum({id}:{id:string}){
-  const [d,setD]=useState<any>();
+function PhotoViewer({
+  photos,
+  index,
+  onClose
+}:{
+  photos:any[],
+  index:number,
+  onClose:()=>void
+}){
+  const [current,setCurrent]=useState(index);
+  const [zoom,setZoom]=useState(1);
 
   useEffect(()=>{
-    api('/photos/'+id).then(setD)
-  },[id]);
+    setCurrent(index);
+    setZoom(1);
+  },[index]);
 
-  if(!d)
-    return <Page title="Photos"><Loading/></Page>;
+  useEffect(()=>{
+    const onKey=(e:KeyboardEvent)=>{
+      if(e.key==='Escape'){
+        onClose();
+      }else if(e.key==='ArrowLeft'&&current>0){
+        setCurrent(x=>x-1);
+        setZoom(1);
+      }else if(
+        e.key==='ArrowRight'&&
+        current<photos.length-1
+      ){
+        setCurrent(x=>x+1);
+        setZoom(1);
+      }
+    };
 
-  return <Page title="Photos">
-    <div className="uniform-grid">
-      {d.photos.map((x:any)=>
-        <figure className="card" key={x.id}>
-          <img
-            className="uniform-img"
-            src={'/files/'+x.storage_key}
-            alt={x.caption||'Troop photo'}
-          />
-          <figcaption>{x.caption}</figcaption>
-          <a
-            className="button"
-            href={'/files/'+x.storage_key}
-            download
-          >
-            Download
-          </a>
-        </figure>
-      )}
+    window.addEventListener(
+      'keydown',
+      onKey
+    );
+
+    return ()=>window.removeEventListener(
+      'keydown',
+      onKey
+    );
+  },[
+    current,
+    photos.length,
+    onClose
+  ]);
+
+  const photo=photos[current];
+
+  if(!photo)
+    return null;
+
+  return <div
+    className="photo-viewer"
+    role="dialog"
+    aria-modal="true"
+    aria-label="Photo viewer"
+    onMouseDown={e=>{
+      if(e.target===e.currentTarget)
+        onClose();
+    }}
+  >
+    <div className="photo-viewer-stage">
+      <img
+        className="photo-viewer-image"
+        src={'/files/'+photo.storage_key}
+        alt={
+          photo.caption||
+          'Troop photo'
+        }
+        style={{
+          transform:`scale(${zoom})`
+        }}
+        draggable={false}
+      />
     </div>
-  </Page>
+
+    {current>0&&
+      <button
+        type="button"
+        className={
+          'photo-viewer-arrow '+
+          'photo-viewer-prev'
+        }
+        aria-label="Previous photo"
+        onClick={()=>{
+          setCurrent(x=>x-1);
+          setZoom(1);
+        }}
+      >
+        ‹
+      </button>
+    }
+
+    {current<photos.length-1&&
+      <button
+        type="button"
+        className={
+          'photo-viewer-arrow '+
+          'photo-viewer-next'
+        }
+        aria-label="Next photo"
+        onClick={()=>{
+          setCurrent(x=>x+1);
+          setZoom(1);
+        }}
+      >
+        ›
+      </button>
+    }
+
+    <div className="photo-viewer-controls">
+      <button
+        type="button"
+        className="photo-viewer-control"
+        aria-label="Zoom out"
+        onClick={()=>
+          setZoom(
+            x=>Math.max(
+              1,
+              Number(
+                (x-.25).toFixed(2)
+              )
+            )
+          )
+        }
+      >
+        −
+      </button>
+
+      <button
+        type="button"
+        className="photo-viewer-control"
+        aria-label="Reset zoom"
+        onClick={()=>
+          setZoom(1)
+        }
+      >
+        {Math.round(zoom*100)}%
+      </button>
+
+      <button
+        type="button"
+        className="photo-viewer-control"
+        aria-label="Zoom in"
+        onClick={()=>
+          setZoom(
+            x=>Math.min(
+              4,
+              Number(
+                (x+.25).toFixed(2)
+              )
+            )
+          )
+        }
+      >
+        +
+      </button>
+    </div>
+
+    <button
+      type="button"
+      className="photo-viewer-close"
+      aria-label="Close photo viewer"
+      onClick={onClose}
+    >
+      ×
+    </button>
+  </div>;
 }
 
-function Photos(){
-  const [a,setA]=useState<any[]>([]);
+function AddPhotoModal({
+  eventId,
+  onSaved,
+  onCancel
+}:{
+  eventId:string,
+  onSaved:()=>void,
+  onCancel:()=>void
+}){
+  const [file,setFile]=useState<File|null>(null);
+  const [caption,setCaption]=useState('');
+  const [saving,setSaving]=useState(false);
+  const [error,setError]=useState('');
+
+  const save=async()=>{
+    setError('');
+
+    if(!file){
+      setError('Choose a photo.');
+      return;
+    }
+
+    setSaving(true);
+
+    try{
+      const form=new FormData();
+
+      form.append(
+        'eventId',
+        eventId
+      );
+
+      form.append(
+        'file',
+        file
+      );
+
+      form.append(
+        'caption',
+        caption
+      );
+
+      const r=await fetch(
+        '/api/admin/photos',
+        {
+          method:'POST',
+          body:form,
+          credentials:'include'
+        }
+      );
+
+      const data=await r.json();
+
+      if(!r.ok)
+        throw new Error(
+          data?.error||
+          'Unable to add the photo.'
+        );
+
+      onSaved();
+    }catch(e:any){
+      setError(
+        e?.message||
+        'Unable to add the photo.'
+      );
+    }finally{
+      setSaving(false);
+    }
+  };
+
+  return <div
+    className="modal-backdrop"
+    onMouseDown={e=>{
+      if(e.target===e.currentTarget)
+        onCancel();
+    }}
+  >
+    <div
+      className="modal-card"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="add-photo-title"
+    >
+      <div className="modal-header">
+        <h2 id="add-photo-title">
+          Add Photo
+        </h2>
+
+        <button
+          type="button"
+          className="modal-close"
+          aria-label="Close"
+          onClick={onCancel}
+        >
+          ×
+        </button>
+      </div>
+
+      {error&&
+        <div className="error">
+          {error}
+        </div>
+      }
+
+      <div className="form">
+        <label>
+          Photo
+          <input
+            type="file"
+            accept="image/*"
+            onChange={e=>
+              setFile(
+                e.target.files?.[0]||
+                null
+              )
+            }
+          />
+        </label>
+
+        <label>
+          Caption
+          <input
+            value={caption}
+            onChange={e=>
+              setCaption(e.target.value)
+            }
+          />
+        </label>
+
+        <div className="button-row">
+          <button
+            type="button"
+            className="primary"
+            onClick={save}
+            disabled={saving}
+          >
+            {saving?
+              'Adding…':
+              'Add Photo'}
+          </button>
+
+          <button
+            type="button"
+            onClick={onCancel}
+            disabled={saving}
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>;
+}
+
+function EditPhotoModal({
+  photo,
+  onSaved,
+  onCancel
+}:{
+  photo:any,
+  onSaved:()=>void,
+  onCancel:()=>void
+}){
+  const [caption,setCaption]=
+    useState(photo.caption||'');
+
+  const [saving,setSaving]=
+    useState(false);
+
+  const [error,setError]=
+    useState('');
+
+  const save=async()=>{
+    setError('');
+    setSaving(true);
+
+    try{
+      await put(
+        '/admin/photos/'+photo.id,
+        {caption}
+      );
+
+      onSaved();
+    }catch(e:any){
+      setError(
+        e?.message||
+        'Unable to save the photo.'
+      );
+    }finally{
+      setSaving(false);
+    }
+  };
+
+  return <div
+    className="modal-backdrop"
+    onMouseDown={e=>{
+      if(e.target===e.currentTarget)
+        onCancel();
+    }}
+  >
+    <div
+      className="modal-card"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="edit-photo-title"
+    >
+      <div className="modal-header">
+        <h2 id="edit-photo-title">
+          Edit Photo
+        </h2>
+
+        <button
+          type="button"
+          className="modal-close"
+          aria-label="Close"
+          onClick={onCancel}
+        >
+          ×
+        </button>
+      </div>
+
+      {error&&
+        <div className="error">
+          {error}
+        </div>
+      }
+
+      <div className="form">
+        <label>
+          Caption
+          <input
+            value={caption}
+            onChange={e=>
+              setCaption(e.target.value)
+            }
+          />
+        </label>
+
+        <div className="button-row">
+          <button
+            type="button"
+            className="primary"
+            onClick={save}
+            disabled={saving}
+          >
+            {saving?
+              'Saving…':
+              'Save Changes'}
+          </button>
+
+          <button
+            type="button"
+            onClick={onCancel}
+            disabled={saving}
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>;
+}
+
+const zipU16=(value:number)=>{
+  const b=new Uint8Array(2);
+  const v=new DataView(
+    b.buffer
+  );
+
+  v.setUint16(
+    0,
+    value,
+    true
+  );
+
+  return b;
+};
+
+const zipU32=(value:number)=>{
+  const b=new Uint8Array(4);
+  const v=new DataView(
+    b.buffer
+  );
+
+  v.setUint32(
+    0,
+    value>>>0,
+    true
+  );
+
+  return b;
+};
+
+const zipConcat=(parts:Uint8Array[])=>{
+  const total=parts.reduce(
+    (sum,x)=>sum+x.length,
+    0
+  );
+
+  const out=
+    new Uint8Array(total);
+
+  let offset=0;
+
+  for(const part of parts){
+    out.set(part,offset);
+    offset+=part.length;
+  }
+
+  return out;
+};
+
+const crc32Table=(()=>{
+  const table=
+    new Uint32Array(256);
+
+  for(let n=0;n<256;n++){
+    let c=n;
+
+    for(let k=0;k<8;k++)
+      c=(c&1)?
+        0xedb88320^(c>>>1):
+        c>>>1;
+
+    table[n]=c>>>0;
+  }
+
+  return table;
+})();
+
+const crc32=(data:Uint8Array)=>{
+  let c=0xffffffff;
+
+  for(const byte of data)
+    c=
+      crc32Table[
+        (c^byte)&0xff
+      ]^
+      (c>>>8);
+
+  return (
+    c^
+    0xffffffff
+  )>>>0;
+};
+
+const zipDosTime=()=>{
+  const d=new Date();
+
+  return {
+    time:
+      (d.getHours()<<11)|
+      (d.getMinutes()<<5)|
+      Math.floor(
+        d.getSeconds()/2
+      ),
+
+    date:
+      ((d.getFullYear()-1980)<<9)|
+      ((d.getMonth()+1)<<5)|
+      d.getDate()
+  };
+};
+
+const safeZipName=(value:string)=>
+  String(value||'Photo')
+    .replace(
+      /[\\/:*?"<>|]+/g,
+      '_'
+    )
+    .trim()||
+    'Photo';
+
+async function downloadPhotosZip(
+  event:any,
+  photos:any[]
+){
+  const encoder=
+    new TextEncoder();
+
+  const files:{
+    name:string,
+    data:Uint8Array,
+    crc:number,
+    time:number,
+    date:number
+  }[]=[];
+
+  const stamp=zipDosTime();
+
+  for(
+    let i=0;
+    i<photos.length;
+    i++
+  ){
+    const p=photos[i];
+
+    const response=
+      await fetch(
+        '/files/'+p.storage_key,
+        {credentials:'include'}
+      );
+
+    if(!response.ok)
+      throw new Error(
+        'Unable to download one of the photos.'
+      );
+
+    const data=
+      new Uint8Array(
+        await response.arrayBuffer()
+      );
+
+    const rawName=
+      String(
+        p.storage_key
+      )
+        .split('/')
+        .pop()||
+      `photo-${i+1}.jpg`;
+
+    files.push({
+      name:
+        `${String(i+1).padStart(3,'0')}-`+
+        safeZipName(rawName),
+
+      data,
+
+      crc:
+        crc32(data),
+
+      time:
+        stamp.time,
+
+      date:
+        stamp.date
+    });
+  }
+
+  const chunks:Uint8Array[]=[];
+  const central:Uint8Array[]=[];
+  let offset=0;
+
+  for(const file of files){
+    const name=
+      encoder.encode(file.name);
+
+    const local=zipConcat([
+      zipU32(0x04034b50),
+      zipU16(20),
+      zipU16(0x800),
+      zipU16(0),
+      zipU16(file.time),
+      zipU16(file.date),
+      zipU32(file.crc),
+      zipU32(file.data.length),
+      zipU32(file.data.length),
+      zipU16(name.length),
+      zipU16(0),
+      name,
+      file.data
+    ]);
+
+    chunks.push(local);
+
+    central.push(
+      zipConcat([
+        zipU32(0x02014b50),
+        zipU16(20),
+        zipU16(20),
+        zipU16(0x800),
+        zipU16(0),
+        zipU16(file.time),
+        zipU16(file.date),
+        zipU32(file.crc),
+        zipU32(file.data.length),
+        zipU32(file.data.length),
+        zipU16(name.length),
+        zipU16(0),
+        zipU16(0),
+        zipU16(0),
+        zipU16(0),
+        zipU32(0),
+        zipU32(offset),
+        name
+      ])
+    );
+
+    offset+=local.length;
+  }
+
+  const centralData=
+    zipConcat(central);
+
+  const end=zipConcat([
+    zipU32(0x06054b50),
+    zipU16(0),
+    zipU16(0),
+    zipU16(files.length),
+    zipU16(files.length),
+    zipU32(centralData.length),
+    zipU32(offset),
+    zipU16(0)
+  ]);
+
+  const blob=new Blob(
+    [
+      ...chunks,
+      ...central,
+      end
+    ],
+    {
+      type:'application/zip'
+    }
+  );
+
+  const url=
+    URL.createObjectURL(blob);
+
+  const a=
+    document.createElement('a');
+
+  a.href=url;
+
+  a.download=
+    `${String(event.start_at).slice(0,10)} `+
+    `${safeZipName(event.title)}.zip`;
+
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+
+  URL.revokeObjectURL(url);
+}
+
+function PhotoAlbum({
+  id,
+  me
+}:{
+  id:string,
+  me:any
+}){
+  const [d,setD]=
+    useState<any>();
+
+  const [showAdd,setShowAdd]=
+    useState(false);
+
+  const [editingPhoto,setEditingPhoto]=
+    useState<any>(null);
+
+  const [selectMode,setSelectMode]=
+    useState(false);
+
+  const [selectedIds,setSelectedIds]=
+    useState<number[]>([]);
+
+  const [viewerIndex,setViewerIndex]=
+    useState<number|null>(null);
+
+  const [message,setMessage]=
+    useState('');
+
+  const [busy,setBusy]=
+    useState(false);
+
+  const canManage=
+    !!me?.isAdministrator||
+    !!me?.permissions?.includes(
+      'PHOTO'
+    );
+
+  const load=async()=>{
+    try{
+      setD(
+        await api('/photos/'+id)
+      );
+    }catch(e:any){
+      setD({
+        error:
+          e?.message||
+          'Unable to load Photos.'
+      });
+    }
+  };
 
   useEffect(()=>{
-    api('/photos').then(x=>setA(x.albums))
+    load();
+    setSelectMode(false);
+    setSelectedIds([]);
+    setViewerIndex(null);
+  },[id]);
+
+  const photos=
+    d?.photos||[];
+
+  const allSelected=
+    photos.length>0&&
+    selectedIds.length===
+      photos.length;
+
+  const selectedPhotos=
+    photos.filter(
+      (x:any)=>
+        selectedIds.includes(
+          Number(x.id)
+        )
+    );
+
+  const toggleSelected=(
+    photoId:number
+  )=>{
+    setSelectedIds(
+      current=>
+        current.includes(photoId)?
+          current.filter(
+            x=>x!==photoId
+          ):
+          [...current,photoId]
+    );
+  };
+
+  const toggleSelectMode=()=>{
+    setSelectMode(
+      current=>!current
+    );
+
+    setSelectedIds([]);
+  };
+
+  const selectAll=()=>{
+    setSelectedIds(
+      photos.map(
+        (x:any)=>
+          Number(x.id)
+      )
+    );
+  };
+
+  const runDownload=async()=>{
+    if(!photos.length||busy)
+      return;
+
+    const downloadThese=
+      selectMode?
+        selectedPhotos:
+        photos;
+
+    if(!downloadThese.length)
+      return;
+
+    setMessage('');
+    setBusy(true);
+
+    try{
+      await downloadPhotosZip(
+        d.event,
+        downloadThese
+      );
+    }catch(e:any){
+      setMessage(
+        e?.message||
+        'Unable to download the photos.'
+      );
+    }finally{
+      setBusy(false);
+    }
+  };
+
+  const deleteSelected=async()=>{
+    if(
+      !canManage||
+      !selectedIds.length||
+      busy
+    )
+      return;
+
+    const confirmed=
+      window.confirm(
+        `Delete ${selectedIds.length} selected photo${
+          selectedIds.length===1?
+            '':
+            's'
+        }? This cannot be undone.`
+      );
+
+    if(!confirmed)
+      return;
+
+    setMessage('');
+    setBusy(true);
+
+    try{
+      await post(
+        '/admin/photos/delete',
+        {
+          event_id:Number(id),
+          photo_ids:selectedIds
+        }
+      );
+
+      setSelectedIds([]);
+      await load();
+    }catch(e:any){
+      setMessage(
+        e?.message||
+        'Unable to delete the selected photos.'
+      );
+    }finally{
+      setBusy(false);
+    }
+  };
+
+  const setCover=async()=>{
+    if(
+      !canManage||
+      selectedIds.length!==1||
+      busy
+    )
+      return;
+
+    setMessage('');
+    setBusy(true);
+
+    try{
+      await put(
+        '/admin/photo-albums/'+
+        id+
+        '/cover',
+        {
+          photo_id:
+            selectedIds[0]
+        }
+      );
+
+      setSelectedIds([]);
+      await load();
+    }catch(e:any){
+      setMessage(
+        e?.message||
+        'Unable to set the cover photo.'
+      );
+    }finally{
+      setBusy(false);
+    }
+  };
+
+  if(!d)
+    return <Page title="Photos">
+      <Loading/>
+    </Page>;
+
+  if(d.error)
+    return <Page title="Photos">
+      <p className="error">
+        {d.error}
+      </p>
+    </Page>;
+
+  return <Page
+    title={d.event.title}
+  >
+    <div className="photo-page-actions">
+      {canManage&&
+        <button
+          type="button"
+          className="button"
+          onClick={()=>
+            setShowAdd(true)
+          }
+        >
+          Add
+        </button>
+      }
+
+      <button
+        type="button"
+        className="button"
+        onClick={
+          toggleSelectMode
+        }
+      >
+        {selectMode?
+          'Done':
+          'Select'}
+      </button>
+
+      {selectMode&&
+        <button
+          type="button"
+          className="button"
+          onClick={selectAll}
+          disabled={
+            allSelected||
+            !photos.length
+          }
+        >
+          Select All
+        </button>
+      }
+
+      <button
+        type="button"
+        className="button"
+        onClick={runDownload}
+        disabled={
+          (selectMode&&
+            !selectedIds.length)||
+          busy||
+          !photos.length
+        }
+      >
+        {busy?
+          'Working…':
+          'Download'}
+      </button>
+
+      {canManage&&
+        selectMode&&
+        <button
+          type="button"
+          className="button"
+          onClick={
+            deleteSelected
+          }
+          disabled={
+            !selectedIds.length||
+            busy
+          }
+        >
+          Delete
+        </button>
+      }
+
+      {canManage&&
+        selectMode&&
+        <button
+          type="button"
+          className="button"
+          onClick={setCover}
+          disabled={
+            selectedIds.length!==1||
+            busy
+          }
+        >
+          Set Cover Photo
+        </button>
+      }
+    </div>
+
+    {message&&
+      <div className="error">
+        {message}
+      </div>
+    }
+
+    {!photos.length?
+      <p className="muted">
+        No photos.
+      </p>:
+
+      <div className="photo-event-grid">
+        {photos.map(
+          (x:any,i:number)=>
+            <figure
+              className="photo-item"
+              key={x.id}
+            >
+              <button
+                type="button"
+                className="photo-image-button"
+                onClick={()=>{
+                  if(selectMode){
+                    toggleSelected(
+                      Number(x.id)
+                    );
+                  }else{
+                    setViewerIndex(i);
+                  }
+                }}
+                aria-label={
+                  `View photo ${i+1}`
+                }
+              >
+                <img
+                  src={
+                    '/files/'+
+                    x.storage_key
+                  }
+                  alt={
+                    x.caption||
+                    'Troop photo'
+                  }
+                  className="photo-grid-image"
+                />
+              </button>
+
+              {selectMode&&
+                <label
+                  className="photo-select-control"
+                >
+                  <input
+                    type="checkbox"
+                    checked={
+                      selectedIds.includes(
+                        Number(x.id)
+                      )
+                    }
+                    onChange={()=>
+                      toggleSelected(
+                        Number(x.id)
+                      )
+                    }
+                    aria-label={
+                      `Select photo ${i+1}`
+                    }
+                  />
+                </label>
+              }
+
+              {(x.caption||
+                canManage&&
+                !selectMode)&&
+                <figcaption
+                  className="photo-caption-row"
+                >
+                  {x.caption&&
+                    <span>
+                      {x.caption}
+                    </span>
+                  }
+
+                  {canManage&&
+                    !selectMode&&
+                    <button
+                      type="button"
+                      className="photo-edit-button"
+                      onClick={()=>
+                        setEditingPhoto(x)
+                      }
+                    >
+                      Edit
+                    </button>
+                  }
+                </figcaption>
+              }
+            </figure>
+        )}
+      </div>
+    }
+
+    {showAdd&&
+      <AddPhotoModal
+        eventId={id}
+        onSaved={async()=>{
+          setShowAdd(false);
+          await load();
+        }}
+        onCancel={()=>
+          setShowAdd(false)
+        }
+      />
+    }
+
+    {editingPhoto&&
+      <EditPhotoModal
+        photo={editingPhoto}
+        onSaved={async()=>{
+          setEditingPhoto(null);
+          await load();
+        }}
+        onCancel={()=>
+          setEditingPhoto(null)
+        }
+      />
+    }
+
+    {viewerIndex!==null&&
+      <PhotoViewer
+        photos={photos}
+        index={viewerIndex}
+        onClose={()=>
+          setViewerIndex(null)
+        }
+      />
+    }
+  </Page>;
+}
+
+function AddPhotoEventModal({
+  events,
+  onSaved,
+  onCancel
+}:{
+  events:any[],
+  onSaved:()=>void,
+  onCancel:()=>void
+}){
+  const eventTypes=[
+    'Ceremony',
+    'Court of Honor',
+    'Fundraiser',
+    'Mass',
+    'Meeting',
+    'Service',
+    'Summer Camp',
+    'Trip',
+    'Other'
+  ];
+
+  const [
+    selectedTypes,
+    setSelectedTypes
+  ]=useState<string[]>(
+    eventTypes
+  );
+
+  const [eventId,setEventId]=
+    useState(
+      events.length?
+        String(events[0].id):
+        ''
+    );
+
+  const [
+    filterOpen,
+    setFilterOpen
+  ]=useState(false);
+
+  const [saving,setSaving]=
+    useState(false);
+
+  const [error,setError]=
+    useState('');
+
+  const visibleEvents=
+    events.filter(
+      (e:any)=>
+        selectedTypes.includes(
+          String(
+            e.event_type||
+            'Other'
+          )
+        )
+    );
+
+  useEffect(()=>{
+    if(
+      !visibleEvents.some(
+        (e:any)=>
+          String(e.id)===eventId
+      )
+    ){
+      setEventId(
+        visibleEvents.length?
+          String(
+            visibleEvents[0].id
+          ):
+          ''
+      );
+    }
+  },[
+    selectedTypes.join('|'),
+    events
+      .map((x:any)=>x.id)
+      .join('|')
+  ]);
+
+  const toggleType=(
+    type:string
+  )=>{
+    setSelectedTypes(
+      current=>
+        current.includes(type)?
+          current.filter(
+            x=>x!==type
+          ):
+          [...current,type]
+    );
+  };
+
+  const save=async()=>{
+    setError('');
+
+    if(!eventId){
+      setError(
+        'Select an event.'
+      );
+      return;
+    }
+
+    setSaving(true);
+
+    try{
+      await post(
+        '/admin/photo-albums',
+        {
+          event_id:
+            Number(eventId)
+        }
+      );
+
+      onSaved();
+    }catch(e:any){
+      setError(
+        e?.message||
+        'Unable to add the event.'
+      );
+    }finally{
+      setSaving(false);
+    }
+  };
+
+  return <div
+    className="modal-backdrop"
+    onMouseDown={e=>{
+      if(e.target===e.currentTarget)
+        onCancel();
+    }}
+  >
+    <div
+      className={
+        'modal-card '+
+        'copy-event-modal'
+      }
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby={
+        'add-photo-event-title'
+      }
+    >
+      <div className="modal-header">
+        <h2 id="add-photo-event-title">
+          Add New Event
+        </h2>
+
+        <button
+          type="button"
+          className="modal-close"
+          aria-label="Close"
+          onClick={onCancel}
+        >
+          ×
+        </button>
+      </div>
+
+      {error&&
+        <div className="error">
+          {error}
+        </div>
+      }
+
+      {!events.length?
+        <p className="muted">
+          There are no past or current events available to add.
+        </p>:
+
+        <div className="form">
+          <label>
+            Event
+            <select
+              value={eventId}
+              onChange={e=>
+                setEventId(
+                  e.target.value
+                )
+              }
+            >
+              {visibleEvents.map(
+                (e:any)=>
+                  <option
+                    key={e.id}
+                    value={e.id}
+                  >
+                    {String(
+                      e.start_at
+                    ).slice(0,10)}
+                    {' ('}
+                    {e.title}
+                    {')'}
+                  </option>
+              )}
+            </select>
+          </label>
+
+          <div className="photo-filter-field">
+            <span className="photo-filter-label">
+              Event Types
+            </span>
+
+            <div className="photo-filter-dropdown">
+              <button
+                type="button"
+                className="photo-filter-trigger"
+                aria-expanded={
+                  filterOpen
+                }
+                onClick={()=>
+                  setFilterOpen(
+                    x=>!x
+                  )
+                }
+              >
+                {selectedTypes.length}
+                {' selected'}
+              </button>
+
+              {filterOpen&&
+                <div className="photo-filter-menu">
+                  {eventTypes.map(
+                    type=>
+                      <label
+                        key={type}
+                        className={
+                          'photo-filter-option'
+                        }
+                      >
+                        <input
+                          type="checkbox"
+                          checked={
+                            selectedTypes.includes(
+                              type
+                            )
+                          }
+                          onChange={()=>
+                            toggleType(type)
+                          }
+                        />
+
+                        <span>
+                          {type}
+                        </span>
+                      </label>
+                  )}
+                </div>
+              }
+            </div>
+          </div>
+
+          {!visibleEvents.length&&
+            <p className="muted">
+              No events match the selected event types.
+            </p>
+          }
+
+          <div className="button-row">
+            <button
+              type="button"
+              className="primary"
+              onClick={save}
+              disabled={
+                saving||
+                !eventId
+              }
+            >
+              {saving?
+                'Adding…':
+                'Add Event'}
+            </button>
+
+            <button
+              type="button"
+              onClick={onCancel}
+              disabled={saving}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  </div>;
+}
+
+function Photos({
+  me
+}:{
+  me:any
+}){
+  const [a,setA]=
+    useState<any[]>([]);
+
+  const [
+    showAddEvent,
+    setShowAddEvent
+  ]=useState(false);
+
+  const [
+    eventOptions,
+    setEventOptions
+  ]=useState<any[]>([]);
+
+  const [
+    loadingOptions,
+    setLoadingOptions
+  ]=useState(false);
+
+  const [error,setError]=
+    useState('');
+
+  const canManage=
+    !!me?.isAdministrator||
+    !!me?.permissions?.includes(
+      'PHOTO'
+    );
+
+  const load=async()=>{
+    try{
+      const x=
+        await api('/photos');
+
+      setA(
+        x.albums||[]
+      );
+
+      setError('');
+    }catch(e:any){
+      setError(
+        e?.message||
+        'Unable to load Photos.'
+      );
+    }
+  };
+
+  useEffect(()=>{
+    load();
   },[]);
 
-  return <Page title="Photos">
-    <div className="album-grid">
-      {a.map(x=>
-        <article className="card" key={x.id}>
-          <h2>{x.title}</h2>
-          <p>{new Date(x.start_at).toLocaleDateString()}</p>
-          <p>{x.photo_count} photos</p>
-          <a className="button" href={'/photos/'+x.id}>Open</a>
-        </article>
-      )}
-    </div>
-  </Page>
+  const openAddEvent=
+    async()=>{
+      setLoadingOptions(true);
+
+      try{
+        const x=
+          await api(
+            '/admin/photo-events'
+          );
+
+        setEventOptions(
+          x.events||[]
+        );
+
+        setShowAddEvent(true);
+      }catch(e:any){
+        setError(
+          e?.message||
+          'Unable to load available events.'
+        );
+      }finally{
+        setLoadingOptions(false);
+      }
+    };
+
+  const eventTypeClass=(
+    type:string
+  )=>
+    'calendar-event-'+
+    String(
+      type||'Other'
+    )
+      .toLowerCase()
+      .replace(
+        /[^a-z0-9]+/g,
+        '-'
+      );
+
+  return <Page
+    title="Photos"
+    actions={
+      canManage&&
+      <button
+        type="button"
+        className="button"
+        onClick={openAddEvent}
+        disabled={loadingOptions}
+      >
+        {loadingOptions?
+          'Loading…':
+          'Add New Event'}
+      </button>
+    }
+  >
+    {error&&
+      <div className="error">
+        {error}
+      </div>
+    }
+
+    {!a.length?
+      <p className="muted">
+        No photos.
+      </p>:
+
+      <div className="photo-album-grid">
+        {a.map(
+          (x:any)=>
+            <a
+              className={
+                'photo-album-card card'
+              }
+              key={x.id}
+              href={
+                '/photos/'+x.event_id
+              }
+            >
+              {x.cover_storage_key?
+                <img
+                  className="photo-album-cover"
+                  src={
+                    '/files/'+
+                    x.cover_storage_key
+                  }
+                  alt=""
+                />:
+
+                <div className={
+                  'photo-album-placeholder'
+                }>
+                  No photos
+                </div>
+              }
+
+              <div className="photo-album-date">
+                {new Date(
+                  x.start_at
+                ).toLocaleDateString(
+                  'en-US',
+                  {
+                    month:'numeric',
+                    day:'numeric',
+                    year:'numeric'
+                  }
+                )}
+              </div>
+
+              <div
+                className={
+                  'photo-album-title '+
+                  eventTypeClass(
+                    x.event_type
+                  )
+                }
+              >
+                {x.title}
+              </div>
+            </a>
+        )}
+      </div>
+    }
+
+    {showAddEvent&&
+      <AddPhotoEventModal
+        events={eventOptions}
+        onSaved={async()=>{
+          setShowAddEvent(false);
+          await load();
+        }}
+        onCancel={()=>
+          setShowAddEvent(false)
+        }
+      />
+    }
+  </Page>;
 }
 
 function Documents(){
