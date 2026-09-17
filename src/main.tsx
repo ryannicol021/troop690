@@ -2930,14 +2930,14 @@ actions={
             </>
           }
 
-          {e.description&&
-            <>
-              <dt>Description</dt>
-              <dd>
-                {e.description}
-              </dd>
-            </>
-          }
+{e.description&&
+  <>
+    <dt>Description</dt>
+    <dd className="event-description">
+      {e.description}
+    </dd>
+  </>
+}
         </dl>
       </article>
     </Page>
