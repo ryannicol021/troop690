@@ -1536,7 +1536,6 @@ tbody tr:nth-child(even){
 }
 
 .album-grid,
-.folder-grid,
 .button-grid,
 .uniform-grid{
   display:grid;
@@ -2351,7 +2350,6 @@ footer a:hover{
   .grid.two,
   .grid.three,
   .album-grid,
-  .folder-grid,
   .button-grid,
   .uniform-grid,
   .admin-grid,
