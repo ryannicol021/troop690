@@ -337,6 +337,10 @@ function Loading(){
 function Home({me}:{me:any}){
   const [d,setD]=useState<any>();
   const [error,setError]=useState('');
+  const [showAnnouncementModal,setShowAnnouncementModal]=useState(false);
+  const [announcementTitle,setAnnouncementTitle]=useState('');
+  const [announcementBody,setAnnouncementBody]=useState('');
+  const [announcementError,setAnnouncementError]=useState('');
 
   useEffect(()=>{
     api('/home')
@@ -428,7 +432,25 @@ function Home({me}:{me:any}){
     </section>
 
     <section className="card home-announcements-card">
-      <h2>Announcements</h2>
+      <div className="home-section-head">
+        <h2>Announcements</h2>
+
+        {me?.permissions?.includes('HOME')&&
+          <button
+            type="button"
+            className="home-add-button"
+            aria-label="Add announcement"
+            onClick={()=>{
+              setAnnouncementTitle('');
+              setAnnouncementBody('');
+              setAnnouncementError('');
+              setShowAnnouncementModal(true);
+            }}
+          >
+            +
+          </button>
+        }
+      </div>
 
       {d.announcements?.length?
         d.announcements.map((a:any)=>
@@ -806,6 +828,117 @@ function Home({me}:{me:any}){
         }
       </p>
     </section>
+
+        {showAnnouncementModal&&
+      <div
+        className="modal-backdrop"
+        onMouseDown={e=>{
+          if(e.target===e.currentTarget)
+            setShowAnnouncementModal(false);
+        }}
+      >
+        <div
+          className="modal-card announcement-modal"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="announcement-modal-title"
+        >
+          <div className="modal-header">
+            <h2 id="announcement-modal-title">
+              Add Announcement
+            </h2>
+
+            <button
+              type="button"
+              className="modal-close"
+              aria-label="Close"
+              onClick={()=>{
+                setShowAnnouncementModal(false);
+              }}
+            >
+              ×
+            </button>
+          </div>
+
+          <form
+            className="form"
+            onSubmit={async e=>{
+              e.preventDefault();
+              setAnnouncementError('');
+
+              try{
+                await post(
+                  '/admin/announcements',
+                  {
+                    title:announcementTitle,
+                    body:announcementBody
+                  }
+                );
+
+                const fresh=await api('/home');
+                setD(fresh);
+
+                setShowAnnouncementModal(false);
+                setAnnouncementTitle('');
+                setAnnouncementBody('');
+              }catch(e:any){
+                setAnnouncementError(
+                  e?.message||
+                  'Unable to add the announcement.'
+                );
+              }
+            }}
+          >
+            <label>
+              Title
+              <input
+                value={announcementTitle}
+                onChange={e=>
+                  setAnnouncementTitle(e.target.value)
+                }
+                required
+              />
+            </label>
+
+            <label>
+              Body
+              <textarea
+                value={announcementBody}
+                onChange={e=>
+                  setAnnouncementBody(e.target.value)
+                }
+                rows={8}
+                required
+              />
+            </label>
+
+            {announcementError&&
+              <p className="error">
+                {announcementError}
+              </p>
+            }
+
+            <div className="button-row">
+              <button
+                type="submit"
+                className="primary"
+              >
+                Add Announcement
+              </button>
+
+              <button
+                type="button"
+                onClick={()=>{
+                  setShowAnnouncementModal(false);
+                }}
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    }
   </Page>
 }
 
