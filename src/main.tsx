@@ -441,7 +441,8 @@ function Home({me}:{me:any}){
         </>
       }
     </section>
-
+    
+    {me&&
     <section className="card home-announcements-card">
       <div className="home-section-head">
         <h2>Announcements</h2>
@@ -523,6 +524,7 @@ setShowAnnouncementModal(true);
         <p className="muted">There are no current announcements.</p>
       }
     </section>
+    }
         
     {me&&
       <>
