@@ -5471,10 +5471,6 @@ app.post('/api/admin/photos',async c=>{
         value instanceof File
     );
 
-  const caption=String(
-    form.get('caption')||''
-  );
-
   if(!Number.isInteger(eventId))
     return json(
       c,
@@ -5547,15 +5543,13 @@ app.post('/api/admin/photos',async c=>{
         .prepare(`
           INSERT INTO photos(
             event_id,
-            storage_key,
-            caption
+            storage_key
           )
-          VALUES(?,?,?)
+          VALUES(?,?)
         `)
         .bind(
           eventId,
-          key,
-          caption
+          key
         )
         .run();
 
@@ -5618,30 +5612,6 @@ app.post('/api/admin/photos',async c=>{
       500
     );
   }
-});
-
-app.put('/api/admin/photos/:id',async c=>{
-  const d=admin(c,'PHOTO');
-  if(d)return d;
-
-  const id=Number(c.req.param('id'));
-  const x=await c.req.json();
-  const caption=String(x.caption||'');
-
-  const photo=await c.env.DB
-    .prepare('SELECT id FROM photos WHERE id=?')
-    .bind(id)
-    .first<any>();
-
-  if(!photo)
-    return json(c,{error:'Photo not found.'},404);
-
-  await c.env.DB
-    .prepare('UPDATE photos SET caption=? WHERE id=?')
-    .bind(caption,id)
-    .run();
-
-  return json(c,{ok:true});
 });
 
 app.post('/api/admin/photos/delete',async c=>{
