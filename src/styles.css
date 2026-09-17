@@ -1222,8 +1222,10 @@ tbody tr:nth-child(even){
 }
 
 .storage-usage-label{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
   margin-bottom:4px;
-  text-align:right;
   color:var(--muted);
   font-size:.72rem;
   line-height:1.2
