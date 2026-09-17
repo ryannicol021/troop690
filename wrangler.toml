@@ -19,6 +19,6 @@ binding = "FILES"
 bucket_name = "troop690-files"
 
 [vars]
-PUBLIC_SITE_URL = "https://troop690.org"
 INTERIM_SITE_URL = "https://troop690.ryannicol.com"
+PUBLIC_SITE_URL = "https://troop690.org"
 SESSION_TTL_DAYS = "30"
