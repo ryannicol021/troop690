@@ -302,6 +302,37 @@ section>h2{
   margin-bottom:18px
 }
 
+.home-section-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+}
+
+.home-section-head h2{
+  margin:0
+}
+
+.home-add-button{
+  width:34px;
+  height:34px;
+  min-width:34px;
+  padding:0;
+  border:1px solid var(--border);
+  border-radius:3px;
+  background:var(--khaki-light);
+  color:var(--navy);
+  display:grid;
+  place-items:center;
+  font-size:1.35rem;
+  line-height:1;
+  cursor:pointer
+}
+
+.home-add-button:hover{
+  background:var(--khaki);
+}
+
 .home-contact-option{
   padding:12px 0;
   border-bottom:1px solid var(--border)
