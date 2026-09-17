@@ -989,6 +989,25 @@ const requirePerm = (permission: string) => (c: any) => {
   return null;
 };
 
+const newYorkToday=()=>{
+  const parts=new Intl.DateTimeFormat(
+    'en-US',
+    {
+      timeZone:'America/New_York',
+      year:'numeric',
+      month:'2-digit',
+      day:'2-digit'
+    }
+  ).formatToParts(new Date());
+
+  const value=(type:string)=>
+    parts.find(
+      x=>x.type===type
+    )?.value||'';
+
+  return `${value('year')}-${value('month')}-${value('day')}`;
+};
+
 app.get('/api/me',c=>json(c,{user:c.get('user')}));
 
 app.post('/api/login',async c=>{
@@ -1897,7 +1916,7 @@ app.get('/api/admin/photo-events',async c=>{
         e.start_at,
         e.event_type
       FROM events e
-      WHERE date(e.start_at)<=date('now','localtime')
+      WHERE substr(e.start_at,1,10)<=?
         AND NOT EXISTS(
           SELECT 1
           FROM photo_albums pa
@@ -1905,6 +1924,7 @@ app.get('/api/admin/photo-events',async c=>{
         )
       ORDER BY e.start_at DESC,e.id DESC
     `)
+    .bind(newYorkToday())
     .all<any>();
 
   return json(c,{events:rows.results??[]});
@@ -1930,11 +1950,14 @@ app.post('/api/admin/photo-albums',async c=>{
   if(!event)
     return json(c,{error:'Event not found.'},404);
 
-  const eligible=await c.env.DB
+const eligible=await c.env.DB
     .prepare(
-      "SELECT id FROM events WHERE id=? AND date(start_at)<=date('now','localtime')"
+      "SELECT id FROM events WHERE id=? AND substr(start_at,1,10)<=?"
     )
-    .bind(eventId)
+    .bind(
+      eventId,
+      newYorkToday()
+    )
     .first<any>();
 
   if(!eligible)
@@ -4674,8 +4697,15 @@ app.post('/api/admin/upload',async c=>{
 });
 
 app.get('/files/:key{.+}',async c=>{
+  const key=c.req.param('key');
+
+  if(key.startsWith('photos/')){
+    const deny=requirePerm('PHV')(c);
+    if(deny)return deny;
+  }
+
   const obj=await c.env.FILES.get(
-    c.req.param('key')
+    key
   );
 
   if(!obj)
