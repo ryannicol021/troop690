@@ -5448,14 +5448,34 @@ app.post('/api/admin/photos',async c=>{
   if(d)return d;
 
   const form=await c.req.formData();
-  const eventId=Number(form.get('eventId'));
-  const file=form.get('file');
+  const eventId=Number(
+    form.get('eventId')
+  );
+
+  const files=form
+    .getAll('file')
+    .filter(
+      (value):value is File=>
+        value instanceof File
+    );
+
   const caption=String(
     form.get('caption')||''
   );
 
   if(!Number.isInteger(eventId))
-    return json(c,{error:'Event required.'},400);
+    return json(
+      c,
+      {error:'Event required.'},
+      400
+    );
+
+  if(!files.length)
+    return json(
+      c,
+      {error:'Choose at least one photo.'},
+      400
+    );
 
   const album=await c.env.DB
     .prepare(
@@ -5465,66 +5485,127 @@ app.post('/api/admin/photos',async c=>{
     .first<any>();
 
   if(!album)
-    return json(c,{error:'Photo event not found.'},404);
-
-  if(!(file instanceof File))
     return json(
       c,
-      {error:'File required'},
-      400
+      {error:'Photo event not found.'},
+      404
     );
 
-  if(!String(file.type||'').startsWith('image/'))
-    return json(
-      c,
-      {error:'File must be an image.'},
-      400
-    );
-
-  const key=
-    `photos/${eventId}/${Date.now()}-${file.name.replace(
-      /[^A-Za-z0-9._-]/g,
-      '_'
-    )}`;
-
-  await c.env.FILES.put(
-    key,
-    file.stream(),
-    {
-      httpMetadata:{
-        contentType:file.type
-      }
-    }
-  );
-
-  const r=await c.env.DB
-    .prepare(`
-      INSERT INTO photos(
-        event_id,
-        storage_key,
-        caption
-      )
-      VALUES(?,?,?)
-    `)
-    .bind(
-      eventId,
-      key,
-      caption
-    )
-    .run();
-
-  const id=r.meta.last_row_id as number;
-
-  if(album.cover_photo_id==null){
-    await c.env.DB
-      .prepare(
-        'UPDATE photo_albums SET cover_photo_id=? WHERE event_id=?'
-      )
-      .bind(id,eventId)
-      .run();
+  for(const file of files){
+    if(!String(file.type||'').startsWith('image/'))
+      return json(
+        c,
+        {error:'All selected files must be images.'},
+        400
+      );
   }
 
-  return json(c,{id,key});
+  const uploadedKeys:string[]=[];
+  const insertedIds:number[]=[];
+
+  try{
+    for(
+      let i=0;
+      i<files.length;
+      i++
+    ){
+      const file=files[i];
+
+      const key=
+        `photos/${eventId}/`+
+        `${crypto.randomUUID()}-`+
+        `${file.name.replace(
+          /[^A-Za-z0-9._-]/g,
+          '_'
+        )}`;
+
+      await c.env.FILES.put(
+        key,
+        file.stream(),
+        {
+          httpMetadata:{
+            contentType:file.type
+          }
+        }
+      );
+
+      uploadedKeys.push(key);
+
+      const r=await c.env.DB
+        .prepare(`
+          INSERT INTO photos(
+            event_id,
+            storage_key,
+            caption
+          )
+          VALUES(?,?,?)
+        `)
+        .bind(
+          eventId,
+          key,
+          caption
+        )
+        .run();
+
+      insertedIds.push(
+        r.meta.last_row_id as number
+      );
+    }
+
+    if(
+      album.cover_photo_id==null&&
+      insertedIds.length
+    ){
+      await c.env.DB
+        .prepare(
+          'UPDATE photo_albums SET cover_photo_id=? WHERE event_id=?'
+        )
+        .bind(
+          insertedIds[0],
+          eventId
+        )
+        .run();
+    }
+
+    return json(c,{
+      ids:insertedIds,
+      count:insertedIds.length
+    });
+  }catch(e:any){
+    for(const key of uploadedKeys){
+      try{
+        await c.env.FILES.delete(key);
+      }catch{}
+    }
+
+    if(insertedIds.length){
+      const placeholders=
+        insertedIds.map(
+          ()=>'?'
+        ).join(',');
+
+      try{
+        await c.env.DB
+          .prepare(
+            `DELETE FROM photos WHERE id IN (${placeholders})`
+          )
+          .bind(
+            ...insertedIds
+          )
+          .run();
+      }catch{}
+    }
+
+    return json(
+      c,
+      {
+        error:
+          e?.message||
+          'Unable to add the photos.'
+      },
+      500
+    );
+  }
 });
 
 app.put('/api/admin/photos/:id',async c=>{
