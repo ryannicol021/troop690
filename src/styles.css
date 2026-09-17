@@ -1327,22 +1327,6 @@ tbody tr:nth-child(even){
   margin:0
 }
 
-.photo-caption-row{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:8px;
-  padding-top:5px;
-  color:var(--muted);
-  font-size:.9rem
-}
-
-.photo-edit-button{
-  min-height:0;
-  padding:3px 6px;
-  font-size:.82rem
-}
-
 .photo-filter-field{
   display:grid;
   gap:6px
