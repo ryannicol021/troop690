@@ -341,6 +341,7 @@ function Home({me}:{me:any}){
   const [announcementTitle,setAnnouncementTitle]=useState('');
   const [announcementBody,setAnnouncementBody]=useState('');
   const [announcementError,setAnnouncementError]=useState('');
+  const [editingAnnouncement,setEditingAnnouncement]=useState<any>(null);
 
   useEffect(()=>{
     api('/home')
@@ -441,10 +442,11 @@ function Home({me}:{me:any}){
             className="home-add-button"
             aria-label="Add announcement"
             onClick={()=>{
-              setAnnouncementTitle('');
-              setAnnouncementBody('');
-              setAnnouncementError('');
-              setShowAnnouncementModal(true);
+setEditingAnnouncement(null);
+setAnnouncementTitle('');
+setAnnouncementBody('');
+setAnnouncementError('');
+setShowAnnouncementModal(true);
             }}
           >
             +
@@ -454,13 +456,59 @@ function Home({me}:{me:any}){
 
       {d.announcements?.length?
         d.announcements.map((a:any)=>
-          <article
-            className="home-announcement"
-            key={a.id}
-          >
-            <h3>{a.title}</h3>
-            <p>{a.body}</p>
-          </article>
+<div className="home-announcement" key={a.id}>
+  <div className="home-announcement-head">
+    <h3>{a.title}</h3>
+
+    {me?.permissions?.includes('HOME')&&
+      <div className="home-announcement-actions">
+        <button
+          type="button"
+          className="button"
+          onClick={()=>{
+            setEditingAnnouncement(a);
+            setAnnouncementTitle(a.title);
+            setAnnouncementBody(a.body);
+            setAnnouncementError('');
+            setShowAnnouncementModal(true);
+          }}
+        >
+          Edit
+        </button>
+
+        <button
+          type="button"
+          className="button"
+          onClick={async()=>{
+            if(!window.confirm(
+              `Delete the announcement "${a.title}"?`
+            ))
+              return;
+
+            try{
+              await api(
+                `/admin/announcements/${a.id}`,
+                {method:'DELETE'}
+              );
+
+              const fresh=await api('/home');
+              setD(fresh);
+            }catch(e:any){
+              setAnnouncementError(
+                e?.message||
+                'Unable to delete the announcement.'
+              );
+            }
+          }}
+        >
+          Delete
+        </button>
+      </div>
+    }
+  </div>
+
+  <p>{a.body}</p>
+</div>
         ):
         <p className="muted">There are no current announcements.</p>
       }
@@ -844,9 +892,9 @@ function Home({me}:{me:any}){
           aria-labelledby="announcement-modal-title"
         >
           <div className="modal-header">
-            <h2 id="announcement-modal-title">
-              Add Announcement
-            </h2>
+<h2 id="announcement-modal-title">
+  {editingAnnouncement?'Edit Announcement':'Add Announcement'}
+</h2>
 
             <button
               type="button"
@@ -867,18 +915,35 @@ function Home({me}:{me:any}){
               setAnnouncementError('');
 
               try{
-                await post(
-                  '/admin/announcements',
-                  {
-                    title:announcementTitle,
-                    body:announcementBody
-                  }
-                );
+if(editingAnnouncement){
+  await api(
+    `/admin/announcements/${editingAnnouncement.id}`,
+    {
+      method:'PUT',
+      headers:{
+        'Content-Type':'application/json'
+      },
+      body:JSON.stringify({
+        title:announcementTitle,
+        body:announcementBody
+      })
+    }
+  );
+}else{
+  await post(
+    '/admin/announcements',
+    {
+      title:announcementTitle,
+      body:announcementBody
+    }
+  );
+}
 
                 const fresh=await api('/home');
                 setD(fresh);
 
                 setShowAnnouncementModal(false);
+                setEditingAnnouncement(null);
                 setAnnouncementTitle('');
                 setAnnouncementBody('');
               }catch(e:any){
