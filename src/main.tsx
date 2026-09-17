@@ -2763,7 +2763,7 @@ actions={
           className="button secondary"
           onClick={async()=>{
             if(!confirm(
-              'Delete this event?'
+              'Delete this event? Any photos associated with this event will also be permanently deleted from the site and storage. This cannot be undone.'
             ))
               return;
 
