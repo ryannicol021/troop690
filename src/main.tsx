@@ -5433,7 +5433,7 @@ const formatStoragePercent=(
 <div className="storage-usage-label">
   <span>
     {storageError?
-      'Unavailable':
+      storageError:
       storageBytes===null?
         'Loading…':
         `${formatStorage(
