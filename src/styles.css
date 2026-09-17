@@ -322,7 +322,7 @@ section>h2{
   height:calc(1.45rem * 1.5);
   min-width:calc(1.45rem * 1.5);
   padding:0;
-  border:1px solid var(--border);
+  border:1px solid #bdb5a6;
   border-radius:3px;
   background:var(--khaki-light);
   color:var(--navy);
@@ -365,7 +365,7 @@ section>h2{
 
 .home-announcement-actions .button{
   min-height:0;
-  padding:.42rem .72rem
+  padding:3px 6px
 }
 
 .home-contact-option .button{
