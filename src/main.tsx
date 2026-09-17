@@ -5363,6 +5363,31 @@ function Photos({
     ).toFixed(2)} GB`;
   };
 
+const formatStoragePercent=(
+  bytes:number
+)=>{
+  const rawPercent=Math.min(
+    100,
+    (bytes/maxStorageBytes)*100
+  );
+
+  if(
+    rawPercent===0||
+    rawPercent===100
+  ){
+    return `${rawPercent}%`;
+  }
+
+  if(
+    rawPercent<1||
+    rawPercent>99
+  ){
+    return `${rawPercent.toFixed(1)}%`;
+  }
+
+  return `${Math.round(rawPercent)}%`;
+};
+
   const storageFillClass=
     storageBytes!==null&&
     storageBytes>=9*1024*1024*1024?
@@ -5379,19 +5404,21 @@ function Photos({
 
         {me?.isAdministrator&&
           <div className="storage-usage">
-            <div className="storage-usage-label">
-              <span>
-                {storageError?
-                  'Unavailable':
-                  storageBytes===null?
-                    'Loading…':
-                    formatStorage(
-                      storageBytes
-                    )}
-              </span>
-            
-              <span>10 GB</span>
-            </div>
+<div className="storage-usage-label">
+  <span>
+    {storageError?
+      'Unavailable':
+      storageBytes===null?
+        'Loading…':
+        `${formatStorage(
+          storageBytes
+        )} (${formatStoragePercent(
+          storageBytes
+        )})`}
+  </span>
+
+  <span>10 GB</span>
+</div>
 
             <div
               className="storage-usage-bar"
