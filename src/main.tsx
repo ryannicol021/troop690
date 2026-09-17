@@ -337,6 +337,15 @@ function Loading(){
 }
 
 function Home({me}:{me:any}){
+  const eventTypeClass=(type:string)=>{
+    return (
+      'calendar-event calendar-event-' +
+      String(type||'Other')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g,'-')
+    );
+  };
+
   const [d,setD]=useState<any>();
   const [error,setError]=useState('');
   const [showAnnouncementModal,setShowAnnouncementModal]=useState(false);
