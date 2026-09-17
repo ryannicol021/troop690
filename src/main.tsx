@@ -4025,9 +4025,6 @@ function AddPhotoModal({
   const [files,setFiles]=
     useState<File[]>([]);
 
-  const [caption,setCaption]=
-    useState('');
-
   const [saving,setSaving]=
     useState(false);
 
@@ -4058,11 +4055,6 @@ function AddPhotoModal({
           file
         );
       }
-
-      form.append(
-        'caption',
-        caption
-      );
 
       const r=await fetch(
         '/api/admin/photos',
@@ -4154,24 +4146,6 @@ function AddPhotoModal({
             } selected.
           </p>
         }
-
-        <label>
-          Caption
-          {files.length>1&&
-            <span className="muted">
-              {' '}Applied to all selected photos.
-            </span>
-          }
-          <input
-            value={caption}
-            onChange={e=>
-              setCaption(
-                e.target.value
-              )
-            }
-            disabled={saving}
-          />
-        </label>
 
         <div className="button-row">
           <button
