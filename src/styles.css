@@ -342,6 +342,23 @@ section>h2{
   width:min(620px,100%)
 }
 
+.home-announcement-head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:12px
+}
+
+.home-announcement-head h3{
+  margin:0
+}
+
+.home-announcement-actions{
+  display:flex;
+  gap:6px;
+  flex-shrink:0
+}
+
 .home-contact-option .button{
   display:inline-block;
   margin-top:8px;
