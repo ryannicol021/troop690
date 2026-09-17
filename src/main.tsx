@@ -42,20 +42,19 @@ useEffect(()=>{
 const me=
   actualMe?.isAdministrator&&
   viewAs!=='Administrator'?
-    {
-      ...actualMe,
-      isAdministrator:false,
-      permissions:
-        viewAsPermissions[
-          viewAs==='Adult Leader'?
-            'ADULTL':
-          viewAs.toUpperCase()
-        ]||[],
-      person:
-        viewAs==='Guest'?
-          null:
-          actualMe.person
-    }:
+    viewAs==='Guest'?
+      null:
+      {
+        ...actualMe,
+        isAdministrator:false,
+        permissions:
+          viewAsPermissions[
+            viewAs==='Adult Leader'?
+              'ADULTL':
+            viewAs.toUpperCase()
+          ]||[],
+        person:actualMe.person
+      }:
     actualMe;
 
     const can=(p:string)=>
