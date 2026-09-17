@@ -4,7 +4,7 @@ import {BrowserRouter,useNavigate,useLocation} from 'react-router-dom';
 import './styles.css';
 import {api,post,put} from './lib/api';
 
-const nav=[['/','Home','public'],['/eagles','Eagle Scouts','public'],['/calendar','Calendar','CAL'],['/photos','Photo Gallery','PHV'],['/documents','Documents','DOCV'],['/leadership','Leadership','public'],['/advancement','Advancement','public'],['/summer-camp','Summer Camp','public'],['/uniform','Scout Uniform','public']];
+const nav=[['/','Home','public'],['/eagles','Eagle Scouts','public'],['/calendar','Calendar','CAL'],['/photos','Photos','PHV'],['/documents','Documents','DOCV'],['/leadership','Leadership','public'],['/advancement','Advancement','public'],['/summer-camp','Summer Camp','public'],['/uniform','Scout Uniform','public']];
 const adminNav=[['/email','Email','EML'],['/member-info','Member Info','MIV'],['/administration','Administration','__ADMIN_ROLE__']];
 
 function App(){
@@ -838,7 +838,7 @@ setShowAnnouncementModal(true);
         </section>
 
         <section className="card">
-          <h2>Recent Photo Albums</h2>
+          <h2>Recent Photos</h2>
           {d.recent.length?
             d.recent.map((e:any)=>
               <a
@@ -862,7 +862,7 @@ setShowAnnouncementModal(true);
                 </div>
               </a>
             ):
-            <p className="muted">No photo albums.</p>
+            <p className="muted">No photos.</p>
           }
         </section>
       </>
@@ -3848,9 +3848,9 @@ function PhotoAlbum({id}:{id:string}){
   },[id]);
 
   if(!d)
-    return <Page title="Photo Gallery"><Loading/></Page>;
+    return <Page title="Photos"><Loading/></Page>;
 
-  return <Page title="Photo Gallery">
+  return <Page title="Photos">
     <div className="uniform-grid">
       {d.photos.map((x:any)=>
         <figure className="card" key={x.id}>
@@ -3880,7 +3880,7 @@ function Photos(){
     api('/photos').then(x=>setA(x.albums))
   },[]);
 
-  return <Page title="Photo Gallery">
+  return <Page title="Photos">
     <div className="album-grid">
       {a.map(x=>
         <article className="card" key={x.id}>
