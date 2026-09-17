@@ -5380,13 +5380,17 @@ function Photos({
         {me?.isAdministrator&&
           <div className="storage-usage">
             <div className="storage-usage-label">
-              {storageError?
-                'Unavailable':
-                storageBytes===null?
-                  'Loading…':
-                  formatStorage(
-                    storageBytes
-                  )}
+              <span>
+                {storageError?
+                  'Unavailable':
+                  storageBytes===null?
+                    'Loading…':
+                    formatStorage(
+                      storageBytes
+                    )}
+              </span>
+            
+              <span>10 GB</span>
             </div>
 
             <div
