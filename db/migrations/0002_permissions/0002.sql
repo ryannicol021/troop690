@@ -11,7 +11,7 @@ DELETE FROM permission_titles;
 
 INSERT INTO permission_titles(code,name,description,system) VALUES
 ('CAL','View Calendar','Access the member calendar.',1),
-('PHV','View Photo Gallery','View and download member photos.',1),
+('PHV','View Photos','View and download member photos.',1),
 ('DOCV','View Documents','Access member documents.',1),
 ('LDV','View Member Leadership','View member-only leadership holders.',1),
 ('HSTV','View Leadership History','View member-only leadership history.',1),
