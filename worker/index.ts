@@ -1354,6 +1354,7 @@ app.get('/api/home',async c=>{
   let events:any[]=[];
   let recent:any[]=[];
   let announcements:any[]=[];
+  let history:any[]=[];
   
   if(user){
     const announcementRows=await c.env.DB
@@ -1371,6 +1372,25 @@ app.get('/api/home',async c=>{
 
     announcements=
       announcementRows.results??[];
+
+    const historyRows=await c.env.DB
+      .prepare(`
+        SELECT
+          id,
+          year,
+          statement,
+          priority,
+          created_at
+        FROM history
+        ORDER BY
+          year DESC,
+          priority ASC,
+          id ASC
+      `)
+      .all<any>();
+    
+    history=
+      historyRows.results??[];
     
     const eventRows=await c.env.DB
       .prepare(`
@@ -1424,9 +1444,9 @@ app.get('/api/home',async c=>{
       )
     ),
     announcements,
+    history,
     events,
     recent
-  });
 });
 
 app.get('/api/eagles',async c=>{
@@ -1485,6 +1505,118 @@ app.get('/api/eagles',async c=>{
       };
     })
   });
+});
+
+app.get('/api/history',async c=>{
+  const rows=await c.env.DB
+    .prepare(`
+      SELECT
+        id,
+        year,
+        statement,
+        priority,
+        created_at
+      FROM history
+      ORDER BY
+        year DESC,
+        priority ASC,
+        id ASC
+    `)
+    .all<any>();
+
+  return json(c,{
+    history:rows.results??[]
+  });
+});
+
+app.post('/api/admin/history',async c=>{
+  const d=admin(c,'HOME');
+  if(d)return d;
+
+  const body=await c.req.json<any>();
+
+  const year=Number(body.year);
+  const statement=String(
+    body.statement||''
+  ).trim();
+  const priority=Number(body.priority);
+
+  if(
+    !Number.isInteger(year)||
+    year<1
+  )
+    return json(
+      c,
+      {error:'Year must be a valid whole number.'},
+      400
+    );
+
+  if(!statement)
+    return json(
+      c,
+      {error:'Statement is required.'},
+      400
+    );
+
+  if(
+    !Number.isInteger(priority)||
+    priority<1||
+    priority>100
+  )
+    return json(
+      c,
+      {error:'Priority must be a whole number from 1 to 100.'},
+      400
+    );
+
+  const row=await c.env.DB
+    .prepare(`
+      INSERT INTO history(
+        year,
+        statement,
+        priority
+      )
+      VALUES(?,?,?)
+      RETURNING
+        id,
+        year,
+        statement,
+        priority,
+        created_at
+    `)
+    .bind(
+      year,
+      statement,
+      priority
+    )
+    .first<any>();
+
+  return json(c,{
+    history:row
+  },201);
+});
+
+app.delete('/api/admin/history/:id',async c=>{
+  const d=admin(c,'HOME');
+  if(d)return d;
+
+  const id=Number(c.req.param('id'));
+
+  const result=await c.env.DB
+    .prepare(
+      'DELETE FROM history WHERE id=?'
+    )
+    .bind(id)
+    .run();
+
+  if(!result.meta.changes)
+    return json(
+      c,
+      {error:'History entry not found.'},
+      404
+    );
+
+  return json(c,{ok:true});
 });
 
 app.get('/api/calendar',async c=>{
