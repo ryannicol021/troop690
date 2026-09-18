@@ -1619,6 +1619,107 @@ tbody tr:nth-child(even){
   font-size:.9rem
 }
 
+.eagle-search-row{
+  margin-bottom:18px
+}
+
+.eagle-search{
+  width:min(280px,100%);
+  max-width:280px;
+  margin:0
+}
+
+.eagle-page-actions{
+  display:flex;
+  align-items:center;
+  gap:6px
+}
+
+.eagle-edit-button{
+  min-height:34px;
+  padding:4px 8px;
+  font-size:.8rem
+}
+
+.eagle-year-grid{
+  display:grid;
+  grid-template-columns:
+    repeat(auto-fill,minmax(210px,1fr));
+  gap:12px
+}
+
+.eagle-year-card{
+  margin-top:0;
+  padding:14px
+}
+
+.eagle-year-title{
+  margin:0 0 10px;
+  color:var(--navy);
+  font-size:1.25rem
+}
+
+.eagle-entry{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:8px;
+  padding:8px 0;
+  border-bottom:1px solid var(--border)
+}
+
+.eagle-entry:last-child{
+  border-bottom:0;
+  padding-bottom:0
+}
+
+.eagle-entry-name{
+  min-width:0;
+  color:var(--text);
+  overflow-wrap:anywhere
+}
+
+.eagle-number{
+  color:var(--red);
+  font-weight:700;
+  margin-right:5px
+}
+
+.eagle-delete-button{
+  width:28px;
+  height:28px;
+  min-width:28px;
+  padding:0;
+  border:1px solid #bdb5a6;
+  border-radius:3px;
+  background:var(--khaki-light);
+  color:var(--red);
+  display:grid;
+  place-items:center;
+  font-size:1.1rem;
+  line-height:1;
+  cursor:pointer
+}
+
+.eagle-delete-button:hover{
+  background:var(--khaki)
+}
+
+.eagle-modal{
+  width:min(620px,100%)
+}
+
+.eagle-form{
+  gap:14px
+}
+
+.eagle-form-row{
+  display:grid;
+  grid-template-columns:
+    repeat(2,minmax(0,1fr));
+  gap:14px
+}
+
 .album-grid,
 .button-grid,
 .uniform-grid{
