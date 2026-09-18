@@ -352,6 +352,12 @@ function Home({me}:{me:any}){
   const [announcementBody,setAnnouncementBody]=useState('');
   const [announcementError,setAnnouncementError]=useState('');
   const [editingAnnouncement,setEditingAnnouncement]=useState<any>(null);
+  const [editingHistory,setEditingHistory]=useState(false);
+  const [showHistoryModal,setShowHistoryModal]=useState(false);
+  const [historyYear,setHistoryYear]=useState('');
+  const [historyStatement,setHistoryStatement]=useState('');
+  const [historyPriority,setHistoryPriority]=useState('');
+  const [historyError,setHistoryError]=useState('');
 
   useEffect(()=>{
     api('/home')
@@ -899,16 +905,141 @@ setShowAnnouncementModal(true);
       </>
     }
 
-    {me&&
-    <section className="card home-history-card">
+{me&&
+  <section className="card home-history-card">
+    <div className="home-section-head">
       <h2>History</h2>
-      <p>
-        {d.content.history||
-          'There is no troop history currently listed.'
+
+      {me?.permissions?.includes('HOME')&&
+        <div className="home-history-controls">
+          {editingHistory&&
+            <button
+              type="button"
+              className="home-add-button"
+              aria-label="Add history entry"
+              onClick={()=>{
+                setHistoryYear('');
+                setHistoryStatement('');
+                setHistoryPriority('');
+                setHistoryError('');
+                setShowHistoryModal(true);
+              }}
+            >
+              +
+            </button>
+          }
+
+          <button
+            type="button"
+            className="home-edit-button"
+            aria-label={
+              editingHistory?
+                'Done editing history':
+                'Edit history'
+            }
+            onClick={()=>{
+              setEditingHistory(
+                !editingHistory
+              );
+            }}
+          >
+            {editingHistory?'✓':'✎'}
+          </button>
+        </div>
+      }
+    </div>
+
+    {d.history?.length?
+      (()=>{
+
+        const groups:any[]=[];
+
+        for(const entry of d.history){
+          const year=Number(entry.year);
+
+          let group=
+            groups.find(
+              x=>x.year===year
+            );
+
+          if(!group){
+            group={
+              year,
+              entries:[]
+            };
+
+            groups.push(group);
+          }
+
+          group.entries.push(entry);
         }
+
+        return groups.map(group=>
+          <div
+            className="home-history-year"
+            key={group.year}
+          >
+            <h3>{group.year}</h3>
+
+            {group.entries.map((entry:any)=>
+              <div
+                className="home-history-entry"
+                key={entry.id}
+              >
+                <p>{entry.statement}</p>
+
+                {editingHistory&&
+                  <button
+                    type="button"
+                    className="home-history-delete-button"
+                    aria-label={
+                      `Delete history entry: ${entry.statement}`
+                    }
+                    onClick={async()=>{
+                      if(!window.confirm(
+                        'Delete this history entry?'
+                      ))
+                        return;
+
+                      try{
+                        await api(
+                          `/admin/history/${entry.id}`,
+                          {method:'DELETE'}
+                        );
+
+                        const fresh=
+                          await api('/home');
+
+                        setD(fresh);
+                      }catch(e:any){
+                        setHistoryError(
+                          e?.message||
+                          'Unable to delete the history entry.'
+                        );
+                      }
+                    }}
+                  >
+                    −
+                  </button>
+                }
+              </div>
+            )}
+          </div>
+        );
+
+      })():
+      <p className="muted">
+        There is no troop history currently listed.
       </p>
-    </section>
     }
+
+    {historyError&&
+      <p className="error">
+        {historyError}
+      </p>
+    }
+  </section>
+}
       
         {showAnnouncementModal&&
       <div
@@ -1045,6 +1176,139 @@ if(editingAnnouncement){
         </div>
       </div>
     }
+
+    {showHistoryModal&&
+  <div
+    className="modal-backdrop"
+    onMouseDown={e=>{
+      if(e.target===e.currentTarget)
+        setShowHistoryModal(false);
+    }}
+  >
+    <div
+      className="modal-card announcement-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="history-modal-title"
+    >
+      <div className="modal-header">
+        <h2 id="history-modal-title">
+          Add History Entry
+        </h2>
+
+        <button
+          type="button"
+          className="modal-close"
+          aria-label="Close"
+          onClick={()=>{
+            setHistoryError('');
+            setShowHistoryModal(false);
+          }}
+        >
+          ×
+        </button>
+      </div>
+
+      <form
+        className="form"
+        onSubmit={async e=>{
+          e.preventDefault();
+          setHistoryError('');
+
+          try{
+            await post(
+              '/admin/history',
+              {
+                year:Number(historyYear),
+                statement:historyStatement,
+                priority:Number(historyPriority)
+              }
+            );
+
+            const fresh=await api('/home');
+            setD(fresh);
+
+            setHistoryYear('');
+            setHistoryStatement('');
+            setHistoryPriority('');
+            setShowHistoryModal(false);
+          }catch(e:any){
+            setHistoryError(
+              e?.message||
+              'Unable to add the history entry.'
+            );
+          }
+        }}
+      >
+        <label>
+          Year
+          <input
+            type="number"
+            min="1"
+            step="1"
+            value={historyYear}
+            onChange={e=>
+              setHistoryYear(e.target.value)
+            }
+            required
+          />
+        </label>
+
+        <label>
+          Event
+          <textarea
+            value={historyStatement}
+            onChange={e=>
+              setHistoryStatement(e.target.value)
+            }
+            rows={5}
+            required
+          />
+        </label>
+
+        <label>
+          Priority
+          <input
+            type="number"
+            min="1"
+            max="100"
+            step="1"
+            value={historyPriority}
+            onChange={e=>
+              setHistoryPriority(e.target.value)
+            }
+            required
+          />
+        </label>
+
+        {historyError&&
+          <p className="error">
+            {historyError}
+          </p>
+        }
+
+        <div className="button-row">
+          <button
+            type="submit"
+            className="primary"
+          >
+            Add History Entry
+          </button>
+
+          <button
+            type="button"
+            onClick={()=>{
+              setHistoryError('');
+              setShowHistoryModal(false);
+            }}
+          >
+            Cancel
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}
   </Page>
 }
 
