@@ -1447,6 +1447,7 @@ app.get('/api/home',async c=>{
     history,
     events,
     recent
+  });
 });
 
 app.get('/api/eagles',async c=>{
@@ -6905,4 +6906,3 @@ app.get('*',async c=>{
 });
 
 export default app;
-}
