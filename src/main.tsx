@@ -285,7 +285,7 @@ const requiredPermission=
   if(p==='/login')return <Login setMe={setMe}/>;
   if(p.startsWith('/claim/'))return <Claim/>;
   if(p==='/update-info')return <UpdateInfo me={me}/>;
-  if(p==='/eagles')return <Eagles/>;
+  if(p==='/eagles')return <Eagles me={me}/>;
   if(p==='/calendar')return <Calendar me={me}/>;
   if(p.startsWith('/calendar/'))
     return <CalendarEvent
@@ -1783,44 +1783,432 @@ function UpdateInfo({me}:{me:any}){
   </Page>
 }
 
-function Eagles(){
+function Eagles({me}:{me:any}){
   const [q,setQ]=useState('');
   const [rows,setRows]=useState<any[]>([]);
+  const [error,setError]=useState('');
+
+  const [editing,setEditing]=useState(false);
+  const [showAdd,setShowAdd]=useState(false);
+
+  const [eagleNumber,setEagleNumber]=useState('');
+  const [eagleYear,setEagleYear]=useState('');
+  const [firstName,setFirstName]=useState('');
+  const [middleName,setMiddleName]=useState('');
+  const [lastName,setLastName]=useState('');
+  const [suffix,setSuffix]=useState('');
+  const [modalError,setModalError]=useState('');
+
+  const canEdit=
+    !!me?.isAdministrator||
+    !!me?.permissions?.includes('EAGLE');
+
+  const load=async()=>{
+    try{
+      setError('');
+
+      const x=await api(
+        '/eagles'+
+        (
+          q?
+            `?q=${encodeURIComponent(q)}`:
+            ''
+        )
+      );
+
+      setRows(x.eagles??[]);
+    }catch(e:any){
+      setError(
+        e?.message||
+        'Unable to load Eagle Scouts.'
+      );
+    }
+  };
 
   useEffect(()=>{
-    api('/eagles'+(q?`?q=${encodeURIComponent(q)}`:''))
-      .then(x=>setRows(x.eagles))
+    load();
   },[q]);
 
-  return <Page title="Eagle Scouts">
-    <input
-      className="search"
-      placeholder="Search by name or historical number"
-      value={q}
-      onChange={e=>setQ(e.target.value)}
-    />
+  const formatName=(e:any)=>{
+    return [
+      e.first_name,
+      e.middle_name,
+      e.last_name,
+      e.suffix
+    ]
+      .map((x:any)=>
+        String(x||'').trim()
+      )
+      .filter(Boolean)
+      .join(' ');
+  };
 
-    <div className="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Number</th>
-            <th>Year</th>
-          </tr>
-        </thead>
+  const groups=new Map<number,any[]>();
 
-        <tbody>
-          {rows.map(e=>
-            <tr key={e.id}>
-              <td>{e.display_name}</td>
-              <td>{e.eagle_number}</td>
-              <td>{e.eagle_year}</td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+  for(const eagle of rows){
+    const year=Number(
+      eagle.eagle_year
+    );
+
+    if(!groups.has(year))
+      groups.set(year,[]);
+
+    groups.get(year)!.push(eagle);
+  }
+
+  const openAdd=()=>{
+    setEagleNumber('');
+    setEagleYear('');
+    setFirstName('');
+    setMiddleName('');
+    setLastName('');
+    setSuffix('');
+    setModalError('');
+    setShowAdd(true);
+  };
+
+  const closeAdd=()=>{
+    setShowAdd(false);
+    setModalError('');
+  };
+
+  return <Page
+    title="Eagle Scouts"
+    actions={
+      canEdit&&
+        <div className="eagle-page-actions">
+          <button
+            type="button"
+            className="button eagle-edit-button"
+            onClick={()=>{
+              if(editing)
+                setEditing(false);
+              else
+                setEditing(true);
+            }}
+          >
+            {editing?'Done':'Edit'}
+          </button>
+
+          {editing&&
+            <button
+              type="button"
+              className="home-add-button"
+              aria-label="Add Eagle Scout"
+              onClick={openAdd}
+            >
+              +
+            </button>
+          }
+        </div>
+    }
+  >
+    <div className="eagle-search-row">
+      <input
+        type="search"
+        className="search eagle-search"
+        placeholder="Search Eagle Scouts"
+        aria-label="Search Eagle Scouts"
+        value={q}
+        onChange={e=>setQ(e.target.value)}
+      />
     </div>
+
+    {error&&
+      <p className="error">{error}</p>
+    }
+
+    {groups.size?
+      <div className="eagle-year-grid">
+        {Array.from(groups.entries()).map(
+          ([year,eagles])=>
+            <section
+              className="card eagle-year-card"
+              key={year}
+            >
+              <h2 className="eagle-year-title">
+                {year}
+              </h2>
+
+              <div className="eagle-list">
+                {eagles.map((e:any)=>
+                  <div
+                    className="eagle-entry"
+                    key={e.id}
+                  >
+                    <div className="eagle-entry-name">
+                      <span className="eagle-number">
+                        {e.eagle_number}.
+                      </span>
+
+                      <span>
+                        {formatName(e)}
+                      </span>
+                    </div>
+
+                    {editing&&
+                      <button
+                        type="button"
+                        className="eagle-delete-button"
+                        aria-label={
+                          `Delete Eagle Scout ${formatName(e)}`
+                        }
+                        onClick={async()=>{
+                          if(!window.confirm(
+                            `Delete Eagle Scout ${formatName(e)}?`
+                          ))
+                            return;
+
+                          try{
+                            setError('');
+
+                            await api(
+                              `/admin/eagles/${e.id}`,
+                              {
+                                method:'DELETE'
+                              }
+                            );
+
+                            await load();
+                          }catch(error:any){
+                            setError(
+                              error?.message||
+                              'Unable to delete Eagle Scout.'
+                            );
+                          }
+                        }}
+                      >
+                        −
+                      </button>
+                    }
+                  </div>
+                )}
+              </div>
+            </section>
+        )}
+      </div>:
+      !error&&
+        <p className="muted">
+          {q?
+            'No Eagle Scouts match your search.':
+            'No Eagle Scouts are currently listed.'
+          }
+        </p>
+    }
+
+    {showAdd&&
+      <div
+        className="modal-backdrop"
+        onMouseDown={e=>{
+          if(e.target===e.currentTarget)
+            closeAdd();
+        }}
+      >
+        <div
+          className="modal-card eagle-modal"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="eagle-modal-title"
+        >
+          <div className="modal-header">
+            <h2 id="eagle-modal-title">
+              Add Eagle Scout
+            </h2>
+
+            <button
+              type="button"
+              className="modal-close"
+              aria-label="Close"
+              onClick={closeAdd}
+            >
+              ×
+            </button>
+          </div>
+
+          <form
+            className="form eagle-form"
+            onSubmit={async e=>{
+              e.preventDefault();
+              setModalError('');
+
+              const number=
+                Number(eagleNumber);
+
+              const year=
+                Number(eagleYear);
+
+              if(
+                !Number.isInteger(number)||
+                number<1
+              ){
+                setModalError(
+                  'Eagle number must be a valid whole number.'
+                );
+                return;
+              }
+
+              if(
+                !Number.isInteger(year)||
+                year<1
+              ){
+                setModalError(
+                  'Year must be a valid whole number.'
+                );
+                return;
+              }
+
+              if(!firstName.trim()){
+                setModalError(
+                  'First name is required.'
+                );
+                return;
+              }
+
+              if(!lastName.trim()){
+                setModalError(
+                  'Last name is required.'
+                );
+                return;
+              }
+
+              try{
+                await post(
+                  '/admin/eagles',
+                  {
+                    eagle_number:number,
+                    eagle_year:year,
+                    first_name:firstName,
+                    middle_name:middleName,
+                    last_name:lastName,
+                    suffix:suffix
+                  }
+                );
+
+                await load();
+                closeAdd();
+              }catch(e:any){
+                setModalError(
+                  e?.message||
+                  'Unable to add Eagle Scout.'
+                );
+              }
+            }}
+          >
+            <div className="eagle-form-row">
+              <label>
+                Eagle Number
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  min="1"
+                  step="1"
+                  value={eagleNumber}
+                  onChange={e=>
+                    setEagleNumber(
+                      e.target.value
+                    )
+                  }
+                  required
+                />
+              </label>
+
+              <label>
+                Year
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  min="1"
+                  step="1"
+                  value={eagleYear}
+                  onChange={e=>
+                    setEagleYear(
+                      e.target.value
+                    )
+                  }
+                  required
+                />
+              </label>
+            </div>
+
+            <div className="eagle-form-row">
+              <label>
+                First
+                <input
+                  value={firstName}
+                  onChange={e=>
+                    setFirstName(
+                      e.target.value
+                    )
+                  }
+                  required
+                />
+              </label>
+
+              <label>
+                Middle
+                <input
+                  value={middleName}
+                  onChange={e=>
+                    setMiddleName(
+                      e.target.value
+                    )
+                  }
+                />
+              </label>
+            </div>
+
+            <div className="eagle-form-row">
+              <label>
+                Last
+                <input
+                  value={lastName}
+                  onChange={e=>
+                    setLastName(
+                      e.target.value
+                    )
+                  }
+                  required
+                />
+              </label>
+
+              <label>
+                Suffix
+                <input
+                  value={suffix}
+                  onChange={e=>
+                    setSuffix(
+                      e.target.value
+                    )
+                  }
+                />
+              </label>
+            </div>
+
+            {modalError&&
+              <p className="error">
+                {modalError}
+              </p>
+            }
+
+            <div className="button-row">
+              <button
+                type="submit"
+                className="primary"
+              >
+                Add Eagle Scout
+              </button>
+
+              <button
+                type="button"
+                onClick={closeAdd}
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    }
   </Page>
 }
 
