@@ -1451,9 +1451,22 @@ app.get('/api/home',async c=>{
 });
 
 app.get('/api/eagles',async c=>{
-  const q=c.req.query('q')?.trim();
+  const q=String(
+    c.req.query('q')||''
+  ).trim();
 
-  let sql='SELECT * FROM eagles';
+  let sql=`
+    SELECT
+      id,
+      first_name,
+      middle_name,
+      last_name,
+      suffix,
+      eagle_number,
+      eagle_year
+    FROM eagles
+  `;
+
   const binds:any[]=[];
 
   if(q){
@@ -1462,7 +1475,9 @@ app.get('/api/eagles',async c=>{
         first_name LIKE ?
         OR middle_name LIKE ?
         OR last_name LIKE ?
-        OR CAST(eagle_number AS TEXT)=?
+        OR suffix LIKE ?
+        OR CAST(eagle_number AS TEXT) LIKE ?
+        OR CAST(eagle_year AS TEXT) LIKE ?
     `;
 
     const like=`%${q}%`;
@@ -1471,41 +1486,160 @@ app.get('/api/eagles',async c=>{
       like,
       like,
       like,
-      q
+      like,
+      like,
+      like
     );
   }
 
-  sql+=' ORDER BY eagle_year DESC,last_name,first_name';
+  sql+=`
+    ORDER BY
+      eagle_year DESC,
+      eagle_number DESC,
+      last_name,
+      first_name,
+      middle_name,
+      suffix,
+      id
+  `;
 
   const rows=await c.env.DB
     .prepare(sql)
     .bind(...binds)
     .all<any>();
 
-  const today=new Date()
-    .toISOString()
-    .slice(0,10);
+  return json(c,{
+    eagles:rows.results??[]
+  });
+});
+
+app.post('/api/admin/eagles',async c=>{
+  const d=admin(c,'EAGLE');
+  if(d)return d;
+
+  const body=await c.req.json<any>();
+
+  const eagleNumber=
+    Number(body.eagle_number);
+
+  const eagleYear=
+    Number(body.eagle_year);
+
+  const firstName=
+    String(body.first_name||'').trim();
+
+  const middleName=
+    String(body.middle_name||'').trim();
+
+  const lastName=
+    String(body.last_name||'').trim();
+
+  const suffix=
+    String(body.suffix||'').trim();
+
+  if(
+    !Number.isInteger(eagleNumber)||
+    eagleNumber<1
+  )
+    return json(
+      c,
+      {
+        error:
+          'Eagle number must be a valid whole number.'
+      },
+      400
+    );
+
+  if(
+    !Number.isInteger(eagleYear)||
+    eagleYear<1
+  )
+    return json(
+      c,
+      {
+        error:
+          'Year must be a valid whole number.'
+      },
+      400
+    );
+
+  if(!firstName||!lastName)
+    return json(
+      c,
+      {
+        error:
+          'First name and last name are required.'
+      },
+      400
+    );
+
+  const row=await c.env.DB
+    .prepare(`
+      INSERT INTO eagles(
+        first_name,
+        middle_name,
+        last_name,
+        suffix,
+        eagle_number,
+        eagle_year,
+        eighteenth_birthday
+      )
+      VALUES(?,?,?,?,?,?,?)
+      RETURNING
+        id,
+        first_name,
+        middle_name,
+        last_name,
+        suffix,
+        eagle_number,
+        eagle_year
+    `)
+    .bind(
+      firstName,
+      middleName,
+      lastName,
+      suffix,
+      eagleNumber,
+      eagleYear,
+      ''
+    )
+    .first<any>();
 
   return json(c,{
-    eagles:(rows.results??[]).map(e=>{
-      const eighteenth=new Date(
-        e.eighteenth_birthday+'T00:00:00'
-      );
+    eagle:row
+  },201);
+});
 
-      const full=new Date(today)>=eighteenth;
-      const middle=e.middle_name?
-        ` ${e.middle_name}`:
-        '';
+app.delete('/api/admin/eagles/:id',async c=>{
+  const d=admin(c,'EAGLE');
+  if(d)return d;
 
-      return {
-        ...e,
-        display_name:
-          full?
-            `${e.first_name}${middle} ${e.last_name}${e.suffix?' '+e.suffix:''}`:
-            `${e.first_name} ${e.last_name[0]}.`
-      };
-    })
-  });
+  const id=Number(
+    c.req.param('id')
+  );
+
+  if(!Number.isInteger(id))
+    return json(
+      c,
+      {error:'Invalid Eagle Scout.'},
+      400
+    );
+
+  const result=await c.env.DB
+    .prepare(
+      'DELETE FROM eagles WHERE id=?'
+    )
+    .bind(id)
+    .run();
+
+  if(!result.meta.changes)
+    return json(
+      c,
+      {error:'Eagle Scout not found.'},
+      404
+    );
+
+  return json(c,{ok:true});
 });
 
 app.get('/api/history',async c=>{
