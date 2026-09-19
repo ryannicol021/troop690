@@ -1641,12 +1641,10 @@ tbody tr:nth-child(even){
   font-size:.8rem
 }
 
-.eagle-year-grid{
-  display:grid;
-  grid-template-columns:
-    repeat(auto-fill,minmax(210px,1fr));
-  gap:12px;
-  align-items:start
+.eagle-year-card{
+  margin:0;
+  padding:14px;
+  align-self:stretch
 }
 
 .eagle-year-card{
