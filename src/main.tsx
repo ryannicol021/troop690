@@ -1787,6 +1787,7 @@ function Eagles({me}:{me:any}){
   const [q,setQ]=useState('');
   const [rows,setRows]=useState<any[]>([]);
   const [error,setError]=useState('');
+  const [loaded,setLoaded]=useState(false);
 
   const [editing,setEditing]=useState(false);
   const [showAdd,setShowAdd]=useState(false);
