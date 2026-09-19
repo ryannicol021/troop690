@@ -1992,7 +1992,7 @@ function Eagles({me}:{me:any}){
       setDraggedId(null);
       return;
     }
-
+  
     await reorderEagles(
       Number(yearEagles[0].id),
       year
@@ -2163,14 +2163,16 @@ function Eagles({me}:{me:any}){
                           );
                         }}
                       >
-                        <div className="eagle-entry-name">
+                      <div className="eagle-entry-name">
+                        {editing&&
                           <span className="eagle-drag-handle">
                             ⋮⋮
                           </span>
-
-                          <span className="eagle-number">
-                            {e.eagle_number}.
-                          </span>
+                        }
+                      
+                        <span className="eagle-number">
+                          {e.eagle_number}.
+                        </span>
 
                           <span>
                             {formatName(e)}
