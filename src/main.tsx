@@ -5571,8 +5571,11 @@ function PhotoAlbum({
 
   const nav=useNavigate();
   
+  const isAdmin=
+    !!me?.isAdministrator;
+
   const canManage=
-    !!me?.isAdministrator||
+    isAdmin||
     !!me?.permissions?.includes(
       'PHOTO'
     );
@@ -5678,7 +5681,8 @@ function PhotoAlbum({
     if(
       !canManage||
       !selectedIds.length||
-      busy
+      busy||
+      (!isAdmin&&selectedIds.length>1)
     )
       return;
 
@@ -5720,7 +5724,7 @@ function PhotoAlbum({
 
   const setCover=async()=>{
     if(
-      !canManage||
+      !isAdmin||
       selectedIds.length!==1||
       busy
     )
@@ -5843,14 +5847,15 @@ function PhotoAlbum({
           }
           disabled={
             !selectedIds.length||
-            busy
+            busy||
+            (!isAdmin&&selectedIds.length>1)
           }
         >
           Delete
         </button>
       }
 
-      {canManage&&
+      {isAdmin&&
         selectMode&&
         <button
           type="button"
@@ -5865,7 +5870,7 @@ function PhotoAlbum({
         </button>
       }
 
-      {canManage&&
+      {isAdmin&&
         <button
           type="button"
           className="button"
