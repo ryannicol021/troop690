@@ -2479,16 +2479,12 @@ function Eagles({me}:{me:any}){
           >
             <label>
               Year
-              <span className="label-optional">
-                Optional
-              </span>
               <input
                 type="number"
                 inputMode="numeric"
                 min="1"
                 step="1"
                 value={eagleYear}
-                placeholder="Current year"
                 onChange={e=>
                   setEagleYear(
                     e.target.value
