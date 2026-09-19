@@ -1653,6 +1653,10 @@ tbody tr:nth-child(even){
   padding:14px
 }
 
+.eagle-year-grid .card + .card{
+  margin-top:0
+}
+
 .eagle-year-title{
   margin:0 0 10px;
   color:var(--navy);
