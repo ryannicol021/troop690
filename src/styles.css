@@ -1678,6 +1678,8 @@ tbody tr:nth-child(even){
 }
 
 .eagle-entry-name{
+  display:flex;
+  align-items:flex-start;
   min-width:0;
   color:var(--text);
   overflow-wrap:anywhere
@@ -1687,6 +1689,55 @@ tbody tr:nth-child(even){
   color:var(--red);
   font-weight:700;
   margin-right:5px
+}
+
+.eagle-drag-handle{
+  flex:0 0 auto;
+  margin-right:6px;
+  color:var(--muted);
+  font-size:.8rem;
+  line-height:1.45;
+  cursor:grab;
+  user-select:none
+}
+
+.eagle-entry[draggable="true"]{
+  cursor:grab
+}
+
+.eagle-entry[draggable="true"]:active,
+.eagle-drag-handle:active{
+  cursor:grabbing
+}
+
+.eagle-entry.dragging{
+  opacity:.45
+}
+
+.eagle-year-card{
+  transition:
+    outline-color .12s ease,
+    box-shadow .12s ease
+}
+
+.eagle-year-card:has(
+  .eagle-entry.dragging
+){
+  cursor:grabbing
+}
+
+.eagle-search-note{
+  display:block;
+  margin-top:5px;
+  color:var(--muted);
+  font-size:.72rem
+}
+
+.label-optional{
+  margin-left:4px;
+  color:var(--muted);
+  font-size:.72rem;
+  font-weight:400
 }
 
 .eagle-delete-button{
