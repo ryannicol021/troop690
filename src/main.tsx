@@ -1805,10 +1805,15 @@ function Eagles({me}:{me:any}){
   const eagleGridRef=
   useRef<HTMLDivElement|null>(null);
 
-  const [
-    eagleCardMinWidth,
-    setEagleCardMinWidth
-  ]=useState(210);
+const [
+  eagleCardMinWidth,
+  setEagleCardMinWidth
+]=useState(210);
+
+const [
+  eagleCardMeasured,
+  setEagleCardMeasured
+]=useState(false);
 
   const canEdit=
     !!me?.isAdministrator||
@@ -1822,14 +1827,15 @@ function Eagles({me}:{me:any}){
       return;
   
     const measure=()=>{
-      if(
-        window.matchMedia(
-          '(max-width:800px)'
-        ).matches
-      ){
-        setEagleCardMinWidth(0);
-        return;
-      }
+if(
+  window.matchMedia(
+    '(max-width:800px)'
+  ).matches
+){
+  setEagleCardMinWidth(0);
+  setEagleCardMeasured(true);
+  return;
+}
   
       const cards=
         Array.from(
@@ -1912,6 +1918,8 @@ function Eagles({me}:{me:any}){
       setEagleCardMinWidth(
         widest
       );
+      
+      setEagleCardMeasured(true);
     };
   
     measure();
@@ -2196,18 +2204,22 @@ function Eagles({me}:{me:any}){
 
     {loaded&&(
       groups.size?
-        <div
-          ref={eagleGridRef}
-          className="eagle-year-grid"
-          style={
-            eagleCardMinWidth?
-              {
-                '--eagle-card-min-width':
-                  `${eagleCardMinWidth}px`
-              } as React.CSSProperties:
-              undefined
-          }
-        >
+<div
+  ref={eagleGridRef}
+  className="eagle-year-grid"
+  style={{
+    ...(eagleCardMinWidth?
+      {
+        '--eagle-card-min-width':
+          `${eagleCardMinWidth}px`
+      }:
+      {}),
+    visibility:
+      eagleCardMeasured?
+        'visible':
+        'hidden'
+  } as React.CSSProperties}
+>
           {orderedYears.map(
             year=>{
               const eagles=
