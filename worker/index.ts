@@ -2437,8 +2437,21 @@ const eligible=await c.env.DB
 });
 
 app.delete('/api/admin/photo-albums/:eventId',async c=>{
-  const d=admin(c,'PHOTO');
-  if(d)return d;
+  const user=c.get('user') as User|null;
+
+  if(!user)
+    return json(
+      c,
+      {error:'Login required'},
+      401
+    );
+
+  if(!user.isAdministrator)
+    return json(
+      c,
+      {error:'Forbidden'},
+      403
+    );
 
   const eventId=Number(c.req.param('eventId'));
 
@@ -6124,7 +6137,10 @@ app.post('/api/admin/photos/delete',async c=>{
   const d=admin(c,'PHOTO');
   if(d)return d;
 
+  const user=c.get('user') as User;
+
   const x=await c.req.json();
+
   const eventId=Number(x.event_id);
 
   const photoIds=Array.isArray(x.photo_ids)?
@@ -6134,6 +6150,19 @@ app.post('/api/admin/photos/delete',async c=>{
         .filter((value:any)=>Number.isInteger(value))
     )]:
     [];
+
+  if(
+    !user.isAdministrator&&
+    photoIds.length>1
+  )
+    return json(
+      c,
+      {
+        error:
+          'Manage Photos users may delete only one photo at a time.'
+      },
+      403
+    );
 
   if(!Number.isInteger(eventId)||!photoIds.length)
     return json(c,{error:'Selected photos are required.'},400);
@@ -6206,8 +6235,21 @@ app.post('/api/admin/photos/delete',async c=>{
 });
 
 app.put('/api/admin/photo-albums/:eventId/cover',async c=>{
-  const d=admin(c,'PHOTO');
-  if(d)return d;
+  const user=c.get('user') as User|null;
+
+  if(!user)
+    return json(
+      c,
+      {error:'Login required'},
+      401
+    );
+
+  if(!user.isAdministrator)
+    return json(
+      c,
+      {error:'Forbidden'},
+      403
+    );
 
   const eventId=Number(c.req.param('eventId'));
   const x=await c.req.json();
