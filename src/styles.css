@@ -708,7 +708,7 @@ tbody tr:nth-child(even){
   text-align:center;
   font-size:1.25rem;
   font-weight:600;
-  color:var(--navy)
+  color:var(--red)
 }
 
 .calendar-subscribe-section{
