@@ -1675,7 +1675,7 @@ app.put('/api/admin/eagles/order',async c=>{
 
   if(
     submittedIds.some(
-      id=>!currentSet.has(id)
+      (id:number)=>!currentSet.has(id)
     )
   )
     return json(
