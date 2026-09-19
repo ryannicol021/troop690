@@ -1944,6 +1944,7 @@ function Eagles({me}:{me:any}){
 
   const load=async()=>{
     try{
+      setLoaded(false);
       setError('');
 
       const x=await api(
@@ -1956,6 +1957,7 @@ function Eagles({me}:{me:any}){
       );
 
       setRows(x.eagles??[]);
+      setLoaded(true);
     }catch(e:any){
       setError(
         e?.message||
@@ -2192,199 +2194,199 @@ function Eagles({me}:{me:any}){
       </p>
     }
 
-    {groups.size?
-      <div
-        ref={eagleGridRef}
-        className="eagle-year-grid"
-        style={
-          eagleCardMinWidth?
-            {
-              '--eagle-card-min-width':
-                `${eagleCardMinWidth}px`
-            } as React.CSSProperties:
-            undefined
-        }
-      >
-        {orderedYears.map(
-          year=>{
-            const eagles=
-              groups.get(year)??[];
-
-            return (
-              <section
-                className="card eagle-year-card"
-                key={year}
-                onDragOver={e=>{
-                  if(
-                    !editing||
-                    !!q||
-                    draggedId==null
-                  )
-                    return;
-
-                  e.preventDefault();
-                  e.dataTransfer.dropEffect=
-                    'move';
-                }}
-                onDrop={async e=>{
-                  e.preventDefault();
-
-                  if(
-                    !editing||
-                    !!q||
-                    draggedId==null
-                  )
-                    return;
-
-                  await moveToYear(
-                    year,
-                    eagles
-                  );
-                }}
-              >
-                <h2 className="eagle-year-title">
-                  {year}
-                </h2>
-
-                <div className="eagle-list">
-                  {eagles.map(
-                    (e:any)=>
-                      <div
-                        className={
-                          'eagle-entry'+
-                          (
-                            draggedId===
-                            Number(e.id)?
-                              ' dragging':
-                              ''
-                          )
-                        }
-                        key={e.id}
-                        draggable={
-                          editing&&!q
-                        }
-                        onDragStart={event=>{
-                          if(
-                            !editing||
-                            q
-                          )
-                            return;
-                        
-                          setDraggedId(
-                            Number(e.id)
-                          );
-                        
-                          event.dataTransfer.effectAllowed=
-                            'move';
-                        
-                          event.dataTransfer.setData(
-                            'text/plain',
-                            String(e.id)
-                          );
-                        }}
-                        onDragEnd={()=>{
-                          setDraggedId(null);
-                        }}
-                        onDragOver={event=>{
-                          if(
-                            !editing||
-                            q||
-                            draggedId==null||
-                            draggedId===
-                              Number(e.id)
-                          )
-                            return;
-
-                          event.preventDefault();
-                          event.dataTransfer.dropEffect=
-                            'move';
-                        }}
-                        onDrop={async event=>{
-                          event.preventDefault();
-                          event.stopPropagation();
-
-                          if(
-                            !editing||
-                            q||
-                            draggedId==null
-                          )
-                            return;
-
-                          await reorderEagles(
-                            Number(e.id),
-                            Number(e.eagle_year)
-                          );
-                        }}
-                      >
-                      <div className="eagle-entry-name">
-                        {editing&&
-                          <span className="eagle-drag-handle">
-                            ⋮⋮
-                          </span>
-                        }
-                      
-                        <span className="eagle-number">
-                          {e.eagle_number}.
-                        </span>
-
-                          <span>
-                            {formatName(e)}
-                          </span>
-                        </div>
-
-                        {editing&&
-                          <button
-                            type="button"
-                            className="eagle-delete-button"
-                            aria-label={
-                              `Delete Eagle Scout ${formatName(e)}`
-                            }
-                            onClick={async()=>{
-                              if(
-                                !window.confirm(
-                                  `Delete Eagle Scout ${formatName(e)}?`
-                                )
-                              )
-                                return;
-
-                              try{
-                                setError('');
-
-                                await api(
-                                  `/admin/eagles/${e.id}`,
-                                  {
-                                    method:'DELETE'
-                                  }
-                                );
-
-                                await load();
-                              }catch(error:any){
-                                setError(
-                                  error?.message||
-                                  'Unable to delete Eagle Scout.'
-                                );
-                              }
-                            }}
-                          >
-                            −
-                          </button>
-                        }
-                      </div>
-                  )}
-                </div>
-              </section>
-            );
+    {loaded&&(
+      groups.size?
+        <div
+          ref={eagleGridRef}
+          className="eagle-year-grid"
+          style={
+            eagleCardMinWidth?
+              {
+                '--eagle-card-min-width':
+                  `${eagleCardMinWidth}px`
+              } as React.CSSProperties:
+              undefined
           }
-        )}
-      </div>:
-      !error&&
+        >
+          {orderedYears.map(
+            year=>{
+              const eagles=
+                groups.get(year)??[];
+
+              return (
+                <section
+                  className="card eagle-year-card"
+                  key={year}
+                  onDragOver={e=>{
+                    if(
+                      !editing||
+                      !!q||
+                      draggedId==null
+                    )
+                      return;
+
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect=
+                      'move';
+                  }}
+                  onDrop={async e=>{
+                    e.preventDefault();
+
+                    if(
+                      !editing||
+                      !!q||
+                      draggedId==null
+                    )
+                      return;
+
+                    await moveToYear(
+                      year,
+                      eagles
+                    );
+                  }}
+                >
+                  <h2 className="eagle-year-title">
+                    {year}
+                  </h2>
+
+                  <div className="eagle-list">
+                    {eagles.map(
+                      (e:any)=>
+                        <div
+                          className={
+                            'eagle-entry'+
+                            (
+                              draggedId===
+                              Number(e.id)?
+                                ' dragging':
+                                ''
+                            )
+                          }
+                          key={e.id}
+                          draggable={
+                            editing&&!q
+                          }
+                          onDragStart={event=>{
+                            if(
+                              !editing||
+                              q
+                            )
+                              return;
+
+                            setDraggedId(
+                              Number(e.id)
+                            );
+
+                            event.dataTransfer.effectAllowed=
+                              'move';
+
+                            event.dataTransfer.setData(
+                              'text/plain',
+                              String(e.id)
+                            );
+                          }}
+                          onDragEnd={()=>{
+                            setDraggedId(null);
+                          }}
+                          onDragOver={event=>{
+                            if(
+                              !editing||
+                              q||
+                              draggedId==null||
+                              draggedId===
+                                Number(e.id)
+                            )
+                              return;
+
+                            event.preventDefault();
+                            event.dataTransfer.dropEffect=
+                              'move';
+                          }}
+                          onDrop={async event=>{
+                            event.preventDefault();
+                            event.stopPropagation();
+
+                            if(
+                              !editing||
+                              q||
+                              draggedId==null
+                            )
+                              return;
+
+                            await reorderEagles(
+                              Number(e.id),
+                              Number(e.eagle_year)
+                            );
+                          }}
+                        >
+                          <div className="eagle-entry-name">
+                            {editing&&
+                              <span className="eagle-drag-handle">
+                                ⋮⋮
+                              </span>
+                            }
+
+                            <span className="eagle-number">
+                              {e.eagle_number}.
+                            </span>
+
+                            <span>
+                              {formatName(e)}
+                            </span>
+                          </div>
+
+                          {editing&&
+                            <button
+                              type="button"
+                              className="eagle-delete-button"
+                              aria-label={
+                                `Delete Eagle Scout ${formatName(e)}`
+                              }
+                              onClick={async()=>{
+                                if(
+                                  !window.confirm(
+                                    `Delete Eagle Scout ${formatName(e)}?`
+                                  )
+                                )
+                                  return;
+
+                                try{
+                                  setError('');
+
+                                  await api(
+                                    `/admin/eagles/${e.id}`,
+                                    {
+                                      method:'DELETE'
+                                    }
+                                  );
+
+                                  await load();
+                                }catch(error:any){
+                                  setError(
+                                    error?.message||
+                                    'Unable to delete Eagle Scout.'
+                                  );
+                                }
+                              }}
+                            >
+                              −
+                            </button>
+                          }
+                        </div>
+                    )}
+                  </div>
+                </section>
+              );
+            }
+          )}
+        </div>:
         <p className="muted">
           {q?
             'No Eagle Scouts match your search.':
             'No Eagle Scouts are currently listed.'
           }
         </p>
-    }
+    )}
 
     {showAdd&&
       <div
@@ -6286,6 +6288,9 @@ function Photos({
   const [a,setA]=
     useState<any[]>([]);
 
+  const [loaded,setLoaded]=
+    useState(false);
+
   const [
     showAddEvent,
     setShowAddEvent
@@ -6322,6 +6327,9 @@ function Photos({
 
   const load=async()=>{
     try{
+      setLoaded(false);
+      setError('');
+
       const x=
         await api('/photos');
 
@@ -6329,7 +6337,7 @@ function Photos({
         x.albums||[]
       );
 
-      setError('');
+      setLoaded(true);
     }catch(e:any){
       setError(
         e?.message||
@@ -6544,13 +6552,10 @@ const formatStoragePercent=(
       </div>
     }
 
-    {!a.length?
-      <p className="muted">
-        No photos.
-      </p>:
-
-      <div className="photo-album-grid">
-        {a.map(
+    {loaded&&(
+      a.length?
+        <div className="photo-album-grid">
+          {a.map(
           (x:any)=>
             <a
               className={
@@ -6602,9 +6607,12 @@ const formatStoragePercent=(
                 {x.title}
               </div>
             </a>
-        )}
-      </div>
-    }
+          )}
+        </div>:
+        <p className="muted">
+          No photos.
+        </p>
+    )}
 
     {showAddEvent&&
       <AddPhotoEventModal
