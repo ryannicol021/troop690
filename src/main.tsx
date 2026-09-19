@@ -2173,8 +2173,8 @@ function Eagles({me}:{me:any}){
       <input
         type="search"
         className="search eagle-search"
-        placeholder="Search Eagle Scouts"
-        aria-label="Search Eagle Scouts"
+        placeholder="Search"
+        aria-label="Search"
         value={q}
         onChange={e=>
           setQ(e.target.value)
