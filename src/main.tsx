@@ -1791,13 +1791,15 @@ function Eagles({me}:{me:any}){
   const [editing,setEditing]=useState(false);
   const [showAdd,setShowAdd]=useState(false);
 
-  const [eagleNumber,setEagleNumber]=useState('');
   const [eagleYear,setEagleYear]=useState('');
   const [firstName,setFirstName]=useState('');
   const [middleName,setMiddleName]=useState('');
   const [lastName,setLastName]=useState('');
   const [suffix,setSuffix]=useState('');
   const [modalError,setModalError]=useState('');
+
+  const [draggedId,setDraggedId]=
+    useState<number|null>(null);
 
   const canEdit=
     !!me?.isAdministrator||
@@ -1836,8 +1838,9 @@ function Eagles({me}:{me:any}){
       e.last_name,
       e.suffix
     ]
-      .map((x:any)=>
-        String(x||'').trim()
+      .map(
+        (x:any)=>
+          String(x||'').trim()
       )
       .filter(Boolean)
       .join(' ');
@@ -1846,9 +1849,8 @@ function Eagles({me}:{me:any}){
   const groups=new Map<number,any[]>();
 
   for(const eagle of rows){
-    const year=Number(
-      eagle.eagle_year
-    );
+    const year=
+      Number(eagle.eagle_year);
 
     if(!groups.has(year))
       groups.set(year,[]);
@@ -1856,8 +1858,19 @@ function Eagles({me}:{me:any}){
     groups.get(year)!.push(eagle);
   }
 
+  for(const list of groups.values()){
+    list.sort(
+      (a:any,b:any)=>
+        Number(b.eagle_number)-
+        Number(a.eagle_number)
+    );
+  }
+
+  const orderedYears=
+    Array.from(groups.keys())
+      .sort((a,b)=>b-a);
+
   const openAdd=()=>{
-    setEagleNumber('');
     setEagleYear('');
     setFirstName('');
     setMiddleName('');
@@ -1872,6 +1885,120 @@ function Eagles({me}:{me:any}){
     setModalError('');
   };
 
+  const reorderEagles=async(
+    targetId:number,
+    targetYear:number
+  )=>{
+    if(draggedId==null)
+      return;
+
+    if(draggedId===targetId){
+      setDraggedId(null);
+      return;
+    }
+
+    if(q){
+      setDraggedId(null);
+      return;
+    }
+
+    const ordered=
+      [...rows]
+        .sort(
+          (a:any,b:any)=>
+            Number(b.eagle_number)-
+            Number(a.eagle_number)
+        );
+
+    const fromIndex=
+      ordered.findIndex(
+        (e:any)=>
+          Number(e.id)===
+          draggedId
+      );
+
+    const targetIndex=
+      ordered.findIndex(
+        (e:any)=>
+          Number(e.id)===
+          targetId
+      );
+
+    if(
+      fromIndex<0||
+      targetIndex<0
+    ){
+      setDraggedId(null);
+      return;
+    }
+
+    const [
+      moved
+    ]=ordered.splice(
+      fromIndex,
+      1
+    );
+
+    moved.eagle_year=
+      targetYear;
+
+    const insertIndex=
+      ordered.findIndex(
+        (e:any)=>
+          Number(e.id)===
+          targetId
+      );
+
+    ordered.splice(
+      insertIndex,
+      0,
+      moved
+    );
+
+    try{
+      await put(
+        '/admin/eagles/order',
+        {
+          items:ordered.map(
+            (e:any)=>({
+              id:Number(e.id),
+              eagle_year:Number(
+                e.eagle_year
+              )
+            })
+          )
+        }
+      );
+
+      await load();
+    }catch(e:any){
+      setError(
+        e?.message||
+        'Unable to reorder Eagle Scouts.'
+      );
+    }finally{
+      setDraggedId(null);
+    }
+  };
+
+  const moveToYear=async(
+    year:number,
+    yearEagles:any[]
+  )=>{
+    if(
+      draggedId==null||
+      !yearEagles.length
+    ){
+      setDraggedId(null);
+      return;
+    }
+
+    await reorderEagles(
+      Number(yearEagles[0].id),
+      year
+    );
+  };
+
   return <Page
     title="Eagle Scouts"
     actions={
@@ -1881,10 +2008,10 @@ function Eagles({me}:{me:any}){
             type="button"
             className="button eagle-edit-button"
             onClick={()=>{
-              if(editing)
-                setEditing(false);
-              else
-                setEditing(true);
+              setDraggedId(null);
+              setEditing(
+                value=>!value
+              );
             }}
           >
             {editing?'Done':'Edit'}
@@ -1910,81 +2037,189 @@ function Eagles({me}:{me:any}){
         placeholder="Search Eagle Scouts"
         aria-label="Search Eagle Scouts"
         value={q}
-        onChange={e=>setQ(e.target.value)}
+        onChange={e=>
+          setQ(e.target.value)
+        }
       />
+
+      {editing&&q&&
+        <span className="eagle-search-note">
+          Clear search to reorder Eagles.
+        </span>
+      }
     </div>
 
     {error&&
-      <p className="error">{error}</p>
+      <p className="error">
+        {error}
+      </p>
     }
 
     {groups.size?
       <div className="eagle-year-grid">
-        {Array.from(groups.entries()).map(
-          ([year,eagles])=>
-            <section
-              className="card eagle-year-card"
-              key={year}
-            >
-              <h2 className="eagle-year-title">
-                {year}
-              </h2>
+        {orderedYears.map(
+          year=>{
+            const eagles=
+              groups.get(year)??[];
 
-              <div className="eagle-list">
-                {eagles.map((e:any)=>
-                  <div
-                    className="eagle-entry"
-                    key={e.id}
-                  >
-                    <div className="eagle-entry-name">
-                      <span className="eagle-number">
-                        {e.eagle_number}.
-                      </span>
+            return (
+              <section
+                className="card eagle-year-card"
+                key={year}
+                onDragOver={e=>{
+                  if(
+                    !editing||
+                    !!q||
+                    draggedId==null
+                  )
+                    return;
 
-                      <span>
-                        {formatName(e)}
-                      </span>
-                    </div>
+                  e.preventDefault();
+                  e.dataTransfer.dropEffect=
+                    'move';
+                }}
+                onDrop={async e=>{
+                  e.preventDefault();
 
-                    {editing&&
-                      <button
-                        type="button"
-                        className="eagle-delete-button"
-                        aria-label={
-                          `Delete Eagle Scout ${formatName(e)}`
+                  if(
+                    !editing||
+                    !!q||
+                    draggedId==null
+                  )
+                    return;
+
+                  await moveToYear(
+                    year,
+                    eagles
+                  );
+                }}
+              >
+                <h2 className="eagle-year-title">
+                  {year}
+                </h2>
+
+                <div className="eagle-list">
+                  {eagles.map(
+                    (e:any)=>
+                      <div
+                        className={
+                          'eagle-entry'+
+                          (
+                            draggedId===
+                            Number(e.id)?
+                              ' dragging':
+                              ''
+                          )
                         }
-                        onClick={async()=>{
-                          if(!window.confirm(
-                            `Delete Eagle Scout ${formatName(e)}?`
-                          ))
+                        key={e.id}
+                        draggable={
+                          editing&&!q
+                        }
+                        onDragStart={event=>{
+                          if(
+                            !editing||
+                            q
+                          )
                             return;
 
-                          try{
-                            setError('');
+                          setDraggedId(
+                            Number(e.id)
+                          );
 
-                            await api(
-                              `/admin/eagles/${e.id}`,
-                              {
-                                method:'DELETE'
-                              }
-                            );
+                          event.dataTransfer.effectAllowed=
+                            'move';
+                        }}
+                        onDragEnd={()=>{
+                          setDraggedId(null);
+                        }}
+                        onDragOver={event=>{
+                          if(
+                            !editing||
+                            q||
+                            draggedId==null||
+                            draggedId===
+                              Number(e.id)
+                          )
+                            return;
 
-                            await load();
-                          }catch(error:any){
-                            setError(
-                              error?.message||
-                              'Unable to delete Eagle Scout.'
-                            );
-                          }
+                          event.preventDefault();
+                          event.dataTransfer.dropEffect=
+                            'move';
+                        }}
+                        onDrop={async event=>{
+                          event.preventDefault();
+                          event.stopPropagation();
+
+                          if(
+                            !editing||
+                            q||
+                            draggedId==null
+                          )
+                            return;
+
+                          await reorderEagles(
+                            Number(e.id),
+                            Number(e.eagle_year)
+                          );
                         }}
                       >
-                        −
-                      </button>
-                    }
-                  </div>
-                )}
-              </div>
-            </section>
+                        <div className="eagle-entry-name">
+                          <span className="eagle-drag-handle">
+                            ⋮⋮
+                          </span>
+
+                          <span className="eagle-number">
+                            {e.eagle_number}.
+                          </span>
+
+                          <span>
+                            {formatName(e)}
+                          </span>
+                        </div>
+
+                        {editing&&
+                          <button
+                            type="button"
+                            className="eagle-delete-button"
+                            aria-label={
+                              `Delete Eagle Scout ${formatName(e)}`
+                            }
+                            onClick={async()=>{
+                              if(
+                                !window.confirm(
+                                  `Delete Eagle Scout ${formatName(e)}?`
+                                )
+                              )
+                                return;
+
+                              try{
+                                setError('');
+
+                                await api(
+                                  `/admin/eagles/${e.id}`,
+                                  {
+                                    method:'DELETE'
+                                  }
+                                );
+
+                                await load();
+                              }catch(error:any){
+                                setError(
+                                  error?.message||
+                                  'Unable to delete Eagle Scout.'
+                                );
+                              }
+                            }}
+                          >
+                            −
+                          </button>
+                        }
+                      </div>
+                  )}
+                </div>
+              </section>
+            );
+          }
         )}
       </div>:
       !error&&
@@ -2000,7 +2235,10 @@ function Eagles({me}:{me:any}){
       <div
         className="modal-backdrop"
         onMouseDown={e=>{
-          if(e.target===e.currentTarget)
+          if(
+            e.target===
+            e.currentTarget
+          )
             closeAdd();
         }}
       >
@@ -2031,32 +2269,6 @@ function Eagles({me}:{me:any}){
               e.preventDefault();
               setModalError('');
 
-              const number=
-                Number(eagleNumber);
-
-              const year=
-                Number(eagleYear);
-
-              if(
-                !Number.isInteger(number)||
-                number<1
-              ){
-                setModalError(
-                  'Eagle number must be a valid whole number.'
-                );
-                return;
-              }
-
-              if(
-                !Number.isInteger(year)||
-                year<1
-              ){
-                setModalError(
-                  'Year must be a valid whole number.'
-                );
-                return;
-              }
-
               if(!firstName.trim()){
                 setModalError(
                   'First name is required.'
@@ -2071,16 +2283,30 @@ function Eagles({me}:{me:any}){
                 return;
               }
 
+              if(eagleYear.trim()){
+                const year=
+                  Number(eagleYear);
+
+                if(
+                  !Number.isInteger(year)||
+                  year<1
+                ){
+                  setModalError(
+                    'Year must be a valid whole number.'
+                  );
+                  return;
+                }
+              }
+
               try{
                 await post(
                   '/admin/eagles',
                   {
-                    eagle_number:number,
-                    eagle_year:year,
+                    eagle_year:eagleYear,
                     first_name:firstName,
                     middle_name:middleName,
                     last_name:lastName,
-                    suffix:suffix
+                    suffix
                   }
                 );
 
@@ -2094,41 +2320,25 @@ function Eagles({me}:{me:any}){
               }
             }}
           >
-            <div className="eagle-form-row">
-              <label>
-                Eagle Number
-                <input
-                  type="number"
-                  inputMode="numeric"
-                  min="1"
-                  step="1"
-                  value={eagleNumber}
-                  onChange={e=>
-                    setEagleNumber(
-                      e.target.value
-                    )
-                  }
-                  required
-                />
-              </label>
-
-              <label>
-                Year
-                <input
-                  type="number"
-                  inputMode="numeric"
-                  min="1"
-                  step="1"
-                  value={eagleYear}
-                  onChange={e=>
-                    setEagleYear(
-                      e.target.value
-                    )
-                  }
-                  required
-                />
-              </label>
-            </div>
+            <label>
+              Year
+              <span className="label-optional">
+                Optional
+              </span>
+              <input
+                type="number"
+                inputMode="numeric"
+                min="1"
+                step="1"
+                value={eagleYear}
+                placeholder="Current year"
+                onChange={e=>
+                  setEagleYear(
+                    e.target.value
+                  )
+                }
+              />
+            </label>
 
             <div className="eagle-form-row">
               <label>
