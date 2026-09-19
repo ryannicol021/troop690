@@ -1840,11 +1840,10 @@ function Eagles({me}:{me:any}){
       if(!cards.length)
         return;
   
-      const measurements=
-        cards.map(card=>{
-          const clone=
-            card.cloneNode(true)
-            as HTMLElement;
+        const measurements=
+          cards.map(card=>{
+            const clone =
+              card.cloneNode(true) as HTMLElement;
   
           clone.style.position=
             'absolute';
