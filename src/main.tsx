@@ -2121,13 +2121,18 @@ function Eagles({me}:{me:any}){
                             q
                           )
                             return;
-
+                        
                           setDraggedId(
                             Number(e.id)
                           );
-
+                        
                           event.dataTransfer.effectAllowed=
                             'move';
+                        
+                          event.dataTransfer.setData(
+                            'text/plain',
+                            String(e.id)
+                          );
                         }}
                         onDragEnd={()=>{
                           setDraggedId(null);
