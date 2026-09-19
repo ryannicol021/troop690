@@ -1470,26 +1470,46 @@ app.get('/api/eagles',async c=>{
   const binds:any[]=[];
 
   if(q){
-    sql+=`
-      WHERE
-        first_name LIKE ?
-        OR middle_name LIKE ?
-        OR last_name LIKE ?
-        OR suffix LIKE ?
-        OR CAST(eagle_number AS TEXT) LIKE ?
-        OR CAST(eagle_year AS TEXT) LIKE ?
-    `;
+    const terms=
+      q
+        .split(/\s+/)
+        .map(
+          term=>term.trim()
+        )
+        .filter(Boolean);
 
-    const like=`%${q}%`;
+    const conditions:string[]=[];
 
-    binds.push(
-      like,
-      like,
-      like,
-      like,
-      like,
-      like
-    );
+    for(const term of terms){
+      const like=`%${term}%`;
+
+      conditions.push(`
+        (
+          first_name LIKE ?
+          OR middle_name LIKE ?
+          OR last_name LIKE ?
+          OR suffix LIKE ?
+          OR CAST(eagle_number AS TEXT) LIKE ?
+          OR CAST(eagle_year AS TEXT) LIKE ?
+        )
+      `);
+
+      binds.push(
+        like,
+        like,
+        like,
+        like,
+        like,
+        like
+      );
+    }
+
+    if(conditions.length){
+      sql+=`
+        WHERE
+          ${conditions.join(' AND ')}
+      `;
+    }
   }
 
   sql+=`
