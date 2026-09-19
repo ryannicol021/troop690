@@ -1788,6 +1788,15 @@ tbody tr:nth-child(even){
   gap:14px
 }
 
+.eagle-page-actions .home-add-button,
+.eagle-delete-button{
+  width:34px;
+  height:34px;
+  min-width:34px;
+  min-height:34px;
+  padding:0
+}
+
 .album-grid,
 .button-grid,
 .uniform-grid{
