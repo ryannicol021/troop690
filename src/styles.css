@@ -1301,6 +1301,13 @@ tbody tr:nth-child(even){
   gap:12px
 }
 
+.photos-page-head-actions > .button{
+  min-height:34px;
+  height:34px;
+  padding-top:4px;
+  padding-bottom:4px;
+}
+
 .storage-usage{
   width:220px
 }
