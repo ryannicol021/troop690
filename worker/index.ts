@@ -1494,8 +1494,8 @@ app.get('/api/eagles',async c=>{
 
   sql+=`
     ORDER BY
-      eagle_year DESC,
       eagle_number DESC,
+      eagle_year DESC,
       last_name,
       first_name,
       middle_name,
@@ -1519,12 +1519,6 @@ app.post('/api/admin/eagles',async c=>{
 
   const body=await c.req.json<any>();
 
-  const eagleNumber=
-    Number(body.eagle_number);
-
-  const eagleYear=
-    Number(body.eagle_year);
-
   const firstName=
     String(body.first_name||'').trim();
 
@@ -1537,16 +1531,29 @@ app.post('/api/admin/eagles',async c=>{
   const suffix=
     String(body.suffix||'').trim();
 
-  if(
-    !Number.isInteger(eagleNumber)||
-    eagleNumber<1
-  )
+  const yearText=
+    String(
+      body.eagle_year??''
+    ).trim();
+
+  const eagleYear=
+    yearText?
+      Number(yearText):
+      Number(
+        newYorkToday().slice(0,4)
+      );
+
+  if(!firstName)
     return json(
       c,
-      {
-        error:
-          'Eagle number must be a valid whole number.'
-      },
+      {error:'First name is required.'},
+      400
+    );
+
+  if(!lastName)
+    return json(
+      c,
+      {error:'Last name is required.'},
       400
     );
 
@@ -1556,22 +1563,23 @@ app.post('/api/admin/eagles',async c=>{
   )
     return json(
       c,
-      {
-        error:
-          'Year must be a valid whole number.'
-      },
+      {error:'Year must be a valid whole number.'},
       400
     );
 
-  if(!firstName||!lastName)
-    return json(
-      c,
-      {
-        error:
-          'First name and last name are required.'
-      },
-      400
-    );
+  const next=await c.env.DB
+    .prepare(`
+      SELECT
+        COALESCE(
+          MAX(eagle_number),
+          0
+        )+1 next_number
+      FROM eagles
+    `)
+    .first<any>();
+
+  const eagleNumber=
+    Number(next?.next_number||1);
 
   const row=await c.env.DB
     .prepare(`
@@ -1610,6 +1618,130 @@ app.post('/api/admin/eagles',async c=>{
   },201);
 });
 
+app.put('/api/admin/eagles/order',async c=>{
+  const d=admin(c,'EAGLE');
+  if(d)return d;
+
+  const body=await c.req.json<any>();
+  const items=
+    Array.isArray(body.items)?
+      body.items:
+      [];
+
+  if(!items.length)
+    return json(
+      c,
+      {error:'An Eagle Scout order is required.'},
+      400
+    );
+
+  const current=await c.env.DB
+    .prepare(`
+      SELECT id
+      FROM eagles
+      ORDER BY
+        eagle_number DESC,
+        id DESC
+    `)
+    .all<any>();
+
+  const currentIds=
+    (current.results??[])
+      .map(
+        (x:any)=>Number(x.id)
+      );
+
+  const submittedIds=
+    items.map(
+      (x:any)=>Number(x.id)
+    );
+
+  if(
+    submittedIds.length!==currentIds.length||
+    new Set(submittedIds).size!==
+      submittedIds.length
+  )
+    return json(
+      c,
+      {
+        error:
+          'The Eagle Scout list changed. Please reload and try again.'
+      },
+      409
+    );
+
+  const currentSet=
+    new Set(currentIds);
+
+  if(
+    submittedIds.some(
+      id=>!currentSet.has(id)
+    )
+  )
+    return json(
+      c,
+      {
+        error:
+          'The Eagle Scout list changed. Please reload and try again.'
+      },
+      409
+    );
+
+  const prepared=[
+    c.env.DB.prepare(
+      'UPDATE eagles SET eagle_number=-id'
+    )
+  ];
+
+  for(
+    let i=0;
+    i<items.length;
+    i++
+  ){
+    const id=
+      Number(items[i].id);
+
+    const year=
+      Number(items[i].eagle_year);
+
+    if(
+      !Number.isInteger(year)||
+      year<1
+    )
+      return json(
+        c,
+        {
+          error:
+            'Every Eagle Scout must have a valid year.'
+        },
+        400
+      );
+
+    prepared.push(
+      c.env.DB.prepare(`
+        UPDATE eagles
+        SET
+          eagle_number=?,
+          eagle_year=?
+        WHERE id=?
+      `)
+      .bind(
+        items.length-i,
+        year,
+        id
+      )
+    );
+  }
+
+  await c.env.DB.batch(
+    prepared
+  );
+
+  return json(c,{
+    ok:true
+  });
+});
+
 app.delete('/api/admin/eagles/:id',async c=>{
   const d=admin(c,'EAGLE');
   if(d)return d;
@@ -1639,7 +1771,50 @@ app.delete('/api/admin/eagles/:id',async c=>{
       404
     );
 
-  return json(c,{ok:true});
+  const remaining=await c.env.DB
+    .prepare(`
+      SELECT id
+      FROM eagles
+      ORDER BY
+        eagle_number DESC,
+        id DESC
+    `)
+    .all<any>();
+
+  const prepared=[
+    c.env.DB.prepare(
+      'UPDATE eagles SET eagle_number=-id'
+    )
+  ];
+
+  const list=
+    remaining.results??[];
+
+  for(
+    let i=0;
+    i<list.length;
+    i++
+  ){
+    prepared.push(
+      c.env.DB.prepare(`
+        UPDATE eagles
+        SET eagle_number=?
+        WHERE id=?
+      `)
+      .bind(
+        list.length-i,
+        Number(list[i].id)
+      )
+    );
+  }
+
+  await c.env.DB.batch(
+    prepared
+  );
+
+  return json(c,{
+    ok:true
+  });
 });
 
 app.get('/api/history',async c=>{
