@@ -1644,7 +1644,13 @@ tbody tr:nth-child(even){
 .eagle-year-grid{
   display:grid;
   grid-template-columns:
-    repeat(auto-fill,minmax(210px,1fr));
+    repeat(
+      auto-fill,
+      minmax(
+        var(--eagle-card-min-width,210px),
+        1fr
+      )
+    );
   gap:12px
 }
 
