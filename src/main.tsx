@@ -1801,9 +1801,146 @@ function Eagles({me}:{me:any}){
   const [draggedId,setDraggedId]=
     useState<number|null>(null);
 
+  const eagleGridRef=
+  useRef<HTMLDivElement|null>(null);
+
+  const [
+    eagleCardMinWidth,
+    setEagleCardMinWidth
+  ]=useState(210);
+
   const canEdit=
     !!me?.isAdministrator||
     !!me?.permissions?.includes('EAGLE');
+
+  useEffect(()=>{
+    const grid=
+      eagleGridRef.current;
+  
+    if(!grid)
+      return;
+  
+    const measure=()=>{
+      if(
+        window.matchMedia(
+          '(max-width:800px)'
+        ).matches
+      ){
+        setEagleCardMinWidth(0);
+        return;
+      }
+  
+      const cards=
+        Array.from(
+          grid.querySelectorAll(
+            '.eagle-year-card'
+          )
+        ) as HTMLElement[];
+  
+      if(!cards.length)
+        return;
+  
+      const measurements=
+        cards.map(card=>{
+          const clone=
+            card.cloneNode(true)
+            as HTMLElement;
+  
+          clone.style.position=
+            'absolute';
+  
+          clone.style.visibility=
+            'hidden';
+  
+          clone.style.width=
+            'max-content';
+  
+          clone.style.minWidth=
+            'max-content';
+  
+          clone.style.maxWidth=
+            'none';
+  
+          clone.style.left=
+            '-100000px';
+  
+          clone.style.top=
+            '0';
+  
+          clone.style.boxSizing=
+            'border-box';
+  
+          clone.style.whiteSpace=
+            'nowrap';
+  
+          clone.querySelectorAll(
+            '.eagle-entry-name'
+          ).forEach(
+            node=>{
+              const el=
+                node as HTMLElement;
+  
+              el.style.whiteSpace=
+                'nowrap';
+  
+              el.style.overflowWrap=
+                'normal';
+            }
+          );
+  
+          document.body.appendChild(
+            clone
+          );
+  
+          const width=
+            Math.ceil(
+              clone.getBoundingClientRect()
+                .width
+            );
+  
+          clone.remove();
+  
+          return width;
+        });
+  
+      const widest=
+        Math.max(
+          210,
+          ...measurements
+        );
+  
+      setEagleCardMinWidth(
+        widest
+      );
+    };
+  
+    measure();
+  
+    const observer=
+      new ResizeObserver(
+        measure
+      );
+  
+    observer.observe(grid);
+  
+    window.addEventListener(
+      'resize',
+      measure
+    );
+  
+    return()=>{
+      observer.disconnect();
+  
+      window.removeEventListener(
+        'resize',
+        measure
+      );
+    };
+  },[
+    rows,
+    editing,
+    q
+  ]);
 
   const load=async()=>{
     try{
@@ -2056,7 +2193,18 @@ function Eagles({me}:{me:any}){
     }
 
     {groups.size?
-      <div className="eagle-year-grid">
+      <div
+        ref={eagleGridRef}
+        className="eagle-year-grid"
+        style={
+          eagleCardMinWidth?
+            {
+              '--eagle-card-min-width':
+                `${eagleCardMinWidth}px`
+            } as React.CSSProperties:
+            undefined
+        }
+      >
         {orderedYears.map(
           year=>{
             const eagles=
