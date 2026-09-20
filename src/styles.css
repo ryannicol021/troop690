@@ -1797,6 +1797,175 @@ tbody tr:nth-child(even){
   padding:0
 }
 
+.leadership-page-actions{
+  display:flex;
+  align-items:center;
+  gap:6px
+}
+
+.leadership-edit-button{
+  min-height:34px;
+  padding:4px 8px;
+  font-size:.8rem
+}
+
+.leadership-youth-grid{
+  display:grid;
+  grid-template-columns:
+    repeat(
+      auto-fill,
+      minmax(210px,1fr)
+    );
+  gap:12px
+}
+
+.leadership-youth-grid .card + .card,
+.leadership-adult-grid .card + .card{
+  margin-top:0
+}
+
+.leadership-youth-card{
+  margin:0;
+  padding:14px;
+  display:flex;
+  flex-direction:column
+}
+
+.leadership-card-title{
+  margin:0 0 12px;
+  color:var(--navy)
+}
+
+.leadership-holder-names{
+  color:var(--text);
+  font-weight:600;
+  margin-bottom:14px
+}
+
+.leadership-holder-list{
+  display:grid;
+  gap:0;
+  margin-bottom:14px
+}
+
+.leadership-holder-row{
+  padding:8px 0;
+  border-bottom:1px solid var(--border)
+}
+
+.leadership-holder-row:last-child{
+  border-bottom:0
+}
+
+.leadership-holder-name{
+  color:var(--text);
+  font-weight:600
+}
+
+.leadership-holder-subtitle{
+  margin-top:2px;
+  color:var(--muted);
+  font-size:.82rem
+}
+
+.leadership-description-section{
+  margin-top:auto;
+  padding-top:10px;
+  border-top:1px solid var(--border)
+}
+
+.leadership-description-heading{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  color:var(--navy);
+  font-weight:600;
+  font-size:.85rem
+}
+
+.leadership-change-button{
+  border:0;
+  background:none;
+  color:var(--navy);
+  padding:2px 0;
+  font-size:.78rem;
+  font-weight:600;
+  cursor:pointer
+}
+
+.leadership-description{
+  margin:6px 0 0;
+  color:var(--text);
+  white-space:pre-wrap
+}
+
+.leadership-description-editor{
+  margin-top:6px
+}
+
+.leadership-description-editor textarea{
+  width:100%;
+  min-height:90px;
+  resize:vertical;
+  border:1px solid #bdbdbd;
+  border-radius:3px;
+  padding:.62rem;
+  background:#fff
+}
+
+.leadership-description-actions{
+  display:flex;
+  gap:6px;
+  margin-top:7px
+}
+
+.leadership-adult-grid{
+  display:grid;
+  grid-template-columns:
+    repeat(3,minmax(0,1fr));
+  gap:12px
+}
+
+.leadership-adult-card{
+  margin:0;
+  padding:14px;
+  min-width:0
+}
+
+.leadership-adult-list{
+  display:grid;
+  grid-auto-rows:minmax(62px,1fr)
+}
+
+.leadership-adult-row{
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  padding:9px 0;
+  border-bottom:1px solid var(--border)
+}
+
+.leadership-adult-row:last-child{
+  border-bottom:0
+}
+
+.leadership-adult-name{
+  color:var(--text);
+  font-weight:600
+}
+
+.leadership-adult-title{
+  margin-top:2px;
+  color:var(--muted);
+  font-size:.82rem
+}
+
+.leadership-adult-row-name-only{
+  align-items:flex-start;
+  justify-content:center
+}
+
 .album-grid,
 .button-grid,
 .uniform-grid{
@@ -2615,10 +2784,12 @@ footer a:hover{
   .button-grid,
   .uniform-grid,
   .admin-grid,
-  .check-grid{
+  .check-grid,
+  .leadership-youth-grid,
+  .leadership-adult-grid{
     grid-template-columns:1fr
   }
-
+  
   .page-head{
     align-items:flex-start;
     flex-direction:column
