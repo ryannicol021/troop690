@@ -1836,12 +1836,6 @@ tbody tr:nth-child(even){
   color:var(--navy)
 }
 
-.leadership-holder-names{
-  color:var(--text);
-  font-weight:600;
-  margin-bottom:14px
-}
-
 .leadership-holder-list{
   display:grid;
   gap:0;
@@ -1869,7 +1863,7 @@ tbody tr:nth-child(even){
 }
 
 .leadership-description-section{
-  margin-top:auto;
+  margin-top:14px;
   padding-top:10px;
   border-top:1px solid var(--border)
 }
@@ -1885,12 +1879,16 @@ tbody tr:nth-child(even){
 }
 
 .leadership-change-button{
-  border:0;
-  background:none;
+  min-height:28px;
+  height:28px;
+  padding:3px 8px;
+  border:1px solid #bdb5a6;
+  border-radius:3px;
+  background:var(--khaki-light);
   color:var(--navy);
-  padding:2px 0;
-  font-size:.78rem;
+  font-size:.75rem;
   font-weight:600;
+  line-height:1;
   cursor:pointer
 }
 
