@@ -6795,39 +6795,34 @@ function Leadership({me}:{me:any}){
                 {x.name}
               </h3>
 
-              {x.holders.length>0&&
-                <div className={
-                  patrolPosition?
-                    'leadership-holder-list':
-                    'leadership-holder-names'
-                }>
-                  {patrolPosition?
-                    x.holders.map(
-                      (holder:any)=>
-                        <div
-                          className="leadership-holder-row"
-                          key={holder.id}
-                        >
-                          <div className="leadership-holder-name">
-                            {holder.name}
-                          </div>
+{x.holders.length>0&&
+  <div className="leadership-holder-list">
+    {x.holders.map(
+      (holder:any)=>
+        <div
+          className="leadership-holder-row"
+          key={holder.id}
+        >
+          <div className="leadership-holder-name">
+            {holder.name}
+            {holder.suffix&&
+              ` ${holder.suffix}`
+            }
+          </div>
 
-                          {holder.patrol&&
-                            <div className="leadership-holder-subtitle">
-                              {holder.patrol}
-                            </div>
-                          }
-                        </div>
-                    ):
-                    x.holders
-                      .map(
-                        (holder:any)=>
-                          holder.name
-                      )
-                      .join(', ')
-                  }
-                </div>
-              }
+          {(
+            x.name==='Patrol Leader'||
+            x.name==='Assistant Patrol Leader'
+          )&&
+            holder.patrol&&
+            <div className="leadership-holder-subtitle">
+              {holder.patrol}
+            </div>
+          }
+        </div>
+    )}
+  </div>
+}
 
               <div className="leadership-description-section">
                 <div className="leadership-description-heading">
