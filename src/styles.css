@@ -1853,7 +1853,11 @@ tbody tr:nth-child(even){
 }
 
 .leadership-holder-row{
+  height:var(--leadership-row-height,auto);
   padding:8px 0;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
   border-bottom:1px solid var(--border)
 }
 
@@ -1925,15 +1929,14 @@ tbody tr:nth-child(even){
 }
 
 .leadership-adult-list{
-  display:grid;
-  grid-auto-rows:62px
+  display:grid
 }
 
 .leadership-adult-row{
+  height:var(--leadership-row-height,auto);
   display:flex;
   flex-direction:column;
   justify-content:center;
-  height:62px;
   padding:9px 0;
   border-bottom:1px solid var(--border)
 }
@@ -1954,7 +1957,6 @@ tbody tr:nth-child(even){
 }
 
 .leadership-adult-row-name-only{
-  align-items:flex-start;
   justify-content:center
 }
 
@@ -2776,21 +2778,15 @@ footer a:hover{
   .button-grid,
   .uniform-grid,
   .admin-grid,
-  .check-grid{
-    grid-template-columns:1fr
-  }
-
+  .check-grid,
   .leadership-youth-grid,
   .leadership-adult-grid{
     grid-template-columns:1fr
   }
 
-  .leadership-adult-list{
-    grid-auto-rows:auto
-  }
-
+  .leadership-holder-row,
   .leadership-adult-row{
-    height:62px
+    height:auto
   }
 
   .leadership-adult-row-name-only{
