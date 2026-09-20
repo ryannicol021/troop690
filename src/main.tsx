@@ -6658,6 +6658,9 @@ function Leadership({me}:{me:any}){
     useState(false);
   const [error,setError]=useState('');
 
+  const [collapsedSections,setCollapsedSections]=
+    useState<Record<string,boolean>>({});
+
   const youthGridRef=
     useRef<HTMLDivElement|null>(null);
 
@@ -6868,6 +6871,13 @@ function Leadership({me}:{me:any}){
       }
     </Page>;
 
+  const toggleSection=(key:string)=>{
+    setCollapsedSections(current=>({
+      ...current,
+      [key]:!current[key]
+    }));
+  };
+  
   return <Page
     title="Leadership"
     actions={
@@ -6896,8 +6906,23 @@ function Leadership({me}:{me:any}){
       </p>
     }
 
-    <section>
-      <h2>Youth Leaders</h2>
+<section>
+  <button
+    type="button"
+    className="leadership-section-toggle"
+    onClick={()=>
+      toggleSection('youth')
+    }
+    aria-expanded={!collapsedSections.youth}
+  >
+    <span className="leadership-section-arrow">
+      {collapsedSections.youth?'▸':'▾'}
+    </span>
+    <span>Youth Leaders</span>
+  </button>
+
+  {!collapsedSections.youth&&
+    <div className="leadership-section-content">
 
       <div
         className="leadership-youth-grid"
@@ -7011,11 +7036,29 @@ function Leadership({me}:{me:any}){
             </article>
           );
         })}
-      </div>
-    </section>
+    </div>
+  }
+</section>
 
-    <section>
-      <h2>Adult Leaders</h2>
+<section>
+    
+<section>
+  <button
+    type="button"
+    className="leadership-section-toggle"
+    onClick={()=>
+      toggleSection('adult')
+    }
+    aria-expanded={!collapsedSections.adult}
+  >
+    <span className="leadership-section-arrow">
+      {collapsedSections.adult?'▸':'▾'}
+    </span>
+    <span>Adult Leaders</span>
+  </button>
+
+  {!collapsedSections.adult&&
+    <div className="leadership-section-content">
 
       <div
         className="leadership-adult-grid"
@@ -7088,11 +7131,27 @@ function Leadership({me}:{me:any}){
             )}
           </div>
         </article>
-      </div>
-    </section>
+    </div>
+  }
+</section>
 
-    <section>
-      <h2>SPL History</h2>
+<section>
+  <button
+    type="button"
+    className="leadership-section-toggle"
+    onClick={()=>
+      toggleSection('splHistory')
+    }
+    aria-expanded={!collapsedSections.splHistory}
+  >
+    <span className="leadership-section-arrow">
+      {collapsedSections.splHistory?'▸':'▾'}
+    </span>
+    <span>SPL History</span>
+  </button>
+
+  {!collapsedSections.splHistory&&
+    <div className="leadership-section-content">
 
       {d.history
         .filter(
@@ -7111,13 +7170,28 @@ function Leadership({me}:{me:any}){
               <span>
                 {x.start_year}-{x.end_year}
               </span>
-            </div>
-        )
-      }
-    </section>
+                </div>
+          )
+  }
+</section>
 
-    <section>
-      <h2>Scoutmaster History</h2>
+<section>
+  <button
+    type="button"
+    className="leadership-section-toggle"
+    onClick={()=>
+      toggleSection('scoutmasterHistory')
+    }
+    aria-expanded={!collapsedSections.scoutmasterHistory}
+  >
+    <span className="leadership-section-arrow">
+      {collapsedSections.scoutmasterHistory?'▸':'▾'}
+    </span>
+    <span>Scoutmaster History</span>
+  </button>
+
+  {!collapsedSections.scoutmasterHistory&&
+    <div className="leadership-section-content">
 
       {d.history
         .filter(
@@ -7134,10 +7208,10 @@ function Leadership({me}:{me:any}){
               <span>
                 {x.start_year}-{x.end_year}
               </span>
-            </div>
-        )
-      }
-    </section>
+    </div>
+          )
+  }
+</section>
   </Page>
 }
 
