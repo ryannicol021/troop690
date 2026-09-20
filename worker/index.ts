@@ -2858,8 +2858,7 @@ app.get('/api/leadership',async c=>{
         name:[
           String(row.prefix||'').trim(),
           String(row.first_name||'').trim(),
-          String(row.last_name||'').trim(),
-          String(row.suffix||'').trim()
+          String(row.last_name||'').trim()
         ]
           .filter(Boolean)
           .join(' '),
