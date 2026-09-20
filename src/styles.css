@@ -1812,10 +1812,7 @@ tbody tr:nth-child(even){
 .leadership-youth-grid{
   display:grid;
   grid-template-columns:
-    repeat(
-      auto-fill,
-      minmax(210px,1fr)
-    );
+    repeat(4,minmax(0,1fr));
   gap:12px
 }
 
@@ -1937,6 +1934,7 @@ tbody tr:nth-child(even){
   display:flex;
   flex-direction:column;
   justify-content:center;
+  height:62px;
   padding:9px 0;
   border-bottom:1px solid var(--border)
 }
@@ -2783,6 +2781,10 @@ footer a:hover{
   .leadership-youth-grid,
   .leadership-adult-grid{
     grid-template-columns:1fr
+  }
+
+  .leadership-adult-row-name-only{
+    height:44px
   }
   
   .page-head{
