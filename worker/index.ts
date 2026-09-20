@@ -2675,27 +2675,274 @@ app.get('/api/leadership',async c=>{
   const canHistory=
     !!u&&u.permissions.includes('HSTV');
 
-  const rows=await c.env.DB
+  /*
+   * Keep a saved leadership-description row for
+   * every currently established youth position.
+   *
+   * The system "Youth" position itself is excluded.
+   */
+  await c.env.DB.prepare(`
+    INSERT OR IGNORE INTO leadership_positions(
+      name,
+      description,
+      public_visible,
+      visible_order
+    )
+    SELECT
+      name,
+      'Description',
+      1,
+      id
+    FROM positions
+    WHERE
+      category='youth'
+      AND (
+        code IS NULL
+        OR code<>'YOUTH'
+      )
+  `).run();
+
+  const youthPositions=await c.env.DB
     .prepare(`
       SELECT
-        lp.id,
-        lp.name,
-        lp.description,
-        lp.public_visible,
-        lp.visible_order,
-        ${canHolder?
-          'p.first_name||" "||p.last_name':
-          'NULL'
-        } holder
-      FROM leadership_positions lp
-      LEFT JOIN leadership_holders lh
-        ON lh.leadership_position_id=lp.id
-      LEFT JOIN people p
-        ON p.id=lh.person_id
-      WHERE lp.public_visible=1
-      ORDER BY lp.visible_order
+        p.id position_id,
+        p.name,
+        lp.id leadership_id,
+        CASE
+          WHEN lp.description IS NULL
+            OR lp.description=''
+          THEN 'Description'
+          ELSE lp.description
+        END description
+      FROM positions p
+      JOIN leadership_positions lp
+        ON lp.name=p.name
+      WHERE
+        p.category='youth'
+        AND (
+          p.code IS NULL
+          OR p.code<>'YOUTH'
+        )
+      ORDER BY p.id
     `)
     .all<any>();
+
+  const youthHolderRows=await c.env.DB
+    .prepare(`
+      SELECT
+        pp.position_id,
+        p.id person_id,
+        p.first_name,
+        p.last_name,
+        COALESCE(
+          pu.name,
+          NULLIF(p.patrol,'')
+        ) patrol_name
+      FROM person_positions pp
+      JOIN people p
+        ON p.id=pp.person_id
+      JOIN positions pos
+        ON pos.id=pp.position_id
+      LEFT JOIN patrol_members pm
+        ON pm.person_id=p.id
+      LEFT JOIN patrol_units pu
+        ON pu.id=pm.patrol_id
+      WHERE
+        pos.category='youth'
+        AND (
+          pos.code IS NULL
+          OR pos.code<>'YOUTH'
+        )
+        AND p.archived=0
+      ORDER BY
+        pp.position_id,
+        p.last_name,
+        p.first_name
+    `)
+    .all<any>();
+
+  const youthHolders=new Map<number,any[]>();
+
+  for(const row of (
+    youthHolderRows.results??[]
+  )){
+    const positionId=
+      Number(row.position_id);
+
+    if(!youthHolders.has(positionId))
+      youthHolders.set(
+        positionId,
+        []
+      );
+
+    youthHolders.get(positionId)!.push({
+      id:Number(row.person_id),
+      name:
+        `${row.first_name} ${row.last_name}`
+          .trim(),
+      patrol:
+        String(row.patrol_name||'')
+    });
+  }
+
+  /*
+   * Only youth positions with a current holder
+   * appear. Holder names are hidden unless the
+   * viewer has View Member Leadership.
+   */
+  const positions=
+    (youthPositions.results??[])
+      .map((x:any)=>{
+        const holders=
+          youthHolders.get(
+            Number(x.position_id)
+          )||[];
+
+        if(!holders.length)
+          return null;
+
+        return {
+          id:Number(x.leadership_id),
+          position_id:Number(x.position_id),
+          name:String(x.name||''),
+          description:String(
+            x.description||'Description'
+          ),
+          holders:canHolder?
+            holders:
+            []
+        };
+      })
+      .filter(Boolean);
+
+  const adultRows=await c.env.DB
+    .prepare(`
+      SELECT
+        p.id person_id,
+        p.first_name,
+        p.last_name,
+        pos.id position_id,
+        pos.name position_name
+      FROM person_positions pp
+      JOIN people p
+        ON p.id=pp.person_id
+      JOIN positions pos
+        ON pos.id=pp.position_id
+      WHERE
+        p.archived=0
+        AND p.adult=1
+        AND pos.category='adult'
+      ORDER BY
+        p.last_name,
+        p.first_name,
+        pos.id
+    `)
+    .all<any>();
+
+  const adults=new Map<number,any>();
+
+  for(const row of (
+    adultRows.results??[]
+  )){
+    const personId=
+      Number(row.person_id);
+
+    if(!adults.has(personId)){
+      adults.set(personId,{
+        id:personId,
+        name:
+          `${row.first_name} ${row.last_name}`
+            .trim(),
+        positions:[]
+      });
+    }
+
+    adults.get(personId)!.positions.push(
+      String(row.position_name||'')
+    );
+  }
+
+  const executiveTitles=[
+    'Executive Officer',
+    'Scout Moderator',
+    'Chartered Organization Representative',
+    'Committee Chair',
+    'Scoutmaster'
+  ];
+
+  const executive=
+    executiveTitles.flatMap(
+      title=>
+        [...adults.values()]
+          .filter((person:any)=>
+            person.positions.includes(title)
+          )
+          .map((person:any)=>({
+            id:person.id,
+            name:person.name,
+            title
+          }))
+    );
+
+  const assistantScoutmasters=
+    [...adults.values()]
+      .filter((person:any)=>
+        person.positions.includes(
+          'Assistant Scoutmaster'
+        )
+      )
+      .map((person:any)=>({
+        id:person.id,
+        name:person.name
+      }));
+
+  const committeeExcluded=new Set([
+    'Committee Member',
+    'Executive Officer',
+    'Scout Moderator',
+    'Chartered Organization Representative',
+    'Committee Chair',
+    'Scoutmaster',
+    'Assistant Scoutmaster',
+    'Merit Badge Counselor'
+  ]);
+
+  const committee=
+    [...adults.values()]
+      .filter((person:any)=>
+        person.positions.includes(
+          'Committee Member'
+        )
+      )
+      .map((person:any)=>{
+
+        const titles=
+          person.positions
+            .filter(
+              (title:string)=>
+                !committeeExcluded.has(title)
+            )
+            .map((title:string)=>
+              title.endsWith(
+                ' Coordinator'
+              )?
+                title.slice(
+                  0,
+                  -' Coordinator'.length
+                ):
+                title
+            )
+            .filter(Boolean);
+
+        return {
+          id:person.id,
+          name:person.name,
+          title:
+            titles.length?
+              titles.join(', '):
+              'Committee Member'
+        };
+      });
 
   const hist=canHistory?
     await c.env.DB
@@ -2706,8 +2953,77 @@ app.get('/api/leadership',async c=>{
     {results:[]};
 
   return json(c,{
-    positions:rows.results,
+    positions,
+    adult:{
+      executive,
+      assistantScoutmasters,
+      committee
+    },
     history:hist.results
+  });
+});
+
+app.put('/api/admin/leadership/:id',async c=>{
+  const d=admin(c,'LEAD');
+  if(d)return d;
+
+  const id=Number(
+    c.req.param('id')
+  );
+
+  if(!Number.isInteger(id))
+    return json(
+      c,
+      {error:'Invalid leadership position.'},
+      400
+    );
+
+  const x=await c.req.json();
+
+  const description=
+    String(
+      x.description??''
+    ).trim();
+
+  const row=await c.env.DB
+    .prepare(`
+      SELECT
+        lp.id
+      FROM leadership_positions lp
+      JOIN positions p
+        ON p.name=lp.name
+      WHERE
+        lp.id=?
+        AND p.category='youth'
+        AND (
+          p.code IS NULL
+          OR p.code<>'YOUTH'
+        )
+    `)
+    .bind(id)
+    .first<any>();
+
+  if(!row)
+    return json(
+      c,
+      {error:'Youth leadership position not found.'},
+      404
+    );
+
+  await c.env.DB
+    .prepare(`
+      UPDATE leadership_positions
+      SET description=?
+      WHERE id=?
+    `)
+    .bind(
+      description||'Description',
+      id
+    )
+    .run();
+
+  return json(c,{
+    ok:true
   });
 });
 
