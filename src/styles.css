@@ -2030,6 +2030,10 @@ tbody tr:nth-child(even){
   padding:14px
 }
 
+.leadership-history-grid .card + .card{
+  margin-top:0
+}
+
 .leadership-history-card-head{
   display:flex;
   align-items:flex-start;
