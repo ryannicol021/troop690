@@ -1848,6 +1848,7 @@ tbody tr:nth-child(even){
 }
 
 .leadership-holder-row:last-child{
+  padding-bottom:0;
   border-bottom:0
 }
 
@@ -1889,7 +1890,7 @@ tbody tr:nth-child(even){
 }
 
 .leadership-description{
-  margin:0;
+  margin:6px 0 0;
   color:var(--text);
   white-space:pre-wrap
 }
