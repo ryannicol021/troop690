@@ -331,9 +331,10 @@ section>h2{
 }
 
 .home-add-button{
-  width:calc(1.45rem * 1.5);
-  height:calc(1.45rem * 1.5);
-  min-width:calc(1.45rem * 1.5);
+  width:34px;
+  height:34px;
+  min-width:34px;
+  min-height:34px;
   padding:0;
   border:1px solid #bdb5a6;
   border-radius:3px;
@@ -452,9 +453,10 @@ section>h2{
 }
 
 .home-history-delete-button{
-  width:1.5rem;
-  height:1.5rem;
-  min-width:1.5rem;
+  width:calc(1.45rem * 1.5);
+  height:calc(1.45rem * 1.5);
+  min-width:calc(1.45rem * 1.5);
+  min-height:34px;
   padding:0;
   border:1px solid #bdb5a6;
   border-radius:3px;
@@ -462,7 +464,7 @@ section>h2{
   color:var(--red);
   display:grid;
   place-items:center;
-  font-size:1.1rem;
+  font-size:1.35rem;
   line-height:1;
   cursor:pointer
 }
