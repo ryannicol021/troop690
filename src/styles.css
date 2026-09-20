@@ -2021,7 +2021,8 @@ tbody tr:nth-child(even){
   display:grid;
   grid-template-columns:
     repeat(3,minmax(0,1fr));
-  gap:12px
+  gap:12px;
+  margin-top:8px
 }
 
 .leadership-history-card{
