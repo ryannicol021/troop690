@@ -299,7 +299,7 @@ const requiredPermission=
       id={p.split('/')[2]}
       me={me}
     />;
-  if(p==='/leadership')return <Leadership/>;
+  if(p==='/leadership')return <Leadership me={me}/>;
   if(p==='/advancement')return <Advancement/>;
   if(p==='/summer-camp')return <SummerCamp/>;
   if(p==='/uniform')return <Uniform/>;
@@ -6642,40 +6642,356 @@ const formatStoragePercent=(
   </Page>;
 }
 
-function Leadership(){
+function Leadership({me}:{me:any}){
   const [d,setD]=useState<any>();
+  const [editing,setEditing]=useState(false);
+  const [editingDescription,setEditingDescription]=
+    useState<number|null>(null);
+  const [descriptionDraft,setDescriptionDraft]=
+    useState('');
+  const [savingDescription,setSavingDescription]=
+    useState(false);
+  const [error,setError]=useState('');
+
+  const canEdit=
+    !!me?.isAdministrator||
+    !!me?.permissions?.includes('LEAD');
+
+  const load=async()=>{
+    try{
+      setError('');
+
+      const x=
+        await api('/leadership');
+
+      setD(x);
+    }catch(e:any){
+      setError(
+        e?.message||
+        'Unable to load leadership.'
+      );
+    }
+  };
 
   useEffect(()=>{
-    api('/leadership').then(setD)
+    load();
   },[]);
 
-  if(!d)
-    return <Page title="Leadership"><Loading/></Page>;
+  const startDescriptionEdit=(x:any)=>{
+    setEditingDescription(
+      Number(x.id)
+    );
 
-  return <Page title="Leadership">
-    <div className="grid two">
-      {d.positions.map((x:any)=>
-        <article className="card" key={x.id}>
-          <h2>{x.name}</h2>
-          <p>{x.description}</p>
-          <p className="holder">
-            {x.holder||'Current holder information is member-only.'}
-          </p>
+    setDescriptionDraft(
+      String(
+        x.description||
+        'Description'
+      )
+    );
+  };
+
+  const cancelDescriptionEdit=()=>{
+    setEditingDescription(null);
+    setDescriptionDraft('');
+  };
+
+  const saveDescription=async(
+    x:any
+  )=>{
+    try{
+      setSavingDescription(true);
+      setError('');
+
+      await put(
+        `/admin/leadership/${x.id}`,
+        {
+          description:
+            descriptionDraft
+        }
+      );
+
+      setD((current:any)=>({
+        ...current,
+        positions:
+          current.positions.map(
+            (position:any)=>
+              Number(position.id)===
+              Number(x.id)?
+                {
+                  ...position,
+                  description:
+                    descriptionDraft.trim()||
+                    'Description'
+                }:
+                position
+          )
+      }));
+
+      cancelDescriptionEdit();
+    }catch(e:any){
+      setError(
+        e?.message||
+        'Unable to save description.'
+      );
+    }finally{
+      setSavingDescription(false);
+    }
+  };
+
+  if(!d)
+    return <Page title="Leadership">
+      {error&&
+        <p className="error">
+          {error}
+        </p>
+      }
+    </Page>;
+
+  return <Page
+    title="Leadership"
+    actions={
+      canEdit&&
+      <div className="leadership-page-actions">
+        <button
+          type="button"
+          className="button leadership-edit-button"
+          onClick={()=>{
+            setEditing(
+              value=>!value
+            );
+
+            if(editing)
+              cancelDescriptionEdit();
+          }}
+        >
+          {editing?'Done':'Edit'}
+        </button>
+      </div>
+    }
+  >
+    {error&&
+      <p className="error">
+        {error}
+      </p>
+    }
+
+    <section>
+      <h2>Youth Leaders</h2>
+
+      <div className="leadership-youth-grid">
+        {d.positions.map((x:any)=>{
+          const patrolPosition=
+            x.name===
+              'Patrol Leader'||
+            x.name===
+              'Assistant Patrol Leader';
+
+          return (
+            <article
+              className="card leadership-youth-card"
+              key={x.id}
+            >
+              <h3 className="leadership-card-title">
+                {x.name}
+              </h3>
+
+              {x.holders.length>0&&
+                <div className={
+                  patrolPosition?
+                    'leadership-holder-list':
+                    'leadership-holder-names'
+                }>
+                  {patrolPosition?
+                    x.holders.map(
+                      (holder:any)=>
+                        <div
+                          className="leadership-holder-row"
+                          key={holder.id}
+                        >
+                          <div className="leadership-holder-name">
+                            {holder.name}
+                          </div>
+
+                          {holder.patrol&&
+                            <div className="leadership-holder-subtitle">
+                              {holder.patrol}
+                            </div>
+                          }
+                        </div>
+                    ):
+                    x.holders
+                      .map(
+                        (holder:any)=>
+                          holder.name
+                      )
+                      .join(', ')
+                  }
+                </div>
+              }
+
+              <div className="leadership-description-section">
+                <div className="leadership-description-heading">
+                  <span>Description</span>
+
+                  {editing&&
+                    <button
+                      type="button"
+                      className="leadership-change-button"
+                      onClick={()=>
+                        startDescriptionEdit(x)
+                      }
+                    >
+                      Change
+                    </button>
+                  }
+                </div>
+
+                {editingDescription===
+                  Number(x.id)?
+                  <div className="leadership-description-editor">
+                    <textarea
+                      value={descriptionDraft}
+                      onChange={e=>
+                        setDescriptionDraft(
+                          e.target.value
+                        )
+                      }
+                    />
+
+                    <div className="leadership-description-actions">
+                      <button
+                        type="button"
+                        className="button"
+                        disabled={
+                          savingDescription
+                        }
+                        onClick={()=>
+                          saveDescription(x)
+                        }
+                      >
+                        Save
+                      </button>
+
+                      <button
+                        type="button"
+                        className="button"
+                        disabled={
+                          savingDescription
+                        }
+                        onClick={
+                          cancelDescriptionEdit
+                        }
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>:
+                  <p className="leadership-description">
+                    {x.description}
+                  </p>
+                }
+              </div>
+            </article>
+          );
+        })}
+      </div>
+    </section>
+
+    <section>
+      <h2>Adult Leaders</h2>
+
+      <div className="leadership-adult-grid">
+        <article className="card leadership-adult-card">
+          <h3 className="leadership-card-title">
+            Executive Leadership
+          </h3>
+
+          <div className="leadership-adult-list">
+            {d.adult.executive.map(
+              (x:any)=>
+                <div
+                  className="leadership-adult-row"
+                  key={`${x.id}-${x.title}`}
+                >
+                  <div className="leadership-adult-name">
+                    {x.name}
+                  </div>
+
+                  <div className="leadership-adult-title">
+                    {x.title}
+                  </div>
+                </div>
+            )}
+          </div>
         </article>
-      )}
-    </div>
+
+        <article className="card leadership-adult-card">
+          <h3 className="leadership-card-title">
+            Assistant Scoutmasters
+          </h3>
+
+          <div className="leadership-adult-list">
+            {d.adult.assistantScoutmasters.map(
+              (x:any)=>
+                <div
+                  className="leadership-adult-row leadership-adult-row-name-only"
+                  key={x.id}
+                >
+                  <div className="leadership-adult-name">
+                    {x.name}
+                  </div>
+                </div>
+            )}
+          </div>
+        </article>
+
+        <article className="card leadership-adult-card">
+          <h3 className="leadership-card-title">
+            Committee Members
+          </h3>
+
+          <div className="leadership-adult-list">
+            {d.adult.committee.map(
+              (x:any)=>
+                <div
+                  className="leadership-adult-row"
+                  key={x.id}
+                >
+                  <div className="leadership-adult-name">
+                    {x.name}
+                  </div>
+
+                  <div className="leadership-adult-title">
+                    {x.title}
+                  </div>
+                </div>
+            )}
+          </div>
+        </article>
+      </div>
+    </section>
 
     <section>
       <h2>SPL History</h2>
 
       {d.history
-        .filter((x:any)=>x.type==='SPL'||x.type==='ASPL')
-        .map((x:any)=>
-          <div className="list-row" key={x.id}>
-            <span>{x.type}</span>
-            <b>{x.person_name}</b>
-            <span>{x.start_year}-{x.end_year}</span>
-          </div>
+        .filter(
+          (x:any)=>
+            x.type==='SPL'||
+            x.type==='ASPL'
+        )
+        .map(
+          (x:any)=>
+            <div
+              className="list-row"
+              key={x.id}
+            >
+              <span>{x.type}</span>
+              <b>{x.person_name}</b>
+              <span>
+                {x.start_year}-{x.end_year}
+              </span>
+            </div>
         )
       }
     </section>
@@ -6684,12 +7000,21 @@ function Leadership(){
       <h2>Scoutmaster History</h2>
 
       {d.history
-        .filter((x:any)=>x.type==='Scoutmaster')
-        .map((x:any)=>
-          <div className="list-row" key={x.id}>
-            <b>{x.person_name}</b>
-            <span>{x.start_year}-{x.end_year}</span>
-          </div>
+        .filter(
+          (x:any)=>
+            x.type==='Scoutmaster'
+        )
+        .map(
+          (x:any)=>
+            <div
+              className="list-row"
+              key={x.id}
+            >
+              <b>{x.person_name}</b>
+              <span>
+                {x.start_year}-{x.end_year}
+              </span>
+            </div>
         )
       }
     </section>
