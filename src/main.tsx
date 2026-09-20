@@ -948,7 +948,7 @@ setShowAnnouncementModal(true);
               );
             }}
           >
-            {editingHistory?'✓':'✎'}
+            {editingHistory?'Done':'Edit'}
           </button>
         </div>
       }
