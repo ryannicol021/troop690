@@ -1805,6 +1805,7 @@ tbody tr:nth-child(even){
 
 .leadership-edit-button{
   min-height:34px;
+  height:34px;
   padding:4px 8px;
   font-size:.8rem
 }
@@ -1816,16 +1817,28 @@ tbody tr:nth-child(even){
   gap:12px
 }
 
-.leadership-youth-grid .card + .card,
-.leadership-adult-grid .card + .card{
-  margin-top:0
+.leadership-adult-grid{
+  display:grid;
+  grid-template-columns:
+    repeat(3,minmax(0,1fr));
+  gap:12px
+}
+
+.leadership-youth-grid .card,
+.leadership-adult-grid .card{
+  margin-top:0;
+  min-width:0
 }
 
 .leadership-youth-card{
-  margin:0;
   padding:14px;
   display:flex;
   flex-direction:column
+}
+
+.leadership-adult-card{
+  padding:14px;
+  min-width:0
 }
 
 .leadership-card-title{
@@ -1863,8 +1876,7 @@ tbody tr:nth-child(even){
 .leadership-description-section{
   margin-top:0;
   padding-top:0;
-  border-top:1px solid var(--border);
-  line-height:1
+  border-top:1px solid var(--border)
 }
 
 .leadership-description-heading{
@@ -1912,22 +1924,9 @@ tbody tr:nth-child(even){
   margin-top:7px
 }
 
-.leadership-adult-grid{
-  display:grid;
-  grid-template-columns:
-    repeat(3,minmax(0,1fr));
-  gap:12px
-}
-
-.leadership-adult-card{
-  margin:0;
-  padding:14px;
-  min-width:0
-}
-
 .leadership-adult-list{
   display:grid;
-  grid-auto-rows:minmax(62px,1fr)
+  grid-auto-rows:62px
 }
 
 .leadership-adult-row{
@@ -2777,10 +2776,21 @@ footer a:hover{
   .button-grid,
   .uniform-grid,
   .admin-grid,
-  .check-grid,
+  .check-grid{
+    grid-template-columns:1fr
+  }
+
   .leadership-youth-grid,
   .leadership-adult-grid{
     grid-template-columns:1fr
+  }
+
+  .leadership-adult-list{
+    grid-auto-rows:auto
+  }
+
+  .leadership-adult-row{
+    height:62px
   }
 
   .leadership-adult-row-name-only{
