@@ -6661,11 +6661,49 @@ function Leadership({me}:{me:any}){
   const [collapsedSections,setCollapsedSections]=
     useState<Record<string,boolean>>({});
 
+  const [historyModalType,setHistoryModalType]=
+    useState<'SPL'|'Scoutmaster'|null>(null);
+  const [historyStartYear,setHistoryStartYear]=
+    useState('');
+  const [historyEndYear,setHistoryEndYear]=
+    useState('');
+  const [historySplName,setHistorySplName]=
+    useState('');
+  const [historyAsplName,setHistoryAsplName]=
+    useState('');
+  const [historyScoutmasterName,setHistoryScoutmasterName]=
+    useState('');
+  const [historyModalError,setHistoryModalError]=
+    useState('');
+  const [savingHistory,setSavingHistory]=
+    useState(false);
+
   const youthGridRef=
     useRef<HTMLDivElement|null>(null);
 
   const adultGridRef=
     useRef<HTMLDivElement|null>(null);
+
+  const canEditLeadership=
+    !!me?.isAdministrator||
+    !!me?.permissions?.includes('LEAD');
+
+  const canEditHistory=
+    !!me?.isAdministrator||
+    !!me?.permissions?.includes('HIST');
+
+  const canEdit=
+    canEditLeadership||
+    canEditHistory;
+
+  const formatHistoryYears=(x:any)=>{
+    const start=Number(x.start_year);
+    const end=Number(x.end_year);
+
+    return start===end?
+      String(start):
+      `${start}\u2013${end}`;
+  };
 
   const measureLeadershipRows=()=>{
     const measureGrid=(
@@ -6763,7 +6801,6 @@ function Leadership({me}:{me:any}){
 
     return()=>{
       window.cancelAnimationFrame(frame);
-
       observer.disconnect();
 
       window.removeEventListener(
@@ -6777,10 +6814,6 @@ function Leadership({me}:{me:any}){
     editingDescription,
     collapsedSections
   ]);
-
-  const canEdit=
-    !!me?.isAdministrator||
-    !!me?.permissions?.includes('LEAD');
 
   const load=async()=>{
     try{
@@ -6820,9 +6853,7 @@ function Leadership({me}:{me:any}){
     setDescriptionDraft('');
   };
 
-  const saveDescription=async(
-    x:any
-  )=>{
+  const saveDescription=async(x:any)=>{
     try{
       setSavingDescription(true);
       setError('');
@@ -6863,6 +6894,144 @@ function Leadership({me}:{me:any}){
     }
   };
 
+  const resetHistoryModal=()=>{
+    setHistoryModalType(null);
+    setHistoryStartYear('');
+    setHistoryEndYear('');
+    setHistorySplName('');
+    setHistoryAsplName('');
+    setHistoryScoutmasterName('');
+    setHistoryModalError('');
+    setSavingHistory(false);
+  };
+
+  const openHistoryModal=(
+    type:'SPL'|'Scoutmaster'
+  )=>{
+    setHistoryModalType(type);
+    setHistoryStartYear('');
+    setHistoryEndYear('');
+    setHistorySplName('');
+    setHistoryAsplName('');
+    setHistoryScoutmasterName('');
+    setHistoryModalError('');
+  };
+
+  const deleteHistoryEntry=async(x:any)=>{
+    const label=
+      x.type==='Scoutmaster'?
+        x.scoutmaster_name:
+        [x.spl_name,x.aspl_name]
+          .filter(Boolean)
+          .join(' / ');
+
+    if(!window.confirm(
+      `Delete ${formatHistoryYears(x)} leadership history entry for ${label}?`
+    ))
+      return;
+
+    try{
+      setError('');
+
+      await api(
+        `/admin/leadership-history/${x.id}`,
+        {method:'DELETE'}
+      );
+
+      await load();
+    }catch(e:any){
+      setError(
+        e?.message||
+        'Unable to delete the leadership history entry.'
+      );
+    }
+  };
+
+  const addHistoryEntry=async(
+    event:React.FormEvent
+  )=>{
+    event.preventDefault();
+    setHistoryModalError('');
+
+    if(!historyModalType)
+      return;
+
+    if(historyModalType==='SPL'){
+      if(
+        !historySplName.trim()&&
+        !historyAsplName.trim()
+      ){
+        setHistoryModalError(
+          'Enter a Senior Patrol Leader or Assistant Senior Patrol Leader.'
+        );
+        return;
+      }
+    }else if(!historyScoutmasterName.trim()){
+      setHistoryModalError(
+        'Scoutmaster is required.'
+      );
+      return;
+    }
+
+    const validateYear=(value:string)=>{
+      if(!value.trim())
+        return true;
+
+      const year=Number(value);
+
+      return Number.isInteger(year)&&year>=1;
+    };
+
+    if(
+      !validateYear(historyStartYear)||
+      !validateYear(historyEndYear)
+    ){
+      setHistoryModalError(
+        'Year must be a valid whole number.'
+      );
+      return;
+    }
+
+    if(
+      historyStartYear.trim()&&
+      historyEndYear.trim()&&
+      Number(historyStartYear)>
+      Number(historyEndYear)
+    ){
+      setHistoryModalError(
+        'Start Year cannot be after End Year.'
+      );
+      return;
+    }
+
+    try{
+      setSavingHistory(true);
+      setError('');
+
+      await post(
+        '/admin/leadership-history',
+        {
+          type:historyModalType,
+          start_year:historyStartYear,
+          end_year:historyEndYear,
+          spl_name:historySplName,
+          aspl_name:historyAsplName,
+          scoutmaster_name:historyScoutmasterName
+        }
+      );
+
+      await load();
+      resetHistoryModal();
+    }catch(e:any){
+      setHistoryModalError(
+        e?.message||
+        'Unable to add the leadership history entry.'
+      );
+    }finally{
+      setSavingHistory(false);
+    }
+  };
+
   if(!d)
     return <Page title="Leadership">
       {error&&
@@ -6878,6 +7047,12 @@ function Leadership({me}:{me:any}){
       [key]:!current[key]
     }));
   };
+
+  const splHistory=
+    d.history?.spl??[];
+
+  const scoutmasterHistory=
+    d.history?.scoutmaster??[];
 
   return <Page
     title="Leadership"
@@ -6969,7 +7144,7 @@ function Leadership({me}:{me:any}){
 
                   <div className="leadership-description-section">
                     <div className="leadership-description-heading">
-                      {editing&&
+                      {editing&&canEditLeadership&&
                         <button
                           type="button"
                           className="leadership-change-button"
@@ -6998,9 +7173,7 @@ function Leadership({me}:{me:any}){
                           <button
                             type="button"
                             className="button"
-                            disabled={
-                              savingDescription
-                            }
+                            disabled={savingDescription}
                             onClick={()=>
                               saveDescription(x)
                             }
@@ -7011,9 +7184,7 @@ function Leadership({me}:{me:any}){
                           <button
                             type="button"
                             className="button"
-                            disabled={
-                              savingDescription
-                            }
+                            disabled={savingDescription}
                             onClick={
                               cancelDescriptionEdit
                             }
@@ -7129,82 +7300,311 @@ function Leadership({me}:{me:any}){
     </section>
 
     <section>
-      <button
-        type="button"
-        className="leadership-section-toggle"
-        onClick={()=>
-          toggleSection('splHistory')
+      <div className="leadership-section-header">
+        <button
+          type="button"
+          className="leadership-section-toggle"
+          onClick={()=>
+            toggleSection('splHistory')
+          }
+          aria-expanded={!collapsedSections.splHistory}
+        >
+          <span className="leadership-section-arrow">
+            {collapsedSections.splHistory?'▸':'▾'}
+          </span>
+          <span>Senior Patrol Leader History</span>
+        </button>
+
+        {editing&&canEditHistory&&
+          <button
+            type="button"
+            className="home-add-button leadership-section-add-button"
+            aria-label="Add Senior Patrol Leader history"
+            onClick={()=>
+              openHistoryModal('SPL')
+            }
+          >
+            +
+          </button>
         }
-        aria-expanded={!collapsedSections.splHistory}
-      >
-        <span className="leadership-section-arrow">
-          {collapsedSections.splHistory?'▸':'▾'}
-        </span>
-        <span>SPL History</span>
-      </button>
+      </div>
 
       {!collapsedSections.splHistory&&
         <div className="leadership-section-content">
-          {d.history
-            .filter(
-              (x:any)=>
-                x.type==='SPL'||
-                x.type==='ASPL'
-            )
-            .map(
-              (x:any)=>
-                <div
-                  className="list-row"
+          {splHistory.length?
+            <div className="leadership-history-grid">
+              {splHistory.map((x:any)=>(
+                <article
+                  className="card leadership-history-card"
                   key={x.id}
                 >
-                  <span>{x.type}</span>
-                  <b>{x.person_name}</b>
-                  <span>
-                    {x.start_year}-{x.end_year}
-                  </span>
-                </div>
-            )}
+                  <div className="leadership-history-card-head">
+                    <h3 className="leadership-history-years">
+                      {formatHistoryYears(x)}
+                    </h3>
+
+                    {editing&&canEditHistory&&
+                      <button
+                        type="button"
+                        className="leadership-history-delete-button"
+                        aria-label="Delete Senior Patrol Leader history entry"
+                        onClick={()=>
+                          deleteHistoryEntry(x)
+                        }
+                      >
+                        −
+                      </button>
+                    }
+                  </div>
+
+                  <div className="leadership-history-person-list">
+                    {x.spl_name&&
+                      <div className="leadership-history-person">
+                        <div className="leadership-history-title">
+                          SPL
+                        </div>
+
+                        <div className="leadership-history-name">
+                          {x.spl_name}
+                        </div>
+                      </div>
+                    }
+
+                    {x.aspl_name&&
+                      <div className="leadership-history-person">
+                        <div className="leadership-history-title">
+                          ASPL
+                        </div>
+
+                        <div className="leadership-history-name">
+                          {x.aspl_name}
+                        </div>
+                      </div>
+                    }
+                  </div>
+                </article>
+              ))}
+            </div>:
+            <p className="muted">
+              No Senior Patrol Leader history is currently listed.
+            </p>
+          }
         </div>
       }
     </section>
 
     <section>
-      <button
-        type="button"
-        className="leadership-section-toggle"
-        onClick={()=>
-          toggleSection('scoutmasterHistory')
+      <div className="leadership-section-header">
+        <button
+          type="button"
+          className="leadership-section-toggle"
+          onClick={()=>
+            toggleSection('scoutmasterHistory')
+          }
+          aria-expanded={!collapsedSections.scoutmasterHistory}
+        >
+          <span className="leadership-section-arrow">
+            {collapsedSections.scoutmasterHistory?'▸':'▾'}
+          </span>
+          <span>Scoutmaster History</span>
+        </button>
+
+        {editing&&canEditHistory&&
+          <button
+            type="button"
+            className="home-add-button leadership-section-add-button"
+            aria-label="Add Scoutmaster history"
+            onClick={()=>
+              openHistoryModal('Scoutmaster')
+            }
+          >
+            +
+          </button>
         }
-        aria-expanded={!collapsedSections.scoutmasterHistory}
-      >
-        <span className="leadership-section-arrow">
-          {collapsedSections.scoutmasterHistory?'▸':'▾'}
-        </span>
-        <span>Scoutmaster History</span>
-      </button>
+      </div>
 
       {!collapsedSections.scoutmasterHistory&&
         <div className="leadership-section-content">
-          {d.history
-            .filter(
-              (x:any)=>
-                x.type==='Scoutmaster'
-            )
-            .map(
-              (x:any)=>
-                <div
-                  className="list-row"
+          {scoutmasterHistory.length?
+            <div className="leadership-history-grid">
+              {scoutmasterHistory.map((x:any)=>(
+                <article
+                  className="card leadership-history-card"
                   key={x.id}
                 >
-                  <b>{x.person_name}</b>
-                  <span>
-                    {x.start_year}-{x.end_year}
-                  </span>
-                </div>
-            )}
+                  <div className="leadership-history-card-head">
+                    <h3 className="leadership-history-years">
+                      {formatHistoryYears(x)}
+                    </h3>
+
+                    {editing&&canEditHistory&&
+                      <button
+                        type="button"
+                        className="leadership-history-delete-button"
+                        aria-label="Delete Scoutmaster history entry"
+                        onClick={()=>
+                          deleteHistoryEntry(x)
+                        }
+                      >
+                        −
+                      </button>
+                    }
+                  </div>
+
+                  <div className="leadership-history-person-list">
+                    <div className="leadership-history-person">
+                      <div className="leadership-history-name">
+                        {x.scoutmaster_name}
+                      </div>
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>:
+            <p className="muted">
+              No Scoutmaster history is currently listed.
+            </p>
+          }
         </div>
       }
     </section>
+
+    {historyModalType&&
+      <div
+        className="modal-backdrop"
+        onMouseDown={e=>{
+          if(e.target===e.currentTarget)
+            resetHistoryModal();
+        }}
+      >
+        <div
+          className="modal-card leadership-history-modal"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="leadership-history-modal-title"
+        >
+          <div className="modal-header">
+            <h2 id="leadership-history-modal-title">
+              Add {historyModalType==='SPL'?
+                'Senior Patrol Leader History':
+                'Scoutmaster History'}
+            </h2>
+
+            <button
+              type="button"
+              className="modal-close"
+              aria-label="Close"
+              onClick={resetHistoryModal}
+            >
+              ×
+            </button>
+          </div>
+
+          <form
+            className="form leadership-history-form"
+            onSubmit={addHistoryEntry}
+          >
+            <div className="leadership-history-form-row">
+              <label>
+                Start Year
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  min="1"
+                  step="1"
+                  value={historyStartYear}
+                  onChange={e=>
+                    setHistoryStartYear(
+                      e.target.value
+                    )
+                  }
+                />
+              </label>
+
+              <label>
+                End Year
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  min="1"
+                  step="1"
+                  value={historyEndYear}
+                  onChange={e=>
+                    setHistoryEndYear(
+                      e.target.value
+                    )
+                  }
+                />
+              </label>
+            </div>
+
+            {historyModalType==='SPL'?
+              <>
+                <label>
+                  Senior Patrol Leader
+                  <input
+                    value={historySplName}
+                    onChange={e=>
+                      setHistorySplName(
+                        e.target.value
+                      )
+                    }
+                  />
+                </label>
+
+                <label>
+                  Assistant Senior Patrol Leader
+                  <input
+                    value={historyAsplName}
+                    onChange={e=>
+                      setHistoryAsplName(
+                        e.target.value
+                      )
+                    }
+                  />
+                </label>
+              </>:
+              <label>
+                Scoutmaster
+                <input
+                  value={historyScoutmasterName}
+                  onChange={e=>
+                    setHistoryScoutmasterName(
+                      e.target.value
+                    )
+                  }
+                  required
+                />
+              </label>
+            }
+
+            {historyModalError&&
+              <p className="error">
+                {historyModalError}
+              </p>
+            }
+
+            <div className="button-row">
+              <button
+                type="submit"
+                className="primary"
+                disabled={savingHistory}
+              >
+                Add History Entry
+              </button>
+
+              <button
+                type="button"
+                disabled={savingHistory}
+                onClick={resetHistoryModal}
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    }
   </Page>
 }
 
