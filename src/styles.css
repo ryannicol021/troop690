@@ -1996,6 +1996,114 @@ tbody tr:nth-child(even){
   width:100%
 }
 
+.leadership-section-header{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin-top:28px
+}
+
+.leadership-section-header .leadership-section-toggle{
+  margin:0;
+  flex:1
+}
+
+.leadership-section-add-button,
+.leadership-history-delete-button{
+  width:34px;
+  height:34px;
+  min-width:34px;
+  min-height:34px;
+  padding:0
+}
+
+.leadership-history-grid{
+  display:grid;
+  grid-template-columns:
+    repeat(3,minmax(0,1fr));
+  gap:12px
+}
+
+.leadership-history-card{
+  margin-top:0;
+  min-width:0;
+  padding:14px
+}
+
+.leadership-history-card-head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:8px
+}
+
+.leadership-history-years{
+  margin:0;
+  color:var(--navy);
+  font-size:1.25rem
+}
+
+.leadership-history-delete-button{
+  border:1px solid #bdb5a6;
+  border-radius:3px;
+  background:var(--khaki-light);
+  color:var(--red);
+  display:grid;
+  place-items:center;
+  font-size:1.1rem;
+  line-height:1;
+  cursor:pointer
+}
+
+.leadership-history-delete-button:hover{
+  background:var(--khaki)
+}
+
+.leadership-history-person-list{
+  display:grid;
+  gap:0;
+  margin-top:10px
+}
+
+.leadership-history-person{
+  padding:8px 0;
+  border-top:1px solid var(--border)
+}
+
+.leadership-history-title{
+  color:var(--muted);
+  font-size:.78rem;
+  font-weight:700;
+  letter-spacing:.04em;
+  text-transform:uppercase
+}
+
+.leadership-history-name{
+  margin-top:2px;
+  color:var(--text);
+  font-weight:600
+}
+
+.leadership-history-person:first-child{
+  border-top:0;
+  padding-top:0
+}
+
+.leadership-history-modal{
+  width:min(620px,100%)
+}
+
+.leadership-history-form{
+  gap:14px
+}
+
+.leadership-history-form-row{
+  display:grid;
+  grid-template-columns:
+    repeat(2,minmax(0,1fr));
+  gap:14px
+}
+
 .album-grid,
 .button-grid,
 .uniform-grid{
@@ -2820,6 +2928,11 @@ footer a:hover{
     grid-template-columns:1fr
   }
 
+  .leadership-history-grid{
+    grid-template-columns:
+      repeat(2,minmax(0,1fr))
+  }
+  
   .leadership-holder-row,
   .leadership-adult-row{
     height:auto
