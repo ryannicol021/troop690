@@ -317,6 +317,19 @@ section>h2{
   color:var(--navy)
 }
 
+.home-section-controls{
+  display:flex;
+  align-items:center;
+  gap:6px
+}
+
+.home-section-edit-button{
+  min-height:34px;
+  height:34px;
+  padding:4px 8px;
+  font-size:.8rem
+}
+
 .home-add-button{
   width:calc(1.45rem * 1.5);
   height:calc(1.45rem * 1.5);
@@ -359,13 +372,15 @@ section>h2{
 
 .home-announcement-actions{
   display:flex;
+  align-items:center;
   gap:6px;
   flex-shrink:0
 }
 
-.home-announcement-actions .button{
-  min-height:0;
-  padding:3px 6px
+.home-announcement-change-button{
+  min-height:28px;
+  height:28px;
+  padding:3px 8px
 }
 
 .home-contact-option .button{
@@ -406,32 +421,6 @@ section>h2{
 
 .home-history-card{
   margin-bottom:18px
-}
-
-.home-history-controls{
-  display:flex;
-  align-items:center;
-  gap:6px
-}
-
-.home-edit-button{
-  width:calc(1.45rem * 1.5);
-  height:calc(1.45rem * 1.5);
-  min-width:calc(1.45rem * 1.5);
-  padding:0;
-  border:1px solid #bdb5a6;
-  border-radius:3px;
-  background:var(--khaki-light);
-  color:var(--navy);
-  display:grid;
-  place-items:center;
-  font-size:1.05rem;
-  line-height:1;
-  cursor:pointer
-}
-
-.home-edit-button:hover{
-  background:var(--khaki)
 }
 
 .home-history-year{
