@@ -1887,7 +1887,7 @@ tbody tr:nth-child(even){
 }
 
 .leadership-description{
-  margin:12px 0 0;
+  margin:10px 0 0;
   color:var(--text);
   white-space:pre-wrap
 }
