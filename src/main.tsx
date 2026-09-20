@@ -357,6 +357,7 @@ function Home({me}:{me:any}){
   const [announcementBody,setAnnouncementBody]=useState('');
   const [announcementError,setAnnouncementError]=useState('');
   const [editingAnnouncement,setEditingAnnouncement]=useState<any>(null);
+  const [editingAnnouncements,setEditingAnnouncements]=useState(false);
   const [editingHistory,setEditingHistory]=useState(false);
   const [showHistoryModal,setShowHistoryModal]=useState(false);
   const [historyYear,setHistoryYear]=useState('');
@@ -453,89 +454,129 @@ function Home({me}:{me:any}){
       }
     </section>
     
-    {me&&
-    <section className="card home-announcements-card">
-      <div className="home-section-head">
-        <h2>Announcements</h2>
+{me&&
+  <section className="card home-announcements-card">
+    <div className="home-section-head">
+      <h2>Announcements</h2>
 
-        {me?.permissions?.includes('HOME')&&
+      {me?.permissions?.includes('HOME')&&
+        <div className="home-section-controls">
+          {editingAnnouncements&&
+            <button
+              type="button"
+              className="home-add-button"
+              aria-label="Add announcement"
+              onClick={()=>{
+                setEditingAnnouncement(null);
+                setAnnouncementTitle('');
+                setAnnouncementBody('');
+                setAnnouncementError('');
+                setShowAnnouncementModal(true);
+              }}
+            >
+              +
+            </button>
+          }
+
           <button
             type="button"
-            className="home-add-button"
-            aria-label="Add announcement"
+            className="button home-section-edit-button"
+            aria-label={
+              editingAnnouncements?
+                'Done editing announcements':
+                'Edit announcements'
+            }
             onClick={()=>{
-setEditingAnnouncement(null);
-setAnnouncementTitle('');
-setAnnouncementBody('');
-setAnnouncementError('');
-setShowAnnouncementModal(true);
+              setEditingAnnouncements(
+                value=>!value
+              );
+
+              if(editingAnnouncements)
+                setEditingAnnouncement(null);
             }}
           >
-            +
+            {editingAnnouncements?'Done':'Edit'}
           </button>
-        }
-      </div>
-
-      {d.announcements?.length?
-        d.announcements.map((a:any)=>
-<div className="home-announcement" key={a.id}>
-  <div className="home-announcement-head">
-    <h3>{a.title}</h3>
-
-    {me?.permissions?.includes('HOME')&&
-      <div className="home-announcement-actions">
-        <button
-          type="button"
-          className="button"
-          onClick={()=>{
-            setEditingAnnouncement(a);
-            setAnnouncementTitle(a.title);
-            setAnnouncementBody(a.body);
-            setAnnouncementError('');
-            setShowAnnouncementModal(true);
-          }}
-        >
-          Edit
-        </button>
-
-        <button
-          type="button"
-          className="button"
-          onClick={async()=>{
-            if(!window.confirm(
-              `Delete the announcement "${a.title}"?`
-            ))
-              return;
-
-            try{
-              await api(
-                `/admin/announcements/${a.id}`,
-                {method:'DELETE'}
-              );
-
-              const fresh=await api('/home');
-              setD(fresh);
-            }catch(e:any){
-              setAnnouncementError(
-                e?.message||
-                'Unable to delete the announcement.'
-              );
-            }
-          }}
-        >
-          Delete
-        </button>
-      </div>
-    }
-  </div>
-
-  <p>{a.body}</p>
-</div>
-        ):
-        <p className="muted">There are no current announcements.</p>
+        </div>
       }
-    </section>
+    </div>
+
+    {d.announcements?.length?
+      d.announcements.map((a:any)=>
+        <div
+          className="home-announcement"
+          key={a.id}
+        >
+          <div className="home-announcement-head">
+            <h3>{a.title}</h3>
+
+            {editingAnnouncements&&
+              <div className="home-announcement-actions">
+                <button
+                  type="button"
+                  className="leadership-change-button home-announcement-change-button"
+                  onClick={()=>{
+                    setEditingAnnouncement(a);
+                    setAnnouncementTitle(a.title);
+                    setAnnouncementBody(a.body);
+                    setAnnouncementError('');
+                    setShowAnnouncementModal(true);
+                  }}
+                >
+                  Change
+                </button>
+
+                <button
+                  type="button"
+                  className="home-history-delete-button"
+                  aria-label={
+                    `Delete announcement: ${a.title}`
+                  }
+                  onClick={async()=>{
+                    if(!window.confirm(
+                      `Delete the announcement "${a.title}"?`
+                    ))
+                      return;
+
+                    try{
+                      await api(
+                        `/admin/announcements/${a.id}`,
+                        {method:'DELETE'}
+                      );
+
+                      const fresh=
+                        await api('/home');
+
+                      setD(fresh);
+                    }catch(e:any){
+                      setAnnouncementError(
+                        e?.message||
+                        'Unable to delete the announcement.'
+                      );
+                    }
+                  }}
+                >
+                  −
+                </button>
+              </div>
+            }
+          </div>
+
+          <p>{a.body}</p>
+        </div>
+      ):
+      <p className="muted">
+        There are no current announcements.
+      </p>
     }
+
+    {announcementError&&
+      <p className="error">
+        {announcementError}
+      </p>
+    }
+  </section>
+}
         
     {me&&
       <>
@@ -912,47 +953,47 @@ setShowAnnouncementModal(true);
 
 {me&&
   <section className="card home-history-card">
-    <div className="home-section-head">
-      <h2>History</h2>
+<div className="home-section-head">
+  <h2>History</h2>
 
-      {me?.permissions?.includes('HOME')&&
-        <div className="home-history-controls">
-          {editingHistory&&
-            <button
-              type="button"
-              className="home-add-button"
-              aria-label="Add history entry"
-              onClick={()=>{
-                setHistoryYear('');
-                setHistoryStatement('');
-                setHistoryPriority('');
-                setHistoryError('');
-                setShowHistoryModal(true);
-              }}
-            >
-              +
-            </button>
-          }
-
-          <button
-            type="button"
-            className="home-edit-button"
-            aria-label={
-              editingHistory?
-                'Done editing history':
-                'Edit history'
-            }
-            onClick={()=>{
-              setEditingHistory(
-                !editingHistory
-              );
-            }}
-          >
-            {editingHistory?'Done':'Edit'}
-          </button>
-        </div>
+  {me?.permissions?.includes('HOME')&&
+    <div className="home-section-controls">
+      {editingHistory&&
+        <button
+          type="button"
+          className="home-add-button"
+          aria-label="Add history entry"
+          onClick={()=>{
+            setHistoryYear('');
+            setHistoryStatement('');
+            setHistoryPriority('');
+            setHistoryError('');
+            setShowHistoryModal(true);
+          }}
+        >
+          +
+        </button>
       }
+
+      <button
+        type="button"
+        className="button home-section-edit-button"
+        aria-label={
+          editingHistory?
+            'Done editing history':
+            'Edit history'
+        }
+        onClick={()=>{
+          setEditingHistory(
+            value=>!value
+          );
+        }}
+      >
+        {editingHistory?'Done':'Edit'}
+      </button>
     </div>
+  }
+</div>
 
     {d.history?.length?
       (()=>{
@@ -1120,9 +1161,13 @@ if(editingAnnouncement){
                 setAnnouncementTitle('');
                 setAnnouncementBody('');
               }catch(e:any){
-                setAnnouncementError(
+                announcementError(
                   e?.message||
-                  'Unable to add the announcement.'
+                  (
+                    editingAnnouncement?
+                      'Unable to update the announcement.':
+                      'Unable to add the announcement.'
+                  )
                 );
               }
             }}
@@ -1157,12 +1202,14 @@ if(editingAnnouncement){
             }
 
             <div className="button-row">
-              <button
-                type="submit"
-                className="primary"
-              >
-                Add Announcement
-              </button>
+<button
+  type="submit"
+  className="primary"
+>
+  {editingAnnouncement?
+    'Save Changes':
+    'Add Announcement'}
+</button>
 
 <button
   type="button"
