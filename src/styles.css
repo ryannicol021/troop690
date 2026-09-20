@@ -1836,6 +1836,21 @@ tbody tr:nth-child(even){
   flex-direction:column
 }
 
+.leadership-youth-card-header{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:8px
+}
+
+.leadership-youth-card-header .leadership-card-title{
+  margin:0 0 12px
+}
+
+.leadership-youth-card-header .leadership-change-button{
+  flex-shrink:0
+}
+
 .leadership-adult-card{
   padding:14px;
   min-width:0
@@ -1867,7 +1882,7 @@ tbody tr:nth-child(even){
 }
 
 .leadership-holder-name{
-  color:var(--text);
+  color:var(--red);
   font-weight:600
 }
 
@@ -1881,11 +1896,6 @@ tbody tr:nth-child(even){
   margin-top:0;
   padding-top:0;
   border-top:1px solid var(--border)
-}
-
-.leadership-description-heading{
-  display:flex;
-  justify-content:flex-end
 }
 
 .leadership-change-button{
