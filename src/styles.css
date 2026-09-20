@@ -1882,7 +1882,7 @@ tbody tr:nth-child(even){
 }
 
 .leadership-holder-name{
-  color:var(--red);
+  color:var(--text);
   font-weight:600
 }
 
@@ -1956,7 +1956,7 @@ tbody tr:nth-child(even){
 }
 
 .leadership-adult-name{
-  color:var(--red);
+  color:var(--text);
   font-weight:600
 }
 
@@ -2086,7 +2086,7 @@ tbody tr:nth-child(even){
 }
 
 .leadership-history-title{
-  color:var(--red);
+  color:var(--muted);
   font-size:.78rem;
   font-weight:700;
   letter-spacing:.04em;
