@@ -1161,7 +1161,7 @@ if(editingAnnouncement){
                 setAnnouncementTitle('');
                 setAnnouncementBody('');
               }catch(e:any){
-                announcementError(
+                setAnnouncementError(
                   e?.message||
                   (
                     editingAnnouncement?
