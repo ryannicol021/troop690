@@ -1865,7 +1865,8 @@ tbody tr:nth-child(even){
 .leadership-description-section{
   margin-top:0;
   padding-top:0;
-  border-top:1px solid var(--border)
+  border-top:1px solid var(--border);
+  line-height:1
 }
 
 .leadership-description-heading{
@@ -1888,7 +1889,7 @@ tbody tr:nth-child(even){
 }
 
 .leadership-description{
-  margin:6px 0 0;
+  margin:0;
   color:var(--text);
   white-space:pre-wrap
 }
