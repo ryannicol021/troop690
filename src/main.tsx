@@ -7109,9 +7109,23 @@ function Leadership({me}:{me:any}){
                   className="card leadership-youth-card"
                   key={x.id}
                 >
-                  <h3 className="leadership-card-title">
-                    {x.name}
-                  </h3>
+                  <div className="leadership-youth-card-header">
+                    <h3 className="leadership-card-title">
+                      {x.name}
+                    </h3>
+                
+                    {editing&&canEditLeadership&&
+                      <button
+                        type="button"
+                        className="leadership-change-button"
+                        onClick={()=>
+                          startDescriptionEdit(x)
+                        }
+                      >
+                        Change
+                      </button>
+                    }
+                  </div>
 
                   {x.holders.length>0&&
                     <div className="leadership-holder-list">
@@ -7143,20 +7157,6 @@ function Leadership({me}:{me:any}){
                   }
 
                   <div className="leadership-description-section">
-                    <div className="leadership-description-heading">
-                      {editing&&canEditLeadership&&
-                        <button
-                          type="button"
-                          className="leadership-change-button"
-                          onClick={()=>
-                            startDescriptionEdit(x)
-                          }
-                        >
-                          Change
-                        </button>
-                      }
-                    </div>
-
                     {editingDescription===
                       Number(x.id)?
                       <div className="leadership-description-editor">
