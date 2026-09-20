@@ -2956,11 +2956,38 @@ app.get('/api/leadership',async c=>{
 
   const hist=canHistory?
     await c.env.DB
-      .prepare(
-        'SELECT * FROM leadership_history ORDER BY end_year DESC,start_year DESC'
-      )
+      .prepare(`
+        SELECT
+          id,
+          type,
+          start_year,
+          end_year,
+          spl_name,
+          aspl_name,
+          scoutmaster_name,
+          created_at
+        FROM leadership_history_entries
+        ORDER BY
+          start_year DESC,
+          end_year DESC,
+          created_at DESC,
+          id DESC
+      `)
       .all<any>():
     {results:[]};
+
+  const historyRows=(hist.results??[]).map((x:any)=>({
+    id:Number(x.id),
+    type:String(x.type||''),
+    start_year:Number(x.start_year),
+    end_year:Number(x.end_year),
+    spl_name:String(x.spl_name||''),
+    aspl_name:String(x.aspl_name||''),
+    scoutmaster_name:String(
+      x.scoutmaster_name||''
+    ),
+    created_at:String(x.created_at||'')
+  }));
 
   return json(c,{
     positions,
@@ -2969,8 +2996,170 @@ app.get('/api/leadership',async c=>{
       assistantScoutmasters,
       committee
     },
-    history:hist.results
+    history:{
+      spl:historyRows
+        .filter((x:any)=>x.type==='SPL'),
+      scoutmaster:historyRows
+        .filter((x:any)=>x.type==='Scoutmaster')
+    }
   });
+});
+
+app.post('/api/admin/leadership-history',async c=>{
+  const d=admin(c,'HIST');
+  if(d)return d;
+
+  const x=await c.req.json();
+
+  const type=String(x.type||'').trim();
+
+  if(type!=='SPL'&&type!=='Scoutmaster')
+    return json(
+      c,
+      {error:'Invalid leadership history type.'},
+      400
+    );
+
+  const parseYear=(value:any)=>{
+    const text=String(value??'').trim();
+
+    if(!text)
+      return null;
+
+    const year=Number(text);
+
+    if(!Number.isInteger(year)||year<1)
+      return NaN;
+
+    return year;
+  };
+
+  const parsedStart=parseYear(x.start_year);
+  const parsedEnd=parseYear(x.end_year);
+
+  if(Number.isNaN(parsedStart)||Number.isNaN(parsedEnd))
+    return json(
+      c,
+      {error:'Year must be a valid whole number.'},
+      400
+    );
+
+  let startYear:number;
+  let endYear:number;
+
+  if(parsedStart==null&&parsedEnd==null){
+    const currentYear=
+      new Date().getUTCFullYear();
+
+    startYear=currentYear;
+    endYear=currentYear;
+  }else if(parsedStart==null){
+    startYear=parsedEnd as number;
+    endYear=parsedEnd as number;
+  }else if(parsedEnd==null){
+    startYear=parsedStart as number;
+    endYear=parsedStart as number;
+  }else{
+    startYear=parsedStart as number;
+    endYear=parsedEnd as number;
+  }
+
+  if(startYear>endYear)
+    return json(
+      c,
+      {error:'Start Year cannot be after End Year.'},
+      400
+    );
+
+  const splName=
+    String(x.spl_name??'').trim();
+
+  const asplName=
+    String(x.aspl_name??'').trim();
+
+  const scoutmasterName=
+    String(x.scoutmaster_name??'').trim();
+
+  if(type==='SPL'){
+    if(!splName&&!asplName)
+      return json(
+        c,
+        {
+          error:
+            'Enter a Senior Patrol Leader or Assistant Senior Patrol Leader.'
+        },
+        400
+      );
+  }else if(!scoutmasterName){
+    return json(
+      c,
+      {error:'Scoutmaster is required.'},
+      400
+    );
+  }
+
+  const result=await c.env.DB
+    .prepare(`
+      INSERT INTO leadership_history_entries(
+        type,
+        start_year,
+        end_year,
+        spl_name,
+        aspl_name,
+        scoutmaster_name
+      )
+      VALUES(?,?,?,?,?,?)
+    `)
+    .bind(
+      type,
+      startYear,
+      endYear,
+      type==='SPL'?splName:'',
+      type==='SPL'?asplName:'',
+      type==='Scoutmaster'?scoutmasterName:''
+    )
+    .run();
+
+  const row=await c.env.DB
+    .prepare(
+      'SELECT * FROM leadership_history_entries WHERE id=?'
+    )
+    .bind(result.meta.last_row_id)
+    .first<any>();
+
+  return json(c,{
+    history:row
+  });
+});
+
+app.delete('/api/admin/leadership-history/:id',async c=>{
+  const d=admin(c,'HIST');
+  if(d)return d;
+
+  const id=Number(c.req.param('id'));
+
+  if(!Number.isInteger(id))
+    return json(
+      c,
+      {error:'Invalid leadership history entry.'},
+      400
+    );
+
+  const result=await c.env.DB
+    .prepare(
+      'DELETE FROM leadership_history_entries WHERE id=?'
+    )
+    .bind(id)
+    .run();
+
+  if(!result.success||!result.meta.changes)
+    return json(
+      c,
+      {error:'Leadership history entry not found.'},
+      404
+    );
+
+  return json(c,{ok:true});
 });
 
 app.put('/api/admin/leadership/:id',async c=>{
