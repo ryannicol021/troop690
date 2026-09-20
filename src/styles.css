@@ -1960,6 +1960,42 @@ tbody tr:nth-child(even){
   justify-content:center
 }
 
+.leadership-section-toggle{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  width:100%;
+  margin:28px 0 14px;
+  padding:0;
+  border:0;
+  background:transparent;
+  color:var(--navy);
+  font-family:"Roboto Slab",Georgia,serif;
+  font-size:1.45rem;
+  font-weight:700;
+  letter-spacing:-.02em;
+  text-align:left;
+  cursor:pointer
+}
+
+.leadership-section-toggle:hover{
+  background:transparent
+}
+
+.leadership-section-arrow{
+  width:16px;
+  flex:0 0 16px;
+  color:var(--red);
+  font-family:Arial,sans-serif;
+  font-size:1rem;
+  line-height:1;
+  text-align:center
+}
+
+.leadership-section-content{
+  width:100%
+}
+
 .album-grid,
 .button-grid,
 .uniform-grid{
