@@ -1839,7 +1839,7 @@ tbody tr:nth-child(even){
 .leadership-holder-list{
   display:grid;
   gap:0;
-  margin-bottom:14px
+  margin-bottom:8px
 }
 
 .leadership-holder-row{
@@ -1890,7 +1890,7 @@ tbody tr:nth-child(even){
 }
 
 .leadership-description{
-  margin:6px 0 0;
+  margin:12px 0 0;
   color:var(--text);
   white-space:pre-wrap
 }
