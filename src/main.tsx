@@ -6774,9 +6774,10 @@ function Leadership({me}:{me:any}){
   },[
     d,
     editing,
-    editingDescription
+    editingDescription,
+    collapsedSections
   ]);
-  
+
   const canEdit=
     !!me?.isAdministrator||
     !!me?.permissions?.includes('LEAD');
@@ -6877,7 +6878,7 @@ function Leadership({me}:{me:any}){
       [key]:!current[key]
     }));
   };
-  
+
   return <Page
     title="Leadership"
     actions={
@@ -6906,312 +6907,304 @@ function Leadership({me}:{me:any}){
       </p>
     }
 
-<section>
-  <button
-    type="button"
-    className="leadership-section-toggle"
-    onClick={()=>
-      toggleSection('youth')
-    }
-    aria-expanded={!collapsedSections.youth}
-  >
-    <span className="leadership-section-arrow">
-      {collapsedSections.youth?'▸':'▾'}
-    </span>
-    <span>Youth Leaders</span>
-  </button>
-
-  {!collapsedSections.youth&&
-    <div className="leadership-section-content">
-
-      <div
-        className="leadership-youth-grid"
-        ref={youthGridRef}
+    <section>
+      <button
+        type="button"
+        className="leadership-section-toggle"
+        onClick={()=>
+          toggleSection('youth')
+        }
+        aria-expanded={!collapsedSections.youth}
       >
-        {d.positions.map((x:any)=>{
-          const patrolPosition=
-            x.name===
-              'Patrol Leader'||
-            x.name===
-              'Assistant Patrol Leader';
+        <span className="leadership-section-arrow">
+          {collapsedSections.youth?'▸':'▾'}
+        </span>
+        <span>Youth Leaders</span>
+      </button>
 
-          return (
-            <article
-              className="card leadership-youth-card"
-              key={x.id}
-            >
+      {!collapsedSections.youth&&
+        <div className="leadership-section-content">
+          <div
+            className="leadership-youth-grid"
+            ref={youthGridRef}
+          >
+            {d.positions.map((x:any)=>{
+              return (
+                <article
+                  className="card leadership-youth-card"
+                  key={x.id}
+                >
+                  <h3 className="leadership-card-title">
+                    {x.name}
+                  </h3>
+
+                  {x.holders.length>0&&
+                    <div className="leadership-holder-list">
+                      {x.holders.map(
+                        (holder:any)=>
+                          <div
+                            className="leadership-holder-row"
+                            key={holder.id}
+                          >
+                            <div className="leadership-holder-name">
+                              {holder.name}
+                              {holder.suffix&&
+                                ` ${holder.suffix}`
+                              }
+                            </div>
+
+                            {(
+                              x.name==='Patrol Leader'||
+                              x.name==='Assistant Patrol Leader'
+                            )&&
+                              holder.patrol&&
+                              <div className="leadership-holder-subtitle">
+                                {holder.patrol}
+                              </div>
+                            }
+                          </div>
+                      )}
+                    </div>
+                  }
+
+                  <div className="leadership-description-section">
+                    <div className="leadership-description-heading">
+                      {editing&&
+                        <button
+                          type="button"
+                          className="leadership-change-button"
+                          onClick={()=>
+                            startDescriptionEdit(x)
+                          }
+                        >
+                          Change
+                        </button>
+                      }
+                    </div>
+
+                    {editingDescription===
+                      Number(x.id)?
+                      <div className="leadership-description-editor">
+                        <textarea
+                          value={descriptionDraft}
+                          onChange={e=>
+                            setDescriptionDraft(
+                              e.target.value
+                            )
+                          }
+                        />
+
+                        <div className="leadership-description-actions">
+                          <button
+                            type="button"
+                            className="button"
+                            disabled={
+                              savingDescription
+                            }
+                            onClick={()=>
+                              saveDescription(x)
+                            }
+                          >
+                            Save
+                          </button>
+
+                          <button
+                            type="button"
+                            className="button"
+                            disabled={
+                              savingDescription
+                            }
+                            onClick={
+                              cancelDescriptionEdit
+                            }
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>:
+                      <p className="leadership-description">
+                        {x.description}
+                      </p>
+                    }
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        </div>
+      }
+    </section>
+
+    <section>
+      <button
+        type="button"
+        className="leadership-section-toggle"
+        onClick={()=>
+          toggleSection('adult')
+        }
+        aria-expanded={!collapsedSections.adult}
+      >
+        <span className="leadership-section-arrow">
+          {collapsedSections.adult?'▸':'▾'}
+        </span>
+        <span>Adult Leaders</span>
+      </button>
+
+      {!collapsedSections.adult&&
+        <div className="leadership-section-content">
+          <div
+            className="leadership-adult-grid"
+            ref={adultGridRef}
+          >
+            <article className="card leadership-adult-card">
               <h3 className="leadership-card-title">
-                {x.name}
+                Executive Leadership
               </h3>
 
-{x.holders.length>0&&
-  <div className="leadership-holder-list">
-    {x.holders.map(
-      (holder:any)=>
-        <div
-          className="leadership-holder-row"
-          key={holder.id}
-        >
-          <div className="leadership-holder-name">
-            {holder.name}
-            {holder.suffix&&
-              ` ${holder.suffix}`
-            }
-          </div>
+              <div className="leadership-adult-list">
+                {d.adult.executive.map(
+                  (x:any)=>
+                    <div
+                      className="leadership-adult-row"
+                      key={`${x.id}-${x.title}`}
+                    >
+                      <div className="leadership-adult-name">
+                        {x.name}
+                      </div>
 
-          {(
-            x.name==='Patrol Leader'||
-            x.name==='Assistant Patrol Leader'
-          )&&
-            holder.patrol&&
-            <div className="leadership-holder-subtitle">
-              {holder.patrol}
-            </div>
-          }
-        </div>
-    )}
-  </div>
-}
-
-              <div className="leadership-description-section">
-<div className="leadership-description-heading">
-  {editing&&
-    <button
-      type="button"
-      className="leadership-change-button"
-      onClick={()=>
-        startDescriptionEdit(x)
-      }
-    >
-      Change
-    </button>
-  }
-</div>
-
-                {editingDescription===
-                  Number(x.id)?
-                  <div className="leadership-description-editor">
-                    <textarea
-                      value={descriptionDraft}
-                      onChange={e=>
-                        setDescriptionDraft(
-                          e.target.value
-                        )
-                      }
-                    />
-
-                    <div className="leadership-description-actions">
-                      <button
-                        type="button"
-                        className="button"
-                        disabled={
-                          savingDescription
-                        }
-                        onClick={()=>
-                          saveDescription(x)
-                        }
-                      >
-                        Save
-                      </button>
-
-                      <button
-                        type="button"
-                        className="button"
-                        disabled={
-                          savingDescription
-                        }
-                        onClick={
-                          cancelDescriptionEdit
-                        }
-                      >
-                        Cancel
-                      </button>
+                      <div className="leadership-adult-title">
+                        {x.title}
+                      </div>
                     </div>
-                  </div>:
-                  <p className="leadership-description">
-                    {x.description}
-                  </p>
-                }
+                )}
               </div>
             </article>
-          );
-        })}
-    </div>
-  }
-</section>
 
-<section>
-    
-<section>
-  <button
-    type="button"
-    className="leadership-section-toggle"
-    onClick={()=>
-      toggleSection('adult')
-    }
-    aria-expanded={!collapsedSections.adult}
-  >
-    <span className="leadership-section-arrow">
-      {collapsedSections.adult?'▸':'▾'}
-    </span>
-    <span>Adult Leaders</span>
-  </button>
+            <article className="card leadership-adult-card">
+              <h3 className="leadership-card-title">
+                Assistant Scoutmasters
+              </h3>
 
-  {!collapsedSections.adult&&
-    <div className="leadership-section-content">
+              <div className="leadership-adult-list">
+                {d.adult.assistantScoutmasters.map(
+                  (x:any)=>
+                    <div
+                      className="leadership-adult-row leadership-adult-row-name-only"
+                      key={x.id}
+                    >
+                      <div className="leadership-adult-name">
+                        {x.name}
+                      </div>
+                    </div>
+                )}
+              </div>
+            </article>
 
-      <div
-        className="leadership-adult-grid"
-        ref={adultGridRef}
+            <article className="card leadership-adult-card">
+              <h3 className="leadership-card-title">
+                Committee Members
+              </h3>
+
+              <div className="leadership-adult-list">
+                {d.adult.committee.map(
+                  (x:any)=>
+                    <div
+                      className="leadership-adult-row"
+                      key={x.id}
+                    >
+                      <div className="leadership-adult-name">
+                        {x.name}
+                      </div>
+
+                      <div className="leadership-adult-title">
+                        {x.title}
+                      </div>
+                    </div>
+                )}
+              </div>
+            </article>
+          </div>
+        </div>
+      }
+    </section>
+
+    <section>
+      <button
+        type="button"
+        className="leadership-section-toggle"
+        onClick={()=>
+          toggleSection('splHistory')
+        }
+        aria-expanded={!collapsedSections.splHistory}
       >
-        <article className="card leadership-adult-card">
-          <h3 className="leadership-card-title">
-            Executive Leadership
-          </h3>
+        <span className="leadership-section-arrow">
+          {collapsedSections.splHistory?'▸':'▾'}
+        </span>
+        <span>SPL History</span>
+      </button>
 
-          <div className="leadership-adult-list">
-            {d.adult.executive.map(
+      {!collapsedSections.splHistory&&
+        <div className="leadership-section-content">
+          {d.history
+            .filter(
+              (x:any)=>
+                x.type==='SPL'||
+                x.type==='ASPL'
+            )
+            .map(
               (x:any)=>
                 <div
-                  className="leadership-adult-row"
-                  key={`${x.id}-${x.title}`}
-                >
-                  <div className="leadership-adult-name">
-                    {x.name}
-                  </div>
-
-                  <div className="leadership-adult-title">
-                    {x.title}
-                  </div>
-                </div>
-            )}
-          </div>
-        </article>
-
-        <article className="card leadership-adult-card">
-          <h3 className="leadership-card-title">
-            Assistant Scoutmasters
-          </h3>
-
-          <div className="leadership-adult-list">
-            {d.adult.assistantScoutmasters.map(
-              (x:any)=>
-                <div
-                  className="leadership-adult-row leadership-adult-row-name-only"
+                  className="list-row"
                   key={x.id}
                 >
-                  <div className="leadership-adult-name">
-                    {x.name}
-                  </div>
+                  <span>{x.type}</span>
+                  <b>{x.person_name}</b>
+                  <span>
+                    {x.start_year}-{x.end_year}
+                  </span>
                 </div>
             )}
-          </div>
-        </article>
+        </div>
+      }
+    </section>
 
-        <article className="card leadership-adult-card">
-          <h3 className="leadership-card-title">
-            Committee Members
-          </h3>
+    <section>
+      <button
+        type="button"
+        className="leadership-section-toggle"
+        onClick={()=>
+          toggleSection('scoutmasterHistory')
+        }
+        aria-expanded={!collapsedSections.scoutmasterHistory}
+      >
+        <span className="leadership-section-arrow">
+          {collapsedSections.scoutmasterHistory?'▸':'▾'}
+        </span>
+        <span>Scoutmaster History</span>
+      </button>
 
-          <div className="leadership-adult-list">
-            {d.adult.committee.map(
+      {!collapsedSections.scoutmasterHistory&&
+        <div className="leadership-section-content">
+          {d.history
+            .filter(
+              (x:any)=>
+                x.type==='Scoutmaster'
+            )
+            .map(
               (x:any)=>
                 <div
-                  className="leadership-adult-row"
+                  className="list-row"
                   key={x.id}
                 >
-                  <div className="leadership-adult-name">
-                    {x.name}
-                  </div>
-
-                  <div className="leadership-adult-title">
-                    {x.title}
-                  </div>
+                  <b>{x.person_name}</b>
+                  <span>
+                    {x.start_year}-{x.end_year}
+                  </span>
                 </div>
             )}
-          </div>
-        </article>
-    </div>
-  }
-</section>
-
-<section>
-  <button
-    type="button"
-    className="leadership-section-toggle"
-    onClick={()=>
-      toggleSection('splHistory')
-    }
-    aria-expanded={!collapsedSections.splHistory}
-  >
-    <span className="leadership-section-arrow">
-      {collapsedSections.splHistory?'▸':'▾'}
-    </span>
-    <span>SPL History</span>
-  </button>
-
-  {!collapsedSections.splHistory&&
-    <div className="leadership-section-content">
-
-      {d.history
-        .filter(
-          (x:any)=>
-            x.type==='SPL'||
-            x.type==='ASPL'
-        )
-        .map(
-          (x:any)=>
-            <div
-              className="list-row"
-              key={x.id}
-            >
-              <span>{x.type}</span>
-              <b>{x.person_name}</b>
-              <span>
-                {x.start_year}-{x.end_year}
-              </span>
-                </div>
-          )
-  }
-</section>
-
-<section>
-  <button
-    type="button"
-    className="leadership-section-toggle"
-    onClick={()=>
-      toggleSection('scoutmasterHistory')
-    }
-    aria-expanded={!collapsedSections.scoutmasterHistory}
-  >
-    <span className="leadership-section-arrow">
-      {collapsedSections.scoutmasterHistory?'▸':'▾'}
-    </span>
-    <span>Scoutmaster History</span>
-  </button>
-
-  {!collapsedSections.scoutmasterHistory&&
-    <div className="leadership-section-content">
-
-      {d.history
-        .filter(
-          (x:any)=>
-            x.type==='Scoutmaster'
-        )
-        .map(
-          (x:any)=>
-            <div
-              className="list-row"
-              key={x.id}
-            >
-              <b>{x.person_name}</b>
-              <span>
-                {x.start_year}-{x.end_year}
-              </span>
-    </div>
-          )
-  }
-</section>
+        </div>
+      }
+    </section>
   </Page>
 }
 
