@@ -1,4 +1,9 @@
-import React,{useEffect,useRef,useState} from 'react';
+import React,{
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState
+} from 'react';
 import {createRoot} from 'react-dom/client';
 import {BrowserRouter,useNavigate,useLocation} from 'react-router-dom';
 import './styles.css';
@@ -6653,6 +6658,122 @@ function Leadership({me}:{me:any}){
     useState(false);
   const [error,setError]=useState('');
 
+  const youthGridRef=
+    useRef<HTMLDivElement|null>(null);
+
+  const adultGridRef=
+    useRef<HTMLDivElement|null>(null);
+
+  const measureLeadershipRows=()=>{
+    const measureGrid=(
+      grid:HTMLDivElement|null,
+      selector:string
+    )=>{
+      if(!grid)
+        return;
+
+      const rows=
+        Array.from(
+          grid.querySelectorAll(selector)
+        ) as HTMLElement[];
+
+      if(!rows.length)
+        return;
+
+      const mobile=
+        window.matchMedia(
+          '(max-width:800px)'
+        ).matches;
+
+      if(mobile){
+        rows.forEach(row=>
+          row.style.removeProperty('height')
+        );
+
+        grid.style.removeProperty(
+          '--leadership-row-height'
+        );
+
+        return;
+      }
+
+      rows.forEach(row=>{
+        row.style.height='auto';
+      });
+
+      const tallest=Math.max(
+        ...rows.map(row=>
+          Math.ceil(
+            row.getBoundingClientRect().height
+          )
+        )
+      );
+
+      grid.style.setProperty(
+        '--leadership-row-height',
+        `${tallest}px`
+      );
+    };
+
+    measureGrid(
+      youthGridRef.current,
+      '.leadership-holder-row'
+    );
+
+    measureGrid(
+      adultGridRef.current,
+      '.leadership-adult-row'
+    );
+  };
+
+  useLayoutEffect(()=>{
+    measureLeadershipRows();
+
+    const frame=
+      window.requestAnimationFrame(
+        measureLeadershipRows
+      );
+
+    const observer=
+      new ResizeObserver(
+        measureLeadershipRows
+      );
+
+    if(youthGridRef.current)
+      observer.observe(
+        youthGridRef.current
+      );
+
+    if(adultGridRef.current)
+      observer.observe(
+        adultGridRef.current
+      );
+
+    window.addEventListener(
+      'resize',
+      measureLeadershipRows
+    );
+
+    document.fonts?.ready.then(
+      measureLeadershipRows
+    );
+
+    return()=>{
+      window.cancelAnimationFrame(frame);
+
+      observer.disconnect();
+
+      window.removeEventListener(
+        'resize',
+        measureLeadershipRows
+      );
+    };
+  },[
+    d,
+    editing,
+    editingDescription
+  ]);
+  
   const canEdit=
     !!me?.isAdministrator||
     !!me?.permissions?.includes('LEAD');
@@ -6778,7 +6899,10 @@ function Leadership({me}:{me:any}){
     <section>
       <h2>Youth Leaders</h2>
 
-      <div className="leadership-youth-grid">
+      <div
+        className="leadership-youth-grid"
+        ref={youthGridRef}
+      >
         {d.positions.map((x:any)=>{
           const patrolPosition=
             x.name===
@@ -6893,7 +7017,10 @@ function Leadership({me}:{me:any}){
     <section>
       <h2>Adult Leaders</h2>
 
-      <div className="leadership-adult-grid">
+      <div
+        className="leadership-adult-grid"
+        ref={adultGridRef}
+      >
         <article className="card leadership-adult-card">
           <h3 className="leadership-card-title">
             Executive Leadership
