@@ -7137,9 +7137,6 @@ function Leadership({me}:{me:any}){
                           >
                             <div className="leadership-holder-name">
                               {holder.name}
-                              {holder.suffix&&
-                                ` ${holder.suffix}`
-                              }
                             </div>
 
                             {(
