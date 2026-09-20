@@ -1956,7 +1956,7 @@ tbody tr:nth-child(even){
 }
 
 .leadership-adult-name{
-  color:var(--text);
+  color:var(--red);
   font-weight:600
 }
 
@@ -2086,7 +2086,7 @@ tbody tr:nth-child(even){
 }
 
 .leadership-history-title{
-  color:var(--muted);
+  color:var(--red);
   font-size:.78rem;
   font-weight:700;
   letter-spacing:.04em;
