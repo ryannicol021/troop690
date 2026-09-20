@@ -2734,6 +2734,7 @@ app.get('/api/leadership',async c=>{
         p.id person_id,
         p.first_name,
         p.last_name,
+        p.suffix,
         COALESCE(
           pu.name,
           NULLIF(p.patrol,'')
@@ -2780,6 +2781,8 @@ app.get('/api/leadership',async c=>{
       name:
         `${row.first_name} ${row.last_name}`
           .trim(),
+      suffix:
+        String(row.suffix||'').trim(),
       patrol:
         String(row.patrol_name||'')
     });
@@ -2819,8 +2822,10 @@ app.get('/api/leadership',async c=>{
     .prepare(`
       SELECT
         p.id person_id,
+        p.prefix,
         p.first_name,
         p.last_name,
+        p.suffix,
         pos.id position_id,
         pos.name position_name
       FROM person_positions pp
@@ -2850,9 +2855,14 @@ app.get('/api/leadership',async c=>{
     if(!adults.has(personId)){
       adults.set(personId,{
         id:personId,
-        name:
-          `${row.first_name} ${row.last_name}`
-            .trim(),
+        name:[
+          String(row.prefix||'').trim(),
+          String(row.first_name||'').trim(),
+          String(row.last_name||'').trim(),
+          String(row.suffix||'').trim()
+        ]
+          .filter(Boolean)
+          .join(' '),
         positions:[]
       });
     }
