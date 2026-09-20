@@ -6825,21 +6825,19 @@ function Leadership({me}:{me:any}){
 }
 
               <div className="leadership-description-section">
-                <div className="leadership-description-heading">
-                  <span>Description</span>
-
-                  {editing&&
-                    <button
-                      type="button"
-                      className="leadership-change-button"
-                      onClick={()=>
-                        startDescriptionEdit(x)
-                      }
-                    >
-                      Change
-                    </button>
-                  }
-                </div>
+<div className="leadership-description-heading">
+  {editing&&
+    <button
+      type="button"
+      className="leadership-change-button"
+      onClick={()=>
+        startDescriptionEdit(x)
+      }
+    >
+      Change
+    </button>
+  }
+</div>
 
                 {editingDescription===
                   Number(x.id)?
