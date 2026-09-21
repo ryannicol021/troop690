@@ -1147,12 +1147,18 @@ tbody tr:nth-child(even){
 }
 
 .modal-close{
+  width:34px;
+  height:34px;
+  min-width:34px;
+  min-height:34px;
   border:0;
   background:transparent;
   color:var(--muted);
   font-size:1.6rem;
   line-height:1;
-  padding:4px 8px;
+  padding:0;
+  display:grid;
+  place-items:center;
   cursor:pointer
 }
 
@@ -2332,19 +2338,6 @@ tbody tr:nth-child(even){
   gap:8px
 }
 
-.req{
-  width:58px;
-  height:58px;
-  display:grid;
-  place-items:center;
-  border:1px solid #aeb6bf;
-  border-radius:3px;
-  background:#fff;
-  text-decoration:none;
-  color:var(--navy);
-  font-weight:600
-}
-
 .req.disabled,
 .disabled{
   opacity:.45;
@@ -3173,6 +3166,13 @@ footer a:hover{
   .advancement-rank-modal,
   .advancement-add-modal{
     width:100%
+  }
+
+  .advancement-edit-grid{
+    grid-template-columns:
+      repeat(7,64px);
+    grid-template-rows:
+      repeat(13,64px)
   }
   
   .page-head{
