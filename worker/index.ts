@@ -3261,6 +3261,131 @@ app.get('/api/advancement',async c=>{
   });
 });
 
+app.post('/api/admin/awards',async c=>{
+  const d=admin(c,'ADV');
+  if(d)return d;
+
+  const body=await c.req.json<any>();
+
+  const name=
+    String(body.name||'').trim();
+
+  const url=
+    String(body.url||'').trim();
+
+  if(!name)
+    return json(
+      c,
+      {error:'Award is required.'},
+      400
+    );
+
+  if(
+    url&&
+    !/^https?:\/\//i.test(url)
+  )
+    return json(
+      c,
+      {
+        error:
+          'Resource Link must begin with http:// or https://.'
+      },
+      400
+    );
+
+  try{
+    const award=
+      await c.env.DB
+        .prepare(`
+          INSERT INTO awards(
+            name,
+            url
+          )
+          VALUES(?,?)
+          RETURNING
+            id,
+            name,
+            url
+        `)
+        .bind(
+          name,
+          url
+        )
+        .first<any>();
+
+    return json(c,{
+      award
+    },201);
+  }catch(e:any){
+    if(
+      String(e?.message||'')
+        .toLowerCase()
+        .includes('unique')
+    )
+      return json(
+        c,
+        {error:'That award already exists.'},
+        409
+      );
+
+    throw e;
+  }
+});
+
+app.post('/api/admin/awards/delete',async c=>{
+  const d=admin(c,'ADV');
+  if(d)return d;
+
+  const body=
+    await c.req.json<any>();
+
+  const ids=
+    Array.isArray(body.ids)?
+      [...new Set(
+        body.ids.map(
+          (x:any)=>Number(x)
+        )
+      )]:
+      [];
+
+  if(
+    !ids.length||
+    ids.some(
+      (id:any)=>
+        !Number.isInteger(id)||
+        id<1
+    )
+  )
+    return json(
+      c,
+      {
+        error:
+          'At least one valid award must be selected.'
+      },
+      400
+    );
+
+  const placeholders=
+    ids.map(()=>'?').join(',');
+
+  const result=
+    await c.env.DB
+      .prepare(`
+        DELETE FROM awards
+        WHERE id IN(${placeholders})
+      `)
+      .bind(...ids)
+      .run();
+
+  return json(c,{
+    ok:true,
+    deleted:
+      Number(
+        result.meta.changes||0
+      )
+  });
+});
+
 app.post('/api/admin/advancement-requirements',async c=>{
   const d=admin(c,'ADV');
   if(d)return d;
