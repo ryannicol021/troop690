@@ -1031,7 +1031,7 @@ const canManageEventAttendance = async (
       WHERE id=?
     `)
     .bind(user.personId)
-    .first<any>();
+    .first();
 
   return Number(person?.adult)===1;
 };
