@@ -3319,3 +3319,240 @@ footer a:hover{
     padding-top:24px
   }
 }
+
+.event-attendance{
+  margin-top:18px;
+  padding:18px
+}
+
+.event-attendance-header{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:16px;
+  padding-bottom:12px;
+  margin-bottom:12px;
+  border-bottom:1px solid var(--border)
+}
+
+.event-attendance-header h2{
+  margin:0;
+  color:var(--navy)
+}
+
+.event-attendance-header .muted{
+  margin:5px 0 0
+}
+
+.event-attendance-manager-actions{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  justify-content:flex-end
+}
+
+.event-family-attendance{
+  display:grid
+}
+
+.event-family-attendance-row{
+  display:grid;
+  grid-template-columns:minmax(180px,1fr) auto;
+  align-items:center;
+  gap:12px;
+  padding:10px 0;
+  border-bottom:1px solid var(--border)
+}
+
+.event-family-attendance-row:last-child{
+  border-bottom:0
+}
+
+.event-family-attendance-person{
+  font-weight:600
+}
+
+.event-family-attendance-controls{
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  flex-wrap:wrap;
+  gap:8px
+}
+
+.attendance-choice-group{
+  display:flex;
+  flex-wrap:wrap;
+  gap:4px
+}
+
+.attendance-choice{
+  min-height:34px;
+  height:34px;
+  padding:3px 9px;
+  color:var(--navy);
+  font-size:.78rem;
+  font-weight:600
+}
+
+.attendance-choice.selected{
+  background:var(--navy);
+  color:#fff;
+  border-color:var(--navy-dark)
+}
+
+.attendance-choice.selected:hover{
+  background:var(--navy-dark)
+}
+
+.attendance-readonly{
+  min-height:34px;
+  padding:7px 10px;
+  border:1px solid var(--border);
+  border-radius:3px;
+  background:var(--khaki-light);
+  color:var(--navy);
+  font-weight:600
+}
+
+.attendance-revoke-button{
+  min-height:34px;
+  height:34px;
+  padding:3px 8px;
+  border:1px solid #bdb5a6;
+  border-radius:3px;
+  background:var(--khaki-light);
+  color:var(--red);
+  font-size:.75rem;
+  font-weight:600;
+  line-height:1
+}
+
+.attendance-revoke-button:hover{
+  background:var(--khaki);
+  color:var(--red)
+}
+
+.attendance-manager-modal{
+  width:min(1100px,100%)
+}
+
+.attendance-manager-help{
+  margin:0 0 14px
+}
+
+.attendance-manager-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:12px
+}
+
+.attendance-manager-column{
+  min-width:0;
+  padding:10px;
+  border:1px solid var(--border);
+  border-radius:4px;
+  background:#fff
+}
+
+.attendance-manager-column h3{
+  margin:0 0 10px;
+  padding-bottom:8px;
+  border-bottom:2px solid var(--khaki);
+  color:var(--navy);
+  font-size:.95rem
+}
+
+.attendance-manager-list{
+  display:grid;
+  gap:6px;
+  min-height:100px
+}
+
+.attendance-manager-person{
+  padding:8px 9px;
+  border:1px solid var(--border);
+  border-radius:3px;
+  background:var(--khaki-light);
+  cursor:grab;
+  user-select:none
+}
+
+.attendance-manager-person:active{
+  cursor:grabbing
+}
+
+.event-permission-modal{
+  width:min(850px,100%)
+}
+
+.event-permission-modal p{
+  margin:0 0 14px
+}
+
+.event-permission-bold{
+  font-weight:700
+}
+
+.event-permission-italic{
+  font-style:italic
+}
+
+.attendance-manager-modal-actions{
+  display:flex;
+  justify-content:flex-end;
+  margin-bottom:12px
+}
+
+.event-permissions-list{
+  display:grid
+}
+
+.event-permissions-row{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  align-items:center;
+  gap:12px;
+  padding:10px 0;
+  border-bottom:1px solid var(--border)
+}
+
+.event-permissions-row:last-child{
+  border-bottom:0
+}
+
+.event-permissions-name{
+  font-weight:600
+}
+
+.event-permissions-row input[type="checkbox"]{
+  width:18px;
+  height:18px
+}
+
+@media(max-width:760px){
+  .event-attendance-header{
+    flex-direction:column
+  }
+
+  .event-attendance-manager-actions{
+    width:100%;
+    justify-content:flex-start
+  }
+
+  .event-family-attendance-row{
+    grid-template-columns:1fr
+  }
+
+  .event-family-attendance-controls{
+    justify-content:flex-start
+  }
+
+  .attendance-manager-grid{
+    grid-template-columns:1fr
+  }
+
+  .event-permissions-row{
+    grid-template-columns:1fr auto
+  }
+}
