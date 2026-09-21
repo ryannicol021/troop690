@@ -8172,35 +8172,38 @@ function Advancement({me}:{me:any}){
             data-column={col}
           >
             {requirement&&
-              <div className="advancement-requirement-item">
-                <a
-                  className={
-                    'button advancement-requirement-button '+
-                    (
-                      !requirement.video_url?
-                        'disabled':
-                        ''
-                    )
-                  }
-                  href={
-                    requirement.video_url||
-                    undefined
-                  }
-                  target="_blank"
-                  rel="noreferrer"
-                  draggable
-                  onDragStart={()=>
-                    setDraggedRequirement(
-                      Number(requirement.id)
-                    )
-                  }
-                  onDragEnd={()=>
-                    setDraggedRequirement(null)
-                  }
-                  onClick={e=>{
-                    e.preventDefault();
-                  }}
-                >
+<div
+  className="advancement-requirement-item"
+  draggable={editing}
+  onDragStart={()=>
+    setDraggedRequirement(
+      Number(requirement.id)
+    )
+  }
+  onDragEnd={()=>
+    setDraggedRequirement(null)
+  }
+>
+  <a
+    className={
+      'button advancement-requirement-button '+
+      (
+        !requirement.video_url?
+          'disabled':
+          ''
+      )
+    }
+    href={
+      requirement.video_url||
+      undefined
+    }
+    target="_blank"
+    rel="noreferrer"
+    onClick={e=>{
+      if(editing||!requirement.video_url)
+        e.preventDefault();
+    }}
+  >
                   {requirement.requirement_name}
                 </a>
 
