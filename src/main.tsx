@@ -7899,39 +7899,51 @@ function Advancement({me}:{me:any}){
     )
   );
 
-  const lastUsedRow=
-    selectedRequirementsForRank.length?
-      Math.max(
-        ...selectedRequirementsForRank.map(
-          (x:any)=>
-            Math.floor(
-              Number(x.visible_order)/7
-            )
-        )
-      ):
-      0;
-
-  const lastUsedColumn=
-    selectedRequirementsForRank.length?
-      Math.max(
-        ...selectedRequirementsForRank.map(
-          (x:any)=>
-            Number(x.visible_order)%7
-        )
-      ):
-      0;
-
-  const normalRows=
-    Math.max(
-      1,
-      lastUsedRow+1
+  const requirementsByPosition=
+    new Map<number,any>(
+      selectedRequirementsForRank.map(
+        (x:any)=>[
+          Number(x.visible_order),
+          x
+        ]
+      )
     );
+
+  const usedRows=[
+    ...new Set(
+      selectedRequirementsForRank.map(
+        (x:any)=>
+          Math.floor(
+            Number(x.visible_order)/7
+          )
+      )
+    )
+  ].sort((a,b)=>a-b);
+
+  const usedColumns=[
+    ...new Set(
+      selectedRequirementsForRank.map(
+        (x:any)=>
+          Number(x.visible_order)%7
+      )
+    )
+  ].sort((a,b)=>a-b);
 
   const normalColumns=
     Math.max(
       1,
-      lastUsedColumn+1
+      usedColumns.length
     );
+
+  const advancementModalColumns=
+    editing?
+      7:
+      normalColumns;
+
+  const advancementModalWidth=
+    advancementModalColumns*64+
+    (advancementModalColumns-1)*8+
+    44;
 
   const hasAvailableSpace=
     occupiedPositions.size<91;
@@ -8065,11 +8077,14 @@ function Advancement({me}:{me:any}){
             closeRank();
         }}
       >
-        <div
-          className="modal-card advancement-rank-modal"
-          role="dialog"
-          aria-modal="true"
-        >
+<div
+  className="modal-card advancement-rank-modal"
+  role="dialog"
+  aria-modal="true"
+  style={{
+    width:`${advancementModalWidth}px`
+  }}
+>
           <div className="modal-header">
             <h2>
               {selectedRank}
@@ -8240,23 +8255,27 @@ function Advancement({me}:{me:any}){
           `repeat(${normalColumns},64px)`
       }}
     >
-      {Array.from(
-        {
-          length:
-            normalRows*normalColumns
-        },
-        (_,position)=>{
+      {usedRows.flatMap(row=>
+        usedColumns.map(column=>{
+          const position=
+            row*7+column;
+
           const requirement=
-            selectedRequirementsForRank.find(
-              (x:any)=>
-                Number(x.visible_order)===
-                position
+            requirementsByPosition.get(
+              position
             );
 
           return (
             <div
-              className="advancement-grid-cell"
-              key={position}
+              className={
+                'advancement-grid-cell '+
+                (
+                  requirement?
+                    'advancement-grid-cell-filled':
+                    ''
+                )
+              }
+              key={`${row}-${column}`}
             >
               {requirement&&
                 <a
@@ -8286,7 +8305,7 @@ function Advancement({me}:{me:any}){
               }
             </div>
           );
-        }
+        })
       )}
     </div>:
     <p className="muted">
