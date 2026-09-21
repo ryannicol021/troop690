@@ -8258,13 +8258,13 @@ const usedColumns: number[]=[
     )}
   </div>:
   selectedRequirementsForRank.length?
-    <div
-      className="advancement-normal-grid"
-      style={{
-        gridTemplateColumns:
-          `repeat(${normalColumns},64px)`
-      }}
-    >
+<div
+  className="advancement-normal-grid"
+  style={{
+    '--advancement-normal-columns':
+      `${normalColumns}`
+  } as React.CSSProperties}
+>
 {usedRows.flatMap((row:number)=>
   usedColumns.map((column:number)=>{
           const position=
