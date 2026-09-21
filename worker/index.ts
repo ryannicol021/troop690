@@ -3315,7 +3315,7 @@ app.post('/api/admin/advancement-requirements',async c=>{
         SELECT visible_order
         FROM advancement_requirements
         WHERE rank=?
-        ORDER BY visible_order
+        ORDER BY visible_order,id
       `)
       .bind(rank)
       .all<any>();
@@ -3328,9 +3328,19 @@ app.post('/api/admin/advancement-requirements',async c=>{
 
   let placement:number|null=null;
 
-  for(let row=12;row>=0;row--){
+  if(!occupied.size){
+    placement=0;
+  }else{
+    const lastRow=Math.max(
+      ...Array.from(occupied).map(
+        position=>
+          Math.floor(position/7)
+      )
+    );
+
     for(let col=0;col<7;col++){
-      const index=row*7+col;
+      const index=
+        lastRow*7+col;
 
       if(!occupied.has(index)){
         placement=index;
@@ -3338,8 +3348,12 @@ app.post('/api/admin/advancement-requirements',async c=>{
       }
     }
 
-    if(placement!==null)
-      break;
+    if(
+      placement===null&&
+      lastRow<12
+    ){
+      placement=(lastRow+1)*7;
+    }
   }
 
   if(placement===null)
