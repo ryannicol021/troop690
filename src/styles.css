@@ -2156,16 +2156,20 @@ tbody tr:nth-child(even){
 }
 
 .advancement-rank-modal{
-  width:calc(
-    var(--advancement-grid-width) + 46px
-  );
-  max-width:none;
+  width:max-content;
+  min-width:0;
+  max-width:100%;
   box-sizing:border-box;
   overflow-x:hidden
 }
 
 .advancement-rank-modal .modal-header{
   align-items:flex-start
+}
+
+.advancement-rank-modal .modal-header h2{
+  min-width:0;
+  overflow-wrap:anywhere
 }
 
 .advancement-rank-modal-actions{
@@ -2261,12 +2265,12 @@ tbody tr:nth-child(even){
 .advancement-edit-grid{
   display:grid;
   grid-template-columns:
-    repeat(7,64px);
+    repeat(7,minmax(0,1fr));
   grid-template-rows:
-    repeat(13,64px);
+    repeat(13,minmax(0,1fr));
   gap:8px;
-  width:var(--advancement-grid-width);
-  min-width:var(--advancement-grid-width);
+  width:100%;
+  min-width:0;
   max-width:none;
   overflow:hidden;
   padding:0
@@ -2275,17 +2279,17 @@ tbody tr:nth-child(even){
 .advancement-normal-grid{
   display:grid;
   gap:8px;
-  width:var(--advancement-grid-width);
-  min-width:var(--advancement-grid-width);
+  width:max-content;
+  min-width:0;
   max-width:none;
   overflow:visible
 }
 
 .advancement-grid-cell{
-  width:64px;
-  height:64px;
-  min-width:64px;
-  min-height:64px;
+  width:100%;
+  height:100%;
+  min-width:0;
+  min-height:0;
   display:grid;
   place-items:center
 }
@@ -2305,15 +2309,17 @@ tbody tr:nth-child(even){
 
 .advancement-requirement-item{
   position:relative;
-  width:64px;
-  height:64px
+  width:100%;
+  height:100%;
+  min-width:0;
+  min-height:0
 }
 
 .advancement-requirement-button{
-  width:64px;
-  height:64px;
-  min-width:64px;
-  min-height:64px;
+  width:100%;
+  height:100%;
+  min-width:0;
+  min-height:0;
   padding:6px;
   display:grid;
   place-items:center;
