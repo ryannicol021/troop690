@@ -2156,7 +2156,9 @@ tbody tr:nth-child(even){
 }
 
 .advancement-rank-modal{
-  width:var(--advancement-modal-width);
+  width:calc(
+    var(--advancement-grid-width) + 46px
+  );
   min-width:0;
   max-width:100%;
   box-sizing:border-box;
