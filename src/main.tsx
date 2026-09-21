@@ -8081,7 +8081,13 @@ const hasAvailableSpace=
         }}
       >
 <div
-  className="modal-card advancement-rank-modal"
+  className={
+    `modal-card advancement-rank-modal ${
+      editing?
+        'advancement-rank-modal-editing':
+        ''
+    }`
+  }
   role="dialog"
   aria-modal="true"
   style={{
