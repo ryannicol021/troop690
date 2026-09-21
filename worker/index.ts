@@ -1,7 +1,11 @@
 import { Hono } from 'hono';
 import type { Context } from 'hono';
 import { setCookie, getCookie, deleteCookie } from 'hono/cookie';
-import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
+import {
+  PDFDocument,
+  StandardFonts,
+  rgb
+} from 'pdf-lib';
 
 type Env = { DB: D1Database; FILES: R2Bucket; ASSETS: Fetcher; PUBLIC_SITE_URL:string; INTERIM_SITE_URL:string; SESSION_TTL_DAYS:string; BOOTSTRAP_SECRET?:string; GEOAPIFY_API_KEY?:string; CLOUDFLARE_ACCOUNT_ID?:string; CLOUDFLARE_API_TOKEN?:string };
 type User = {
@@ -24,6 +28,510 @@ const app = new Hono<{Bindings:Env,Variables:{user:User|null}}>();
 const json = (c:any, data:any, status=200) => c.json(data,status);
 const sha256 = async (s:string) => Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s)))).map(x=>x.toString(16).padStart(2,'0')).join('');
 const random = (n=32) => { const b=new Uint8Array(n); crypto.getRandomValues(b); return b; };
+const ATTENDANCE_PERMISSION_PARAGRAPHS = [
+  `I understand that participation in Scouting activities involves the risk of personal injury, including death, due to the physical, mental, and emotional challenges in the activities offered. Information about those activities may be obtained from the venue, activity coordinators, or local council. I also understand that participation in these activities is entirely voluntary and requires participants to follow instructions and abide by all applicable rules and the standards of conduct.`,
+
+  `In case of an emergency involving my child, I understand that efforts will be made to contact me. In the event I cannot be reached, permission is hereby given to the medical provider to secure proper treatment, including hospitalization, anesthesia, surgery, or injections of medication for my child. Medical providers are authorized to disclose protected health information to the adult in charge and/ or any physician or health care provider involved in providing medical care to the participant. Protected Health Information/Confidential Health Information (PHI/CHI) under the Standards for Privacy of Individually Identifiable Health Information, 45 C.F.R. §§160.103, 164.501, etc. seq., as amended from time to time, includes examination findings, test results, and treatment provided for purposes of medical evaluation of the participant, follow-up and communication with the participant’s parents or guardian, and/or determination of the participant’s ability to continue in the program activities.`,
+
+  `With appreciation of the dangers and risks associated with programs and activities including preparations for and transportation to and from the activity, on my own behalf and/or on behalf of my child, I hereby fully and completely release and waive any and all claims for personal injury, death, or loss that may arise against Scouting America, the local council, the activity coordinators, and all employees, volunteers, related parties, or other organizations associated with any program or activity.`,
+
+  `By clicking 'Agree,' I acknowledge and agree that your action constitutes a binding legal agreement and serves as your electronic signature under applicable law.`
+];
+
+const permissionPersonName=(
+  person:any,
+  middleInitial=false
+)=>{
+  const parts:string[]=[];
+
+  if(String(person?.prefix||'').trim())
+    parts.push(
+      String(person.prefix).trim()
+    );
+
+  if(String(person?.first_name||'').trim())
+    parts.push(
+      String(person.first_name).trim()
+    );
+
+  const middle=
+    String(person?.middle_name||'').trim();
+
+  if(middle){
+    parts.push(
+      middleInitial?
+        middle.charAt(0)+'.':
+        middle
+    );
+  }
+
+  if(String(person?.last_name||'').trim())
+    parts.push(
+      String(person.last_name).trim()
+    );
+
+  if(String(person?.suffix||'').trim())
+    parts.push(
+      String(person.suffix).trim()
+    );
+
+  return parts.join(' ');
+};
+
+const permissionFilePart=(value:string)=>{
+  return String(value||'')
+    .trim()
+    .replace(/[\\/:*?"<>|]/g,'-')
+    .replace(/\s+/g,'-');
+};
+
+const permissionPhone=(value:string)=>{
+  const digits=
+    String(value||'')
+      .replace(/\D/g,'');
+
+  if(digits.length===10)
+    return `(${digits.slice(0,3)}) ${digits.slice(3,6)}-${digits.slice(6)}`;
+
+  return String(value||'').trim();
+};
+
+const drawWrappedPermissionText=(
+  page:any,
+  text:string,
+  font:any,
+  size:number,
+  x:number,
+  y:number,
+  maxWidth:number,
+  lineHeight:number
+)=>{
+  const words=text.split(/\s+/);
+  let line='';
+
+  for(const word of words){
+    const next=
+      line?
+        `${line} ${word}`:
+        word;
+
+    if(
+      font.widthOfTextAtSize(
+        next,
+        size
+      )>maxWidth&&
+      line
+    ){
+      page.drawText(
+        line,
+        {
+          x,
+          y,
+          size,
+          font,
+          color:rgb(0,0,0)
+        }
+      );
+
+      y-=lineHeight;
+      line=word;
+    }else{
+      line=next;
+    }
+  }
+
+  if(line){
+    page.drawText(
+      line,
+      {
+        x,
+        y,
+        size,
+        font,
+        color:rgb(0,0,0)
+      }
+    );
+
+    y-=lineHeight;
+  }
+
+  return y;
+};
+
+const buildPermissionPdf=async(
+  parent:any,
+  scout:any
+)=>{
+  const pdf=await PDFDocument.create();
+
+  const regular=await pdf.embedFont(
+    StandardFonts.Helvetica
+  );
+
+  const bold=await pdf.embedFont(
+    StandardFonts.HelveticaBold
+  );
+
+  const italic=await pdf.embedFont(
+    StandardFonts.HelveticaOblique
+  );
+
+  let page=pdf.addPage();
+
+  const margin=54;
+  const width=page.getSize().width;
+  const height=page.getSize().height;
+  const maxWidth=width-(margin*2);
+
+  let y=height-margin;
+
+  const title=
+    'Informed Consent, Release Agreement, and Authorization';
+
+  const titleSize=16;
+
+  const titleWidth=
+    bold.widthOfTextAtSize(
+      title,
+      titleSize
+    );
+
+  page.drawText(
+    title,
+    {
+      x:(width-titleWidth)/2,
+      y,
+      size:titleSize,
+      font:bold,
+      color:rgb(0,0,0)
+    }
+  );
+
+  y-=34;
+
+  for(
+    let i=0;
+    i<ATTENDANCE_PERMISSION_PARAGRAPHS.length;
+    i++
+  ){
+    const paragraph=
+      ATTENDANCE_PERMISSION_PARAGRAPHS[i];
+
+    const font=
+      i===2?
+        bold:
+      i===3?
+        italic:
+        regular;
+
+    const size=
+      i===2?
+        10:
+        10;
+
+    const lineHeight=14;
+
+    const words=paragraph.split(/\s+/);
+    let line='';
+
+    for(const word of words){
+      const next=
+        line?
+          `${line} ${word}`:
+          word;
+
+      if(
+        font.widthOfTextAtSize(
+          next,
+          size
+        )>maxWidth&&
+        line
+      ){
+        if(y<margin+80){
+          page=pdf.addPage();
+          y=page.getSize().height-margin;
+        }
+
+        page.drawText(
+          line,
+          {
+            x:margin,
+            y,
+            size,
+            font,
+            color:rgb(0,0,0)
+          }
+        );
+
+        y-=lineHeight;
+        line=word;
+      }else{
+        line=next;
+      }
+    }
+
+    if(line){
+      if(y<margin+80){
+        page=pdf.addPage();
+        y=page.getSize().height-margin;
+      }
+
+      page.drawText(
+        line,
+        {
+          x:margin,
+          y,
+          size,
+          font,
+          color:rgb(0,0,0)
+        }
+      );
+
+      y-=lineHeight;
+    }
+
+    y-=10;
+  }
+
+  const parentName=
+    permissionPersonName(
+      parent,
+      false
+    );
+
+  const scoutName=
+    permissionPersonName(
+      scout,
+      false
+    );
+
+  const signatureLines=[
+    parentName,
+    `Parent/Guardian of ${scoutName}`
+  ];
+
+  const phone=
+    permissionPhone(
+      parent?.phone
+    );
+
+  if(phone)
+    signatureLines.push(phone);
+
+  const email=
+    String(parent?.email||'').trim();
+
+  if(email)
+    signatureLines.push(email);
+
+  if(y<margin+90){
+    page=pdf.addPage();
+    y=page.getSize().height-margin;
+  }
+
+  y-=8;
+
+  for(const line of signatureLines){
+    page.drawText(
+      line,
+      {
+        x:margin,
+        y,
+        size:10,
+        font:regular,
+        color:rgb(0,0,0)
+      }
+    );
+
+    y-=15;
+  }
+
+  const bytes=await pdf.save();
+
+  return bytes;
+};
+
+const crc32=(data:Uint8Array)=>{
+  let crc=0xffffffff;
+
+  for(const byte of data){
+    crc^=byte;
+
+    for(let i=0;i<8;i++){
+      crc=
+        (crc>>>1)^
+        (
+          (crc&1)?
+            0xedb88320:
+            0
+        );
+    }
+  }
+
+  return (
+    crc^
+    0xffffffff
+  )>>>0;
+};
+
+const le16=(value:number)=>{
+  return new Uint8Array([
+    value&0xff,
+    (value>>>8)&0xff
+  ]);
+};
+
+const le32=(value:number)=>{
+  return new Uint8Array([
+    value&0xff,
+    (value>>>8)&0xff,
+    (value>>>16)&0xff,
+    (value>>>24)&0xff
+  ]);
+};
+
+const concatBytes=(
+  ...parts:Uint8Array[]
+)=>{
+  const total=
+    parts.reduce(
+      (sum,p)=>sum+p.length,
+      0
+    );
+
+  const out=
+    new Uint8Array(total);
+
+  let offset=0;
+
+  for(const part of parts){
+    out.set(part,offset);
+    offset+=part.length;
+  }
+
+  return out;
+};
+
+const buildZip=(
+  files:{
+    name:string,
+    bytes:Uint8Array
+  }[]
+)=>{
+  const encoder=
+    new TextEncoder();
+
+  const locals:Uint8Array[]=[];
+  const centrals:Uint8Array[]=[];
+
+  let offset=0;
+
+  const now=new Date();
+
+  const dosTime=
+    (
+      now.getHours()<<11
+    )|
+    (
+      now.getMinutes()<<5
+    )|
+    Math.floor(
+      now.getSeconds()/2
+    );
+
+  const dosDate=
+    (
+      Math.max(
+        0,
+        now.getFullYear()-1980
+      )<<9
+    )|
+    (
+      (now.getMonth()+1)<<5
+    )|
+    now.getDate();
+
+  for(const file of files){
+    const name=
+      encoder.encode(file.name);
+
+    const crc=crc32(file.bytes);
+
+    const local=concatBytes(
+      new Uint8Array([
+        0x50,0x4b,0x03,0x04,
+        20,0
+      ]),
+      le16(0),
+      le16(0),
+      le16(dosTime),
+      le16(dosDate),
+      le32(crc),
+      le32(file.bytes.length),
+      le32(file.bytes.length),
+      le16(name.length),
+      le16(0),
+      name,
+      file.bytes
+    );
+
+    locals.push(local);
+
+    const central=concatBytes(
+      new Uint8Array([
+        0x50,0x4b,0x01,0x02,
+        20,0,
+        20,0
+      ]),
+      le16(0),
+      le16(0),
+      le16(dosTime),
+      le16(dosDate),
+      le32(crc),
+      le32(file.bytes.length),
+      le32(file.bytes.length),
+      le16(name.length),
+      le16(0),
+      le16(0),
+      le16(0),
+      le16(0),
+      le32(0),
+      le32(offset),
+      name
+    );
+
+    centrals.push(central);
+
+    offset+=local.length;
+  }
+
+  const centralOffset=offset;
+
+  const centralBytes=
+    concatBytes(...centrals);
+
+  const localBytes=
+    concatBytes(...locals);
+
+  const end=concatBytes(
+    new Uint8Array([
+      0x50,0x4b,0x05,0x06,
+      0,0,
+      0,0
+    ]),
+    le16(files.length),
+    le16(files.length),
+    le32(centralBytes.length),
+    le32(centralOffset),
+    le16(0)
+  );
+
+  return concatBytes(
+    localBytes,
+    centralBytes,
+    end
+  );
+};
 const b64 = (b:Uint8Array) => btoa(String.fromCharCode(...b)).replaceAll('+','-').replaceAll('/','_').replaceAll('=','');
 const unb64 = (s:string) => Uint8Array.from(atob(s.replaceAll('-','+').replaceAll('_','/')),c=>c.charCodeAt(0));
 
@@ -7887,11 +8395,8 @@ app.put('/api/events/:id/permission-checkoffs',async c=>{
   return json(c,{ok:true});
 });
 
-app.post('/api/permissions/sign',async c=>{
-  const deny=requirePerm('SIGN')(c);
-  if(deny)return deny;
-
-  const u=c.get('user');
+app.get('/api/events/:id/my-permissions',async c=>{
+  const u=c.get('user') as User|null;
 
   if(!u||!u.personId)
     return json(
@@ -7900,103 +8405,747 @@ app.post('/api/permissions/sign',async c=>{
       401
     );
 
-  const x=await c.req.json();
+  await ensureFamilySchema(c);
 
-  const rel=await c.env.DB
+  const eventId=Number(
+    c.req.param('id')
+  );
+
+  const person=await c.env.DB
     .prepare(`
-      SELECT 1
-      FROM family_members a
-      JOIN family_members b
-        ON b.family_id=a.family_id
-      JOIN people caller
-        ON caller.id=a.person_id
-      JOIN people scout
-        ON scout.id=b.person_id
+      SELECT
+        id,
+        adult,
+        archived
+      FROM people
+      WHERE id=?
+    `)
+    .bind(u.personId)
+    .first<any>();
+
+  if(
+    !person||
+    Number(person.adult)!==1||
+    Number(person.archived)===1
+  )
+    return json(c,{
+      members:[]
+    });
+
+  const family=await c.env.DB
+    .prepare(`
+      SELECT family_id
+      FROM family_members
+      WHERE person_id=?
+      LIMIT 1
+    `)
+    .bind(u.personId)
+    .first<any>();
+
+  if(!family?.family_id)
+    return json(c,{
+      members:[]
+    });
+
+  const rows=await c.env.DB
+    .prepare(`
+      SELECT
+        p.id,
+        p.prefix,
+        p.first_name,
+        p.middle_name,
+        p.last_name,
+        p.suffix,
+        p.adult,
+        ea.response,
+
+        (
+          SELECT pf.id
+          FROM permission_forms pf
+          WHERE
+            pf.event_id=?
+            AND pf.scout_person_id=p.id
+            AND pf.parent_person_id=?
+            AND pf.revoked_at IS NULL
+          ORDER BY pf.id DESC
+          LIMIT 1
+        ) permission_id,
+
+        EXISTS(
+          SELECT 1
+          FROM permission_forms pf2
+          WHERE
+            pf2.event_id=?
+            AND pf2.scout_person_id=p.id
+            AND pf2.parent_person_id=?
+            AND pf2.revoked_at IS NULL
+        ) permission_signed
+
+      FROM family_members fm
+      JOIN people p
+        ON p.id=fm.person_id
+      LEFT JOIN event_attendance ea
+        ON ea.event_id=?
+        AND ea.person_id=p.id
       WHERE
-        a.person_id=?
-        AND b.person_id=?
-        AND caller.adult=1
-        AND scout.adult=0
+        fm.family_id=?
+        AND p.archived=0
+      ORDER BY
+        p.last_name COLLATE NOCASE,
+        p.first_name COLLATE NOCASE,
+        p.suffix COLLATE NOCASE
     `)
     .bind(
+      eventId,
       u.personId,
-      x.scoutPersonId
+      eventId,
+      u.personId,
+      eventId,
+      Number(family.family_id)
     )
-    .first();
+    .all<any>();
 
-  if(!rel)
+  return json(c,{
+    members:(rows.results??[]).map((row:any)=>({
+      ...row,
+      response:
+        String(row.response||'Unsure'),
+      permissionSigned:
+        Number(row.permission_signed)===1,
+      permissionId:
+        row.permission_id==null?
+          null:
+          Number(row.permission_id)
+    }))
+  });
+});
+
+app.get('/api/events/:id/permissions',async c=>{
+  const id=Number(
+    c.req.param('id')
+  );
+
+  if(!(await canManageEventAttendance(c,id)))
     return json(
       c,
-      {error:'Only a connected parent/guardian can sign'},
+      {error:'Forbidden'},
       403
     );
 
-  const templateKey=await c.env.DB
-    .prepare(
-      "SELECT value FROM site_content WHERE key='ahmr_template'"
+  await ensureFamilySchema(c);
+
+  const rows=await c.env.DB
+    .prepare(`
+      SELECT
+        p.id,
+        p.prefix,
+        p.first_name,
+        p.middle_name,
+        p.last_name,
+        p.suffix,
+        p.phone,
+        p.email,
+
+        (
+          SELECT
+            pf.id
+          FROM permission_forms pf
+          WHERE
+            pf.event_id=?
+            AND pf.scout_person_id=p.id
+            AND pf.revoked_at IS NULL
+          ORDER BY pf.id DESC
+          LIMIT 1
+        ) permission_id,
+
+        (
+          SELECT
+            parent.id
+          FROM permission_forms pf2
+          JOIN people parent
+            ON parent.id=pf2.parent_person_id
+          WHERE
+            pf2.event_id=?
+            AND pf2.scout_person_id=p.id
+            AND pf2.revoked_at IS NULL
+          ORDER BY pf2.id DESC
+          LIMIT 1
+        ) permission_parent_id,
+
+        EXISTS(
+          SELECT 1
+          FROM permission_checkoffs pc
+          WHERE
+            pc.event_id=?
+            AND pc.scout_person_id=p.id
+            AND pc.checked=1
+        ) checked
+
+      FROM people p
+      JOIN event_attendance ea
+        ON ea.person_id=p.id
+        AND ea.event_id=?
+      WHERE
+        p.adult=0
+        AND p.archived=0
+        AND ea.response='Yes'
+      ORDER BY
+        p.last_name COLLATE NOCASE,
+        p.first_name COLLATE NOCASE,
+        p.suffix COLLATE NOCASE
+    `)
+    .bind(
+      id,
+      id,
+      id,
+      id
+    )
+    .all<any>();
+
+  return json(c,{
+    youth:(rows.results??[]).map((row:any)=>({
+      ...row,
+      permissionId:
+        row.permission_id==null?
+          null:
+          Number(row.permission_id),
+      hasPermission:
+        row.permission_id!=null,
+      checked:
+        Number(row.checked)===1
+    }))
+  });
+});
+
+app.get('/api/events/:id/permissions/:scoutId/export',async c=>{
+  const eventId=Number(
+    c.req.param('id')
+  );
+
+  const scoutId=Number(
+    c.req.param('scoutId')
+  );
+
+  if(!(await canManageEventAttendance(c,eventId)))
+    return new Response(
+      'Forbidden',
+      {
+        status:403
+      }
+    );
+
+  const row=await c.env.DB
+    .prepare(`
+      SELECT
+        pf.id,
+        pf.pdf_storage_key,
+        p.prefix,
+        p.first_name,
+        p.middle_name,
+        p.last_name,
+        p.suffix
+      FROM permission_forms pf
+      JOIN people p
+        ON p.id=pf.scout_person_id
+      WHERE
+        pf.event_id=?
+        AND pf.scout_person_id=?
+        AND pf.revoked_at IS NULL
+      ORDER BY pf.id DESC
+      LIMIT 1
+    `)
+    .bind(
+      eventId,
+      scoutId
     )
     .first<any>();
 
-  if(!templateKey?.value)
+  if(!row)
+    return new Response(
+      'Permission not found',
+      {
+        status:404
+      }
+    );
+
+  let bytes:Uint8Array|null=null;
+
+  if(row.pdf_storage_key){
+    const stored=
+      await c.env.FILES.get(
+        row.pdf_storage_key
+      );
+
+    if(stored){
+      bytes=
+        new Uint8Array(
+          await stored.arrayBuffer()
+        );
+    }
+  }
+
+  if(!bytes){
+    const parent=await c.env.DB
+      .prepare(`
+        SELECT
+          id,
+          prefix,
+          first_name,
+          middle_name,
+          last_name,
+          suffix,
+          phone,
+          email
+        FROM people
+        WHERE id=(
+          SELECT parent_person_id
+          FROM permission_forms
+          WHERE id=?
+        )
+      `)
+      .bind(row.id)
+      .first<any>();
+
+    const scout=await c.env.DB
+      .prepare(`
+        SELECT
+          id,
+          prefix,
+          first_name,
+          middle_name,
+          last_name,
+          suffix
+        FROM people
+        WHERE id=?
+      `)
+      .bind(scoutId)
+      .first<any>();
+
+    if(!parent||!scout)
+      return new Response(
+        'Permission information unavailable',
+        {
+          status:500
+        }
+      );
+
+    bytes=
+      await buildPermissionPdf(
+        parent,
+        scout
+      );
+  }
+
+  const filename=
+    `${permissionFilePart(row.last_name)}-${permissionFilePart(row.first_name)}.pdf`;
+
+  return new Response(
+    bytes,
+    {
+      headers:{
+        'Content-Type':
+          'application/pdf',
+        'Content-Disposition':
+          `attachment; filename="${filename}"`
+      }
+    }
+  );
+});
+
+app.get('/api/events/:id/permissions/export-all',async c=>{
+  const eventId=Number(
+    c.req.param('id')
+  );
+
+  if(!(await canManageEventAttendance(c,eventId)))
+    return new Response(
+      'Forbidden',
+      {
+        status:403
+      }
+    );
+
+  const event=await c.env.DB
+    .prepare(`
+      SELECT
+        id,
+        title,
+        start_at
+      FROM events
+      WHERE id=?
+    `)
+    .bind(eventId)
+    .first<any>();
+
+  if(!event)
+    return new Response(
+      'Event not found',
+      {
+        status:404
+      }
+    );
+
+  const rows=await c.env.DB
+    .prepare(`
+      SELECT
+        pf.id permission_id,
+        pf.parent_person_id,
+        p.id scout_id,
+        p.prefix,
+        p.first_name,
+        p.middle_name,
+        p.last_name,
+        p.suffix
+      FROM permission_forms pf
+      JOIN people p
+        ON p.id=pf.scout_person_id
+      JOIN event_attendance ea
+        ON ea.event_id=pf.event_id
+        AND ea.person_id=pf.scout_person_id
+      WHERE
+        pf.event_id=?
+        AND pf.revoked_at IS NULL
+        AND p.adult=0
+        AND p.archived=0
+        AND ea.response='Yes'
+        AND pf.id=(
+          SELECT MAX(pf2.id)
+          FROM permission_forms pf2
+          WHERE
+            pf2.event_id=pf.event_id
+            AND pf2.scout_person_id=pf.scout_person_id
+            AND pf2.revoked_at IS NULL
+        )
+      ORDER BY
+        p.last_name COLLATE NOCASE,
+        p.first_name COLLATE NOCASE,
+        p.suffix COLLATE NOCASE
+    `)
+    .bind(eventId)
+    .all<any>();
+
+  const files:{
+    name:string,
+    bytes:Uint8Array
+  }[]=[];
+
+  const duplicateCounts=
+    new Map<string,number>();
+
+  for(const row of rows.results??[]){
+    const base=
+      `${permissionFilePart(row.last_name)}-${permissionFilePart(row.first_name)}`;
+
+    const count=
+      (duplicateCounts.get(base)||0)+1;
+
+    duplicateCounts.set(
+      base,
+      count
+    );
+
+    const filename=
+      count===1&&
+      (rows.results??[]).filter(
+        (x:any)=>
+          permissionFilePart(x.last_name)===
+            permissionFilePart(row.last_name)&&
+          permissionFilePart(x.first_name)===
+            permissionFilePart(row.first_name)
+      ).length===1
+        ?
+          `${base}.pdf`
+        :
+          `${base}-${count}.pdf`;
+
+    const parent=await c.env.DB
+      .prepare(`
+        SELECT
+          id,
+          prefix,
+          first_name,
+          middle_name,
+          last_name,
+          suffix,
+          phone,
+          email
+        FROM people
+        WHERE id=?
+      `)
+      .bind(
+        Number(row.parent_person_id)
+      )
+      .first<any>();
+
+    const scout=await c.env.DB
+      .prepare(`
+        SELECT
+          id,
+          prefix,
+          first_name,
+          middle_name,
+          last_name,
+          suffix
+        FROM people
+        WHERE id=?
+      `)
+      .bind(
+        Number(row.scout_id)
+      )
+      .first<any>();
+
+    if(!parent||!scout)
+      continue;
+
+    files.push({
+      name:filename,
+      bytes:
+        await buildPermissionPdf(
+          parent,
+          scout
+        )
+    });
+  }
+
+  const zipBytes=
+    buildZip(files);
+
+  const date=
+    String(event.start_at||'')
+      .slice(0,10);
+
+  const filename=
+    `${date}-${permissionFilePart(event.title)}.zip`;
+
+  return new Response(
+    zipBytes,
+    {
+      headers:{
+        'Content-Type':
+          'application/zip',
+        'Content-Disposition':
+          `attachment; filename="${filename}"`
+      }
+    }
+  );
+});
+
+app.post('/api/permissions/sign',async c=>{
+  const u=c.get('user') as User|null;
+
+  if(!u||!u.personId)
+    return json(
+      c,
+      {error:'Login required'},
+      401
+    );
+
+  await ensureFamilySchema(c);
+
+  const x=await c.req.json<any>();
+
+  const eventId=Number(
+    x.eventId
+  );
+
+  const scoutPersonId=Number(
+    x.scoutPersonId
+  );
+
+  if(
+    !Number.isInteger(eventId)||
+    !Number.isInteger(scoutPersonId)
+  )
+    return json(
+      c,
+      {error:'Invalid event or Scout.'},
+      400
+    );
+
+  const event=await c.env.DB
+    .prepare(`
+      SELECT
+        id,
+        title,
+        start_at,
+        end_at
+      FROM events
+      WHERE id=?
+    `)
+    .bind(eventId)
+    .first<any>();
+
+  if(!event)
+    return json(
+      c,
+      {error:'Event not found.'},
+      404
+    );
+
+  if(
+    event.end_at &&
+    new Date(event.end_at).getTime()<=Date.now()
+  )
     return json(
       c,
       {
         error:
-          'An administrator must upload the official AHMR PDF template first'
+          'Permission cannot be given after the event has ended.'
       },
-      400
+      403
     );
 
-  const tpl=await c.env.FILES.get(
-    templateKey.value
-  );
+  const relationship=await c.env.DB
+    .prepare(`
+      SELECT
+        caller.id parent_id,
+        caller.adult parent_adult,
+        scout.id scout_id,
+        scout.adult scout_adult,
+        scout.archived scout_archived
+      FROM family_members caller_family
+      JOIN family_members scout_family
+        ON scout_family.family_id=
+           caller_family.family_id
+      JOIN people caller
+        ON caller.id=caller_family.person_id
+      JOIN people scout
+        ON scout.id=scout_family.person_id
+      WHERE
+        caller.id=?
+        AND scout.id=?
+      LIMIT 1
+    `)
+    .bind(
+      u.personId,
+      scoutPersonId
+    )
+    .first<any>();
 
-  if(!tpl)
+  if(
+    !relationship||
+    Number(relationship.parent_adult)!==1||
+    Number(relationship.scout_adult)!==0||
+    Number(relationship.scout_archived)===1
+  )
     return json(
       c,
-      {error:'AHMR template missing'},
+      {
+        error:
+          'Only a connected adult parent/guardian can give permission for this Scout.'
+      },
+      403
+    );
+
+  const attendance=await c.env.DB
+    .prepare(`
+      SELECT response
+      FROM event_attendance
+      WHERE
+        event_id=?
+        AND person_id=?
+    `)
+    .bind(
+      eventId,
+      scoutPersonId
+    )
+    .first<any>();
+
+  if(
+    String(attendance?.response||'Unsure')!=='Yes'
+  )
+    return json(
+      c,
+      {
+        error:
+          'The Scout must be marked Yes for attendance before permission can be given.'
+      },
+      403
+    );
+
+  const existing=await c.env.DB
+    .prepare(`
+      SELECT
+        id
+      FROM permission_forms
+      WHERE
+        event_id=?
+        AND parent_person_id=?
+        AND scout_person_id=?
+        AND revoked_at IS NULL
+      ORDER BY id DESC
+      LIMIT 1
+    `)
+    .bind(
+      eventId,
+      u.personId,
+      scoutPersonId
+    )
+    .first<any>();
+
+  if(existing)
+    return json(c,{
+      ok:true,
+      id:Number(existing.id),
+      alreadySigned:true
+    });
+
+  const parent=await c.env.DB
+    .prepare(`
+      SELECT
+        id,
+        prefix,
+        first_name,
+        middle_name,
+        last_name,
+        suffix,
+        phone,
+        email
+      FROM people
+      WHERE
+        id=?
+        AND archived=0
+    `)
+    .bind(u.personId)
+    .first<any>();
+
+  const scout=await c.env.DB
+    .prepare(`
+      SELECT
+        id,
+        prefix,
+        first_name,
+        middle_name,
+        last_name,
+        suffix
+      FROM people
+      WHERE
+        id=?
+        AND adult=0
+        AND archived=0
+    `)
+    .bind(scoutPersonId)
+    .first<any>();
+
+  if(!parent||!scout)
+    return json(
+      c,
+      {error:'Member information could not be loaded.'},
       400
     );
 
-  const pdf=await PDFDocument.load(
-    await tpl.arrayBuffer()
-  );
-
-  const page=pdf.getPages()[0];
-  const font=await pdf.embedFont(
-    StandardFonts.Helvetica
-  );
-
-  page.drawText(
-    `Digital signature: ${String(x.signature||'').slice(0,100)}`,
-    {
-      x:50,
-      y:45,
-      size:10,
-      font,
-      color:rgb(0,0,0)
-    }
-  );
-
-  page.drawText(
-    `Signed: ${new Date().toLocaleString('en-US')}`,
-    {
-      x:50,
-      y:30,
-      size:8,
-      font,
-      color:rgb(0,0,0)
-    }
-  );
-
-  const bytes=await pdf.save();
+  const pdfBytes=
+    await buildPermissionPdf(
+      parent,
+      scout
+    );
 
   const key=
-    `permissions/${x.eventId}/${Date.now()}-${u.personId}.pdf`;
+    `permissions/${eventId}/${Date.now()}-${u.personId}-${scoutPersonId}.pdf`;
 
   await c.env.FILES.put(
     key,
-    bytes,
+    pdfBytes,
     {
       httpMetadata:{
         contentType:'application/pdf'
@@ -8004,7 +9153,13 @@ app.post('/api/permissions/sign',async c=>{
     }
   );
 
-  const r=await c.env.DB
+  const signature=
+    permissionPersonName(
+      parent,
+      false
+    );
+
+  const result=await c.env.DB
     .prepare(`
       INSERT INTO permission_forms(
         event_id,
@@ -8016,16 +9171,85 @@ app.post('/api/permissions/sign',async c=>{
       VALUES(?,?,?,?,?)
     `)
     .bind(
-      x.eventId,
+      eventId,
       u.personId,
-      x.scoutPersonId,
-      x.signature,
+      scoutPersonId,
+      signature,
       key
     )
     .run();
 
   return json(c,{
-    id:r.meta.last_row_id
+    ok:true,
+    id:Number(result.meta.last_row_id),
+    alreadySigned:false
+  });
+});
+
+app.post('/api/permissions/revoke',async c=>{
+  const u=c.get('user') as User|null;
+
+  if(!u||!u.personId)
+    return json(
+      c,
+      {error:'Login required'},
+      401
+    );
+
+  const x=await c.req.json<any>();
+
+  const eventId=Number(
+    x.eventId
+  );
+
+  const scoutPersonId=Number(
+    x.scoutPersonId
+  );
+
+  if(
+    !Number.isInteger(eventId)||
+    !Number.isInteger(scoutPersonId)
+  )
+    return json(
+      c,
+      {error:'Invalid event or Scout.'},
+      400
+    );
+
+  await ensureFamilySchema(c);
+
+  const result=await c.env.DB
+    .prepare(`
+      UPDATE permission_forms
+      SET revoked_at=CURRENT_TIMESTAMP
+      WHERE id=(
+        SELECT id
+        FROM permission_forms
+        WHERE
+          event_id=?
+          AND parent_person_id=?
+          AND scout_person_id=?
+          AND revoked_at IS NULL
+        ORDER BY id DESC
+        LIMIT 1
+      )
+    `)
+    .bind(
+      eventId,
+      u.personId,
+      scoutPersonId
+    )
+    .run();
+
+  if(!result.meta.changes)
+    return json(
+      c,
+      {error:'No active permission was found.'},
+      404
+    );
+
+  return json(c,{
+    ok:true
   });
 });
 
