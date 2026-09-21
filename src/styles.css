@@ -3074,6 +3074,25 @@ footer a:hover{
   .leadership-adult-row-name-only{
     height:44px
   }
+
+  .advancement-rank-grid{
+    grid-template-columns:
+      repeat(3,minmax(0,1fr))
+  }
+
+  .advancement-rank-button:last-child{
+    grid-column:2
+  }
+
+  .advancement-requirement-grid{
+    grid-template-columns:
+      repeat(3,minmax(0,1fr))
+  }
+
+  .advancement-rank-modal,
+  .advancement-add-modal{
+    width:100%
+  }
   
   .page-head{
     align-items:flex-start;
