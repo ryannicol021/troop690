@@ -2156,7 +2156,10 @@ tbody tr:nth-child(even){
 }
 
 .advancement-rank-modal{
-  max-width:100%;
+  width:calc(
+    var(--advancement-grid-width) + 46px
+  );
+  max-width:none;
   box-sizing:border-box;
   overflow-x:hidden
 }
@@ -2262,8 +2265,9 @@ tbody tr:nth-child(even){
   grid-template-rows:
     repeat(13,64px);
   gap:8px;
-  width:max-content;
-  max-width:100%;
+  width:var(--advancement-grid-width);
+  min-width:var(--advancement-grid-width);
+  max-width:none;
   overflow:hidden;
   padding:0
 }
@@ -2271,7 +2275,10 @@ tbody tr:nth-child(even){
 .advancement-normal-grid{
   display:grid;
   gap:8px;
-  width:max-content
+  width:var(--advancement-grid-width);
+  min-width:var(--advancement-grid-width);
+  max-width:none;
+  overflow:visible
 }
 
 .advancement-grid-cell{
@@ -3190,6 +3197,12 @@ footer a:hover{
       repeat(7,64px);
     grid-template-rows:
       repeat(13,64px)
+  }
+
+  .advancement-rank-modal{
+    width:calc(
+      var(--advancement-grid-width) + 34px
+    )
   }
   
   .page-head{
