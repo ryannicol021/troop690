@@ -2197,6 +2197,12 @@ tbody tr:nth-child(even){
   min-width:496px
 }
 
+@media(min-width:801px){
+  .advancement-rank-modal:not([data-editing="true"]){
+    width:fit-content
+  }
+}
+
 .advancement-normal-grid{
   display:grid;
   grid-template-columns:
@@ -3139,6 +3145,11 @@ footer a:hover{
     max-width:100%
   }
 
+  .advancement-rank-modal[data-editing="true"] .advancement-edit-grid{
+    width:100%;
+    min-width:0
+  }
+  
   .advancement-edit-grid{
     grid-template-columns:
       repeat(7,minmax(0,1fr));
