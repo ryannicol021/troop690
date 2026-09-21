@@ -2156,7 +2156,9 @@ tbody tr:nth-child(even){
 }
 
 .advancement-rank-modal{
-  max-width:100%
+  max-width:100%;
+  box-sizing:border-box;
+  overflow-x:hidden
 }
 
 .advancement-rank-modal .modal-header{
@@ -2213,10 +2215,12 @@ tbody tr:nth-child(even){
 }
 
 .advancement-requirement-button.disabled{
-  background:#efede8;
+  background:#e5e1d8;
+  border-color:#cfc8ba;
   color:#9d9a92;
   cursor:default;
-  pointer-events:none
+  pointer-events:none;
+  opacity:1
 }
 
 .advancement-requirement-select{
@@ -2260,8 +2264,8 @@ tbody tr:nth-child(even){
   gap:8px;
   width:max-content;
   max-width:100%;
-  overflow:auto;
-  padding:2px
+  overflow:hidden;
+  padding:0
 }
 
 .advancement-normal-grid{
@@ -2309,7 +2313,14 @@ tbody tr:nth-child(even){
   text-align:center;
   font-size:1rem;
   line-height:1.15;
-  overflow-wrap:anywhere
+  overflow-wrap:anywhere;
+  background:var(--khaki-light);
+  border-color:#bdb5a6;
+  color:var(--text)
+}
+
+.advancement-requirement-button:hover{
+  background:var(--khaki)
 }
 
 .advancement-requirement-select{
