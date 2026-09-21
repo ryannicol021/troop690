@@ -8004,33 +8004,6 @@ const usedColumns: number[]=[
     </section>
 
     <section>
-      <h2>Know Your Knots</h2>
-
-      <div className="button-grid">
-        {d.knots.map((k:any)=>
-          <a
-            className={
-              'button '+(
-                !k.video_url?
-                  'disabled':
-                  ''
-              )
-            }
-            key={k.id}
-            href={
-              k.video_url||
-              undefined
-            }
-            target="_blank"
-            rel="noreferrer"
-          >
-            {k.name}
-          </a>
-        )}
-      </div>
-    </section>
-
-    <section>
       <h2>Merit Badges</h2>
 
       <p>
