@@ -3716,6 +3716,1071 @@ function CopyEventModal({
   );
 }
 
+const attendanceName=(person:any)=>{
+  const parts:string[]=[];
+
+  if(String(person?.prefix||'').trim())
+    parts.push(String(person.prefix).trim());
+
+  if(String(person?.first_name||'').trim())
+    parts.push(String(person.first_name).trim());
+
+  const middle=String(person?.middle_name||'').trim();
+
+  if(middle)
+    parts.push(
+      middle.endsWith('.')?
+        middle:
+        middle.charAt(0)+'.'
+    );
+
+  if(String(person?.last_name||'').trim())
+    parts.push(String(person.last_name).trim());
+
+  if(String(person?.suffix||'').trim())
+    parts.push(String(person.suffix).trim());
+
+  return parts.join(' ');
+};
+
+const attendanceSort=(a:any,b:any)=>{
+  const last=
+    String(a.last_name||'')
+      .localeCompare(
+        String(b.last_name||'')
+      );
+
+  if(last)
+    return last;
+
+  const first=
+    String(a.first_name||'')
+      .localeCompare(
+        String(b.first_name||'')
+      );
+
+  if(first)
+    return first;
+
+  return String(a.suffix||'')
+    .localeCompare(
+      String(b.suffix||'')
+    );
+};
+
+const downloadAttendanceFile=async(
+  path:string,
+  fallbackName:string
+)=>{
+  const r=await fetch(
+    '/api'+path,
+    {
+      credentials:'include'
+    }
+  );
+
+  const blob=await r.blob();
+
+  if(!r.ok){
+    let message=`HTTP ${r.status}`;
+
+    try{
+      const text=await blob.text();
+      const data=JSON.parse(text);
+
+      message=
+        data?.error||
+        text||
+        message;
+    }catch{}
+
+    throw new Error(message);
+  }
+
+  const cd=
+    r.headers.get(
+      'content-disposition'
+    )||'';
+
+  const match=
+    cd.match(
+      /filename="?([^";]+)"?/i
+    );
+
+  const filename=
+    match?.[1]||
+    fallbackName;
+
+  const url=
+    URL.createObjectURL(blob);
+
+  const a=
+    document.createElement('a');
+
+  a.href=url;
+  a.download=filename;
+
+  document.body.appendChild(a);
+
+  a.click();
+  a.remove();
+
+  setTimeout(()=>{
+    URL.revokeObjectURL(url);
+  },1000);
+};
+
+function EventPermissionModal({
+  eventId,
+  youth,
+  onDone,
+  onCancel
+}:{
+  eventId:number,
+  youth:any,
+  onDone:()=>void,
+  onCancel:()=>void
+}){
+  const [saving,setSaving]=useState(false);
+  const [error,setError]=useState('');
+
+  const submit=async()=>{
+    setSaving(true);
+    setError('');
+
+    try{
+      await post(
+        '/permissions/sign',
+        {
+          eventId,
+          scoutPersonId:Number(
+            youth.id
+          ),
+          signature:''
+        }
+      );
+
+      onDone();
+    }catch(err:any){
+      setError(
+        err?.message||
+        'Unable to give permission.'
+      );
+    }finally{
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div
+      className="modal-backdrop"
+      onMouseDown={e=>{
+        if(
+          e.target===e.currentTarget&&
+          !saving
+        )
+          onCancel();
+      }}
+    >
+      <div
+        className="modal-card event-permission-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="event-permission-title"
+      >
+        <div className="modal-header">
+          <h2 id="event-permission-title">
+            Informed Consent, Release Agreement, and Authorization
+          </h2>
+
+          <button
+            type="button"
+            className="modal-close"
+            onClick={onCancel}
+            disabled={saving}
+            aria-label="Close"
+          >
+            ×
+          </button>
+        </div>
+
+        <p>
+          I understand that participation in Scouting activities involves the risk of personal injury, including death, due to the physical, mental, and emotional challenges in the activities offered. Information about those activities may be obtained from the venue, activity coordinators, or local council. I also understand that participation in these activities is entirely voluntary and requires participants to follow instructions and abide by all applicable rules and the standards of conduct.
+        </p>
+
+        <p>
+          In case of an emergency involving my child, I understand that efforts will be made to contact me. In the event I cannot be reached, permission is hereby given to the medical provider to secure proper treatment, including hospitalization, anesthesia, surgery, or injections of medication for my child. Medical providers are authorized to disclose protected health information to the adult in charge and/ or any physician or health care provider involved in providing medical care to the participant. Protected Health Information/Confidential Health Information (PHI/CHI) under the Standards for Privacy of Individually Identifiable Health Information, 45 C.F.R. §§160.103, 164.501, etc. seq., as amended from time to time, includes examination findings, test results, and treatment provided for purposes of medical evaluation of the participant, follow-up and communication with the participant’s parents or guardian, and/or determination of the participant’s ability to continue in the program activities.
+        </p>
+
+        <p className="event-permission-bold">
+          With appreciation of the dangers and risks associated with programs and activities including preparations for and transportation to and from the activity, on my own behalf and/or on behalf of my child, I hereby fully and completely release and waive any and all claims for personal injury, death, or loss that may arise against Scouting America, the local council, the activity coordinators, and all employees, volunteers, related parties, or other organizations associated with any program or activity.
+        </p>
+
+        <p className="event-permission-italic">
+          By clicking 'Agree,' I acknowledge and agree that your action constitutes a binding legal agreement and serves as your electronic signature under applicable law.
+        </p>
+
+        {error&&
+          <p className="error">
+            {error}
+          </p>
+        }
+
+        <div className="button-row">
+          <button
+            type="button"
+            className="button secondary"
+            onClick={onCancel}
+            disabled={saving}
+          >
+            Cancel
+          </button>
+
+          <button
+            type="button"
+            className="button primary"
+            onClick={submit}
+            disabled={saving}
+          >
+            {saving?
+              'Submitting…':
+              'Agree'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function EventAttendanceManagerModal({
+  eventId,
+  ended,
+  onDone,
+  onCancel
+}:{
+  eventId:number,
+  ended:boolean,
+  onDone:()=>void,
+  onCancel:()=>void
+}){
+  const [members,setMembers]=
+    useState<any[]>([]);
+
+  const [loading,setLoading]=
+    useState(true);
+
+  const [saving,setSaving]=
+    useState(false);
+
+  const [error,setError]=
+    useState('');
+
+  const [draggedId,setDraggedId]=
+    useState<number|null>(null);
+
+  const load=async()=>{
+    setLoading(true);
+    setError('');
+
+    try{
+      const data=await api(
+        '/events/'+eventId+
+        '/attendance'
+      );
+
+      setMembers(
+        [...(data.members||[])]
+          .sort(attendanceSort)
+      );
+    }catch(err:any){
+      setError(
+        err?.message||
+        'Unable to load attendance.'
+      );
+    }finally{
+      setLoading(false);
+    }
+  };
+
+  useEffect(()=>{
+    load();
+  },[eventId]);
+
+  const move=(response:string)=>{
+    if(draggedId==null)
+      return;
+
+    setMembers(prev=>
+      prev.map(member=>
+        Number(member.id)===draggedId?
+          {
+            ...member,
+            response
+          }:
+          member
+      )
+    );
+
+    setDraggedId(null);
+  };
+
+  const save=async()=>{
+    setSaving(true);
+    setError('');
+
+    try{
+      await post(
+        '/events/'+eventId+
+        '/attendance/manage',
+        {
+          members:
+            members.map(member=>({
+              personId:Number(member.id),
+              response:
+                String(
+                  member.response||'Unsure'
+                )
+            }))
+        }
+      );
+
+      onDone();
+    }catch(err:any){
+      setError(
+        err?.message||
+        'Unable to save attendance.'
+      );
+    }finally{
+      setSaving(false);
+    }
+  };
+
+  const columns=[
+    ['Yes','Attending'],
+    ['No','Not Attending'],
+    ['Unsure','Unsure']
+  ];
+
+  return (
+    <div
+      className="modal-backdrop"
+      onMouseDown={e=>{
+        if(
+          e.target===e.currentTarget&&
+          !saving
+        )
+          onCancel();
+      }}
+    >
+      <div
+        className="modal-card attendance-manager-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="attendance-manager-title"
+      >
+        <div className="modal-header">
+          <h2 id="attendance-manager-title">
+            Open Attendance
+          </h2>
+
+          <button
+            type="button"
+            className="modal-close"
+            onClick={onCancel}
+            disabled={saving}
+            aria-label="Close"
+          >
+            ×
+          </button>
+        </div>
+
+        <p className="muted attendance-manager-help">
+          {ended?
+            'The event has ended. This is attendance management.':
+            'Drag each member into Attending, Not Attending, or Unsure, then save.'}
+        </p>
+
+        {error&&
+          <p className="error">
+            {error}
+          </p>
+        }
+
+        {loading?
+          <Loading/>:
+          <div className="attendance-manager-grid">
+            {columns.map(
+              ([response,title])=>{
+                const items=
+                  members.filter(
+                    member=>
+                      String(
+                        member.response||
+                        'Unsure'
+                      )===response
+                  );
+
+                return (
+                  <section
+                    className="attendance-manager-column"
+                    key={response}
+                    onDragOver={e=>
+                      e.preventDefault()
+                    }
+                    onDrop={e=>{
+                      e.preventDefault();
+                      move(response);
+                    }}
+                  >
+                    <h3>{title}</h3>
+
+                    <div className="attendance-manager-list">
+                      {items.map(member=>
+                        <div
+                          className="attendance-manager-person"
+                          key={member.id}
+                          draggable
+                          onDragStart={()=>
+                            setDraggedId(
+                              Number(
+                                member.id
+                              )
+                            )
+                          }
+                          onDragEnd={()=>
+                            setDraggedId(null)
+                          }
+                        >
+                          {attendanceName(member)}
+                        </div>
+                      )}
+                    </div>
+                  </section>
+                );
+              }
+            )}
+          </div>
+        }
+
+        <div className="button-row">
+          <button
+            type="button"
+            className="button secondary"
+            onClick={onCancel}
+            disabled={saving}
+          >
+            Cancel
+          </button>
+
+          <button
+            type="button"
+            className="button primary"
+            onClick={save}
+            disabled={loading||saving}
+          >
+            {saving?
+              'Saving…':
+              'Save Attendance'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function EventPermissionsManagerModal({
+  eventId,
+  onDone,
+  onCancel
+}:{
+  eventId:number,
+  onDone:()=>void,
+  onCancel:()=>void
+}){
+  const [youth,setYouth]=
+    useState<any[]>([]);
+
+  const [loading,setLoading]=
+    useState(true);
+
+  const [error,setError]=
+    useState('');
+
+  const [exporting,setExporting]=
+    useState(false);
+
+  const load=async()=>{
+    setLoading(true);
+    setError('');
+
+    try{
+      const [
+        permissions,
+        checkoffs
+      ]=await Promise.all([
+        api(
+          '/events/'+eventId+
+          '/permissions'
+        ),
+        api(
+          '/events/'+eventId+
+          '/permission-checkoffs'
+        )
+      ]);
+
+      const states=
+        checkoffs.checkoffs||{};
+
+      setYouth(
+        (permissions.youth||[])
+          .map((row:any)=>({
+            ...row,
+            checked:
+              states[String(row.id)]===true
+          }))
+      );
+    }catch(err:any){
+      setError(
+        err?.message||
+        'Unable to load permissions.'
+      );
+    }finally{
+      setLoading(false);
+    }
+  };
+
+  useEffect(()=>{
+    load();
+  },[eventId]);
+
+  const setChecked=async(
+    id:number,
+    checked:boolean
+  )=>{
+    setYouth(prev=>
+      prev.map(row=>
+        Number(row.id)===id?
+          {...row,checked}:
+          row
+      )
+    );
+
+    try{
+      await put(
+        '/events/'+eventId+
+        '/permission-checkoffs',
+        {
+          scoutPersonId:id,
+          checked
+        }
+      );
+    }catch(err:any){
+      setYouth(prev=>
+        prev.map(row=>
+          Number(row.id)===id?
+            {
+              ...row,
+              checked:!checked
+            }:
+            row
+        )
+      );
+
+      setError(
+        err?.message||
+        'Unable to save the checkbox.'
+      );
+    }
+  };
+
+  const exportOne=async(
+    row:any
+  )=>{
+    try{
+      await downloadAttendanceFile(
+        '/events/'+
+        eventId+
+        '/permissions/'+
+        row.id+
+        '/export',
+        'permission.pdf'
+      );
+    }catch(err:any){
+      setError(
+        err?.message||
+        'Unable to export the permission.'
+      );
+    }
+  };
+
+  const exportAll=async()=>{
+    setExporting(true);
+
+    try{
+      await downloadAttendanceFile(
+        '/events/'+
+        eventId+
+        '/permissions/export-all',
+        'permissions.zip'
+      );
+    }catch(err:any){
+      setError(
+        err?.message||
+        'Unable to export permissions.'
+      );
+    }finally{
+      setExporting(false);
+    }
+  };
+
+  const signedCount=
+    youth.filter(
+      row=>row.hasPermission
+    ).length;
+
+  return (
+    <div
+      className="modal-backdrop"
+      onMouseDown={e=>{
+        if(e.target===e.currentTarget)
+          onCancel();
+      }}
+    >
+      <div
+        className="modal-card event-permissions-manager-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="event-permissions-title"
+      >
+        <div className="modal-header">
+          <h2 id="event-permissions-title">
+            Open Permissions
+          </h2>
+
+          <button
+            type="button"
+            className="modal-close"
+            onClick={onCancel}
+            aria-label="Close"
+          >
+            ×
+          </button>
+        </div>
+
+        <div className="attendance-manager-modal-actions">
+          <button
+            type="button"
+            className="button"
+            onClick={exportAll}
+            disabled={
+              loading||
+              exporting||
+              signedCount===0
+            }
+          >
+            {exporting?
+              'Exporting…':
+              'Export All'}
+          </button>
+        </div>
+
+        {error&&
+          <p className="error">
+            {error}
+          </p>
+        }
+
+        {loading?
+          <Loading/>:
+          !youth.length?
+            <p className="muted">
+              No youth are currently marked Yes for this event.
+            </p>:
+            <div className="event-permissions-list">
+              {youth.map(row=>
+                <div
+                  className="event-permissions-row"
+                  key={row.id}
+                >
+                  <span className="event-permissions-name">
+                    {attendanceName(row)}
+                  </span>
+
+                  {row.hasPermission?
+                    <button
+                      type="button"
+                      className="button"
+                      onClick={()=>
+                        exportOne(row)
+                      }
+                    >
+                      Export
+                    </button>:
+                    <input
+                      type="checkbox"
+                      aria-label={
+                        `Permission received for ${attendanceName(row)}`
+                      }
+                      checked={!!row.checked}
+                      onChange={e=>
+                        setChecked(
+                          Number(row.id),
+                          e.target.checked
+                        )
+                      }
+                    />
+                  }
+                </div>
+              )}
+            </div>
+        }
+
+        <div className="button-row">
+          <button
+            type="button"
+            className="button secondary"
+            onClick={onDone}
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function EventAttendancePanel({
+  eventId,
+  event
+}:{
+  eventId:number,
+  event:any
+}){
+  const [data,setData]=
+    useState<any>();
+
+  const [attendanceModalOpen,setAttendanceModalOpen]=
+    useState(false);
+
+  const [permissionsModalOpen,setPermissionsModalOpen]=
+    useState(false);
+
+  const [permissionYouthId,setPermissionYouthId]=
+    useState<number|null>(null);
+
+  const [busyId,setBusyId]=
+    useState<number|null>(null);
+
+  const [error,setError]=
+    useState('');
+
+  const load=async()=>{
+    try{
+      const [
+        attendance,
+        permissions
+      ]=await Promise.all([
+        api(
+          '/events/'+eventId+
+          '/attendance'
+        ),
+        api(
+          '/events/'+eventId+
+          '/my-permissions'
+        ).catch(()=>({
+          members:[]
+        }))
+      ]);
+
+      const permissionMap=
+        new Map<number,any>(
+          (permissions.members||[]).map(
+            (member:any)=>[
+              Number(member.id),
+              member
+            ]
+          )
+        );
+
+      setData({
+        ...attendance,
+        members:
+          (attendance.members||[])
+            .map((member:any)=>({
+              ...member,
+              permissionSigned:
+                !!permissionMap.get(
+                  Number(member.id)
+                )?.permissionSigned
+            }))
+      });
+    }catch{
+      setData(null);
+    }
+  };
+
+  useEffect(()=>{
+    load();
+  },[eventId]);
+
+  const ended=
+    !!event.end_at&&
+    new Date(event.end_at).getTime()<=Date.now();
+
+  const setResponse=async(
+    personId:number,
+    response:string
+  )=>{
+    setBusyId(personId);
+    setError('');
+
+    try{
+      await post(
+        '/events/'+eventId+
+        '/attendance',
+        {
+          personId,
+          response
+        }
+      );
+
+      await load();
+    }catch(err:any){
+      setError(
+        err?.message||
+        'Unable to update attendance.'
+      );
+    }finally{
+      setBusyId(null);
+    }
+  };
+
+  if(!data)
+    return null;
+
+  const manager=!!data.manager;
+
+  const members=
+    [...(data.members||[])]
+      .sort(attendanceSort);
+
+  return (
+    <>
+      {(manager||members.length>0)&&
+        <section className="event-attendance card">
+          <div className="event-attendance-header">
+            <div>
+              <h2>Attendance</h2>
+
+              {ended&&
+                <p className="muted">
+                  The event has ended. Parent attendance responses are now closed.
+                </p>
+              }
+            </div>
+
+            {manager&&
+              <div className="event-attendance-manager-actions">
+                <button
+                  type="button"
+                  className="button"
+                  onClick={()=>
+                    setAttendanceModalOpen(true)
+                  }
+                >
+                  Open Attendance
+                </button>
+
+                <button
+                  type="button"
+                  className="button"
+                  onClick={()=>
+                    setPermissionsModalOpen(true)
+                  }
+                >
+                  Open Permissions
+                </button>
+              </div>
+            }
+          </div>
+
+          {!manager&&members.length>0&&
+            <div className="event-family-attendance">
+              {members.map(member=>{
+                const isYouth=
+                  Number(member.adult)===0;
+
+                const response=
+                  String(
+                    member.response||
+                    'Unsure'
+                  );
+
+                const permissionSigned=
+                  !!member.permissionSigned;
+
+                return (
+                  <div
+                    className="event-family-attendance-row"
+                    key={member.id}
+                  >
+                    <div className="event-family-attendance-person">
+                      {attendanceName(member)}
+                    </div>
+
+                    <div className="event-family-attendance-controls">
+                      {!ended?
+                        <div className="attendance-choice-group">
+                          {[
+                            'Yes',
+                            'Unsure',
+                            'No'
+                          ].map(choice=>
+                            <button
+                              type="button"
+                              key={choice}
+                              className={
+                                'button attendance-choice '+
+                                (
+                                  response===choice?
+                                    'selected':
+                                    ''
+                                )
+                              }
+                              disabled={
+                                busyId===
+                                Number(member.id)
+                              }
+                              onClick={()=>
+                                setResponse(
+                                  Number(member.id),
+                                  choice
+                                )
+                              }
+                            >
+                              {choice}
+                            </button>
+                          )}
+                        </div>:
+                        <span className="attendance-readonly">
+                          {response}
+                        </span>
+                      }
+
+                      {isYouth&&
+                       permissionSigned&&
+                        <button
+                          type="button"
+                          className="button attendance-revoke-button"
+                          onClick={async()=>{
+                            if(!confirm(
+                              `Revoke permission for ${attendanceName(member)}?`
+                            ))
+                              return;
+
+                            try{
+                              await post(
+                                '/permissions/revoke',
+                                {
+                                  eventId,
+                                  scoutPersonId:
+                                    Number(member.id)
+                                }
+                              );
+
+                              await load();
+                            }catch(err:any){
+                              setError(
+                                err?.message||
+                                'Unable to revoke permission.'
+                              );
+                            }
+                          }}
+                        >
+                          Revoke Permission
+                        </button>
+                      }
+
+                      {isYouth&&
+                       !permissionSigned&&
+                       response==='Yes'&&
+                       !ended&&
+                        <button
+                          type="button"
+                          className="button"
+                          onClick={()=>
+                            setPermissionYouthId(
+                              Number(member.id)
+                            )
+                          }
+                        >
+                          Give Permission
+                        </button>
+                      }
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          }
+
+          {error&&
+            <p className="error">
+              {error}
+            </p>
+          }
+        </section>
+      }
+
+      {attendanceModalOpen&&
+        <EventAttendanceManagerModal
+          eventId={eventId}
+          ended={ended}
+          onDone={async()=>{
+            setAttendanceModalOpen(false);
+            await load();
+          }}
+          onCancel={()=>
+            setAttendanceModalOpen(false)
+          }
+        />
+      }
+
+      {permissionsModalOpen&&
+        <EventPermissionsManagerModal
+          eventId={eventId}
+          onDone={()=>
+            setPermissionsModalOpen(false)
+          }
+          onCancel={()=>
+            setPermissionsModalOpen(false)
+          }
+        />
+      }
+
+      {permissionYouthId!=null&&
+        <EventPermissionModal
+          eventId={eventId}
+          youth={
+            members.find(
+              member=>
+                Number(member.id)===
+                permissionYouthId
+            )||{}
+          }
+          onDone={async()=>{
+            setPermissionYouthId(null);
+            await load();
+          }}
+          onCancel={()=>
+            setPermissionYouthId(null)
+          }
+        />
+      }
+    </>
+  );
+}
+
 function CalendarEvent({
   id,
   me,
@@ -4022,6 +5087,10 @@ actions={
 }
         </dl>
       </article>
+      <EventAttendancePanel
+        eventId={Number(id)}
+        event={e}
+      />
     </Page>
   );
 }
