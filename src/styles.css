@@ -2117,6 +2117,134 @@ tbody tr:nth-child(even){
   gap:16px
 }
 
+.advancement-rank-grid{
+  display:grid;
+  grid-template-columns:
+    repeat(7,minmax(0,1fr));
+  gap:12px
+}
+
+.advancement-rank-button{
+  aspect-ratio:1;
+  min-width:0;
+  min-height:0;
+  padding:0;
+  border:1px solid var(--border);
+  border-radius:3px;
+  background:#fff;
+  overflow:hidden;
+  cursor:pointer;
+  display:grid;
+  place-items:center
+}
+
+.advancement-rank-button img{
+  display:block;
+  width:100%;
+  height:100%;
+  object-fit:contain
+}
+
+.advancement-rank-button:hover{
+  background:var(--khaki-light)
+}
+
+.advancement-rank-modal{
+  width:min(860px,100%)
+}
+
+.advancement-rank-modal .modal-header{
+  align-items:flex-start
+}
+
+.advancement-rank-modal-actions{
+  display:flex;
+  align-items:center;
+  gap:6px
+}
+
+.advancement-rank-modal-actions .home-add-button,
+.advancement-rank-modal-actions .home-history-delete-button{
+  width:34px;
+  height:34px;
+  min-width:34px;
+  min-height:34px;
+  padding:0
+}
+
+.advancement-requirement-grid{
+  display:grid;
+  grid-template-columns:
+    repeat(auto-fill,minmax(110px,1fr));
+  gap:10px
+}
+
+.advancement-requirement-item{
+  position:relative;
+  min-width:0
+}
+
+.advancement-requirement-button{
+  width:100%;
+  aspect-ratio:1;
+  min-height:0;
+  padding:10px;
+  border:1px solid var(--border);
+  border-radius:3px;
+  background:#fff;
+  color:var(--navy);
+  display:grid;
+  place-items:center;
+  text-align:center;
+  text-decoration:none;
+  font-weight:600;
+  overflow-wrap:anywhere
+}
+
+.advancement-requirement-button:hover{
+  background:var(--khaki-light);
+  text-decoration:none
+}
+
+.advancement-requirement-button.disabled{
+  background:#efede8;
+  color:#9d9a92;
+  cursor:default;
+  pointer-events:none
+}
+
+.advancement-requirement-select{
+  position:absolute;
+  top:6px;
+  right:6px;
+  width:28px;
+  height:28px;
+  min-height:28px;
+  display:grid;
+  place-items:center;
+  padding:0;
+  border:1px solid #bdb5a6;
+  border-radius:3px;
+  background:rgba(255,255,255,.94);
+  cursor:pointer
+}
+
+.advancement-requirement-select input{
+  width:17px;
+  height:17px;
+  min-height:17px;
+  margin:0;
+  padding:0
+}
+
+.advancement-add-modal-backdrop{
+  z-index:90
+}
+
+.advancement-add-modal{
+  width:min(560px,100%)
+}
+
 .req-grid{
   display:flex;
   flex-wrap:wrap;
