@@ -3374,7 +3374,7 @@ app.post('/api/admin/advancement-requirements/delete',async c=>{
   if(
     !ids.length||
     ids.some(
-      (id:number)=>
+      (id:any)=>
         !Number.isInteger(id)||
         id<1
     )
