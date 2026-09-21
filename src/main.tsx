@@ -7670,6 +7670,8 @@ function Advancement({me}:{me:any}){
     useState('');
   const [savingRequirement,setSavingRequirement]=
     useState(false);
+  const [draggedRequirement,setDraggedRequirement]=
+    useState<number|null>(null);
 
   const canEdit=
     !!me?.isAdministrator||
@@ -7753,6 +7755,30 @@ function Advancement({me}:{me:any}){
       ...current,
       [id]:!current[id]
     }));
+  };
+
+  const moveRequirement=async(
+    id:number,
+    position:number
+  )=>{
+    if(occupiedPositions.has(position))
+      return;
+
+    try{
+      await put(
+        `/admin/advancement-requirements/${id}/position`,
+        {position}
+      );
+
+      await load();
+    }catch(e:any){
+      setError(
+        e?.message||
+        'Unable to move the requirement.'
+      );
+    }finally{
+      setDraggedRequirement(null);
+    }
   };
 
   const deleteSelectedRequirements=async()=>{
@@ -7856,10 +7882,59 @@ function Advancement({me}:{me:any}){
 
   const selectedRequirementsForRank=
     selectedRank?
-      requirements.filter(
-        (x:any)=>x.rank===selectedRank
-      ):
+      requirements
+        .filter(
+          (x:any)=>x.rank===selectedRank
+        )
+        .sort(
+          (a:any,b:any)=>
+            Number(a.visible_order)-
+            Number(b.visible_order)
+        ):
       [];
+
+  const occupiedPositions=new Set<number>(
+    selectedRequirementsForRank.map(
+      (x:any)=>Number(x.visible_order)
+    )
+  );
+
+  const lastUsedRow=
+    selectedRequirementsForRank.length?
+      Math.max(
+        ...selectedRequirementsForRank.map(
+          (x:any)=>
+            Math.floor(
+              Number(x.visible_order)/7
+            )
+        )
+      ):
+      0;
+
+  const lastUsedColumn=
+    selectedRequirementsForRank.length?
+      Math.max(
+        ...selectedRequirementsForRank.map(
+          (x:any)=>
+            Number(x.visible_order)%7
+        )
+      ):
+      0;
+
+  const normalRows=
+    Math.max(
+      1,
+      lastUsedRow+1
+    );
+
+  const normalColumns=
+    Math.max(
+      1,
+      lastUsedColumn+1
+    );
+
+  const hasAvailableSpace=
+    occupiedPositions.size<91;
 
   return <Page
     title="Advancement"
@@ -8003,14 +8078,22 @@ function Advancement({me}:{me:any}){
             <div className="advancement-rank-modal-actions">
               {editing&&canEdit&&
                 <>
-                  <button
-                    type="button"
-                    className="home-add-button"
-                    aria-label="Add requirement"
-                    onClick={openAddRequirement}
-                  >
-                    +
-                  </button>
+<button
+  type="button"
+  className={
+    'home-add-button '+
+    (
+      !hasAvailableSpace?
+        'disabled':
+        ''
+    )
+  }
+  aria-label="Add requirement"
+  disabled={!hasAvailableSpace}
+  onClick={openAddRequirement}
+>
+  +
+</button>
 
                   <button
                     type="button"
@@ -8037,78 +8120,176 @@ function Advancement({me}:{me:any}){
             </div>
           </div>
 
-          {selectedRequirementsForRank.length?
-            <div className="advancement-requirement-grid">
-              {selectedRequirementsForRank.map(
-                (x:any)=>{
-                  const checked=
-                    !!selectedRequirements[
-                      Number(x.id)
-                    ];
+{editing?
+  <div className="advancement-edit-grid">
+    {Array.from(
+      {length:91},
+      (_,position)=>{
+        const requirement=
+          selectedRequirementsForRank.find(
+            (x:any)=>
+              Number(x.visible_order)===
+              position
+          );
 
-                  const disabled=
-                    !x.video_url;
+        const row=
+          Math.floor(position/7);
 
-                  return (
-                    <div
-                      className="advancement-requirement-item"
-                      key={x.id}
-                    >
-                      <a
-                        className={
-                          'advancement-requirement-button '+
-                          (
-                            disabled?
-                              'disabled':
-                              ''
-                          )
-                        }
-                        href={
-                          disabled?
-                            undefined:
-                            x.video_url
-                        }
-                        target="_blank"
-                        rel="noreferrer"
-                        aria-disabled={disabled}
-                        tabIndex={
-                          disabled?
-                            -1:
-                            undefined
-                        }
-                        onClick={e=>{
-                          if(disabled)
-                            e.preventDefault();
-                        }}
-                      >
-                        {x.requirement_name}
-                      </a>
+        const col=
+          position%7;
 
-                      {editing&&canEdit&&
-                        <label className="advancement-requirement-select">
-                          <input
-                            type="checkbox"
-                            checked={checked}
-                            onChange={()=>
-                              toggleRequirement(
-                                Number(x.id)
-                              )
-                            }
-                            aria-label={
-                              `Select ${x.requirement_name}`
-                            }
-                          />
-                        </label>
-                      }
-                    </div>
-                  );
-                }
-              )}
-            </div>:
-            <p className="muted">
-              No requirements have been added yet.
-            </p>
-          }
+        return (
+          <div
+            className={
+              'advancement-grid-cell '+
+              (
+                requirement?
+                  'advancement-grid-cell-filled':
+                  ''
+              )
+            }
+            key={position}
+            onDragOver={e=>{
+              if(
+                draggedRequirement!==null&&
+                !requirement
+              )
+                e.preventDefault();
+            }}
+            onDrop={e=>{
+              e.preventDefault();
+
+              if(
+                draggedRequirement!==null&&
+                !requirement
+              )
+                moveRequirement(
+                  draggedRequirement,
+                  position
+                );
+            }}
+            data-row={row}
+            data-column={col}
+          >
+            {requirement&&
+              <div className="advancement-requirement-item">
+                <a
+                  className={
+                    'button advancement-requirement-button '+
+                    (
+                      !requirement.video_url?
+                        'disabled':
+                        ''
+                    )
+                  }
+                  href={
+                    requirement.video_url||
+                    undefined
+                  }
+                  target="_blank"
+                  rel="noreferrer"
+                  draggable
+                  onDragStart={()=>
+                    setDraggedRequirement(
+                      Number(requirement.id)
+                    )
+                  }
+                  onDragEnd={()=>
+                    setDraggedRequirement(null)
+                  }
+                  onClick={e=>{
+                    e.preventDefault();
+                  }}
+                >
+                  {requirement.requirement_name}
+                </a>
+
+                <label className="advancement-requirement-select">
+                  <input
+                    type="checkbox"
+                    checked={
+                      !!selectedRequirements[
+                        Number(requirement.id)
+                      ]
+                    }
+                    onChange={()=>
+                      toggleRequirement(
+                        Number(requirement.id)
+                      )
+                    }
+                    aria-label={
+                      `Select ${requirement.requirement_name}`
+                    }
+                  />
+                </label>
+              </div>
+            }
+          </div>
+        );
+      }
+    )}
+  </div>:
+  selectedRequirementsForRank.length?
+    <div
+      className="advancement-normal-grid"
+      style={{
+        gridTemplateColumns:
+          `repeat(${normalColumns},64px)`
+      }}
+    >
+      {Array.from(
+        {
+          length:
+            normalRows*normalColumns
+        },
+        (_,position)=>{
+          const requirement=
+            selectedRequirementsForRank.find(
+              (x:any)=>
+                Number(x.visible_order)===
+                position
+            );
+
+          return (
+            <div
+              className="advancement-grid-cell"
+              key={position}
+            >
+              {requirement&&
+                <a
+                  className={
+                    'button advancement-requirement-button '+
+                    (
+                      !requirement.video_url?
+                        'disabled':
+                        ''
+                    )
+                  }
+                  href={
+                    requirement.video_url||
+                    undefined
+                  }
+                  target="_blank"
+                  rel="noreferrer"
+                  onClick={e=>{
+                    if(
+                      !requirement.video_url
+                    )
+                      e.preventDefault();
+                  }}
+                >
+                  {requirement.requirement_name}
+                </a>
+              }
+            </div>
+          );
+        }
+      )}
+    </div>:
+    <p className="muted">
+      No requirements have been added yet.
+    </p>
+}
         </div>
       </div>
     }
