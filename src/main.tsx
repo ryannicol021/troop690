@@ -3849,7 +3849,7 @@ actions={
         nav('/calendar');
       }}
     >
-      ←
+      ×
     </button>
 
     {canEdit&&
@@ -5830,7 +5830,7 @@ function PhotoAlbum({
           nav('/photos');
         }}
       >
-        ←
+        ×
       </button>
     }
   >
