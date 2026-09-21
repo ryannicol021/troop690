@@ -3139,30 +3139,37 @@ footer a:hover{
     max-width:100%
   }
 
-  .advancement-rank-modal[data-editing="true"]{
-    width:100%;
-    max-width:100%
-  }
-
   .advancement-edit-grid{
+    --advancement-edit-cell-size:
+      min(
+        64px,
+        calc((100vw - 102px)/7)
+      );
+
     grid-template-columns:
-      repeat(7,minmax(0,1fr));
+      repeat(7,var(--advancement-edit-cell-size));
     grid-template-rows:
-      repeat(13,auto);
-    width:100%;
-    min-width:0
-  }
-
-  .advancement-edit-grid .advancement-grid-cell{
-    width:auto;
-    height:auto;
+      repeat(
+        13,
+        var(--advancement-edit-cell-size)
+      );
+    width:max-content;
     min-width:0;
-    min-height:0;
-    aspect-ratio:1
+    max-width:none
   }
 
-  .advancement-edit-grid .advancement-requirement-item,
-  .advancement-edit-grid .advancement-requirement-button{
+  .advancement-edit-grid
+  .advancement-grid-cell{
+    width:var(--advancement-edit-cell-size);
+    height:var(--advancement-edit-cell-size);
+    min-width:var(--advancement-edit-cell-size);
+    min-height:var(--advancement-edit-cell-size)
+  }
+
+  .advancement-edit-grid
+  .advancement-requirement-item,
+  .advancement-edit-grid
+  .advancement-requirement-button{
     width:100%;
     height:100%;
     min-width:0;
@@ -3179,14 +3186,23 @@ footer a:hover{
     min-width:0
   }
 
-  .advancement-normal-grid .advancement-grid-cell,
-  .advancement-normal-grid .advancement-requirement-item,
-  .advancement-normal-grid .advancement-requirement-button{
+  .advancement-normal-grid
+  .advancement-grid-cell{
     width:100%;
     height:auto;
     min-width:0;
     min-height:0;
     aspect-ratio:1
+  }
+
+  .advancement-normal-grid
+  .advancement-requirement-item,
+  .advancement-normal-grid
+  .advancement-requirement-button{
+    width:100%;
+    height:100%;
+    min-width:0;
+    min-height:0
   }
   
   .page-head{
