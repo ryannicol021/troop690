@@ -8740,7 +8740,7 @@ app.get('/api/events/:id/permissions/:scoutId/export',async c=>{
     `${permissionFilePart(row.last_name)}-${permissionFilePart(row.first_name)}.pdf`;
 
   return new Response(
-    bytes,
+    bytes as unknown as BodyInit,
     {
       headers:{
         'Content-Type':
@@ -8918,7 +8918,7 @@ app.get('/api/events/:id/permissions/export-all',async c=>{
     `${date}-${permissionFilePart(event.title)}.zip`;
 
   return new Response(
-    zipBytes,
+    zipBytes as unknown as BodyInit,
     {
       headers:{
         'Content-Type':
