@@ -3225,6 +3225,16 @@ app.put('/api/admin/leadership/:id',async c=>{
   });
 });
 
+const advancementRanks=[
+  'Scout',
+  'Tenderfoot',
+  'Second Class',
+  'First Class',
+  'Star',
+  'Life',
+  'Eagle Scout'
+];
+
 app.get('/api/advancement',async c=>{
   const reqs=await c.env.DB
     .prepare(
@@ -3245,9 +3255,157 @@ app.get('/api/advancement',async c=>{
     .all<any>();
 
   return json(c,{
-    requirements:reqs.results,
-    knots:knots.results,
-    awards:awards.results
+    requirements:reqs.results??[],
+    knots:knots.results??[],
+    awards:awards.results??[]
+  });
+});
+
+app.post('/api/admin/advancement-requirements',async c=>{
+  const d=admin(c,'ADV');
+  if(d)return d;
+
+  const body=await c.req.json<any>();
+
+  const rank=
+    String(body.rank||'').trim();
+
+  const requirementName=
+    String(
+      body.requirement_name||''
+    ).trim();
+
+  const resourceLink=
+    String(
+      body.resource_link||''
+    ).trim();
+
+  if(!advancementRanks.includes(rank))
+    return json(
+      c,
+      {error:'Invalid Scout rank.'},
+      400
+    );
+
+  if(!requirementName)
+    return json(
+      c,
+      {error:'Requirement is required.'},
+      400
+    );
+
+  if(
+    resourceLink&&
+    !/^https?:\/\//i.test(
+      resourceLink
+    )
+  )
+    return json(
+      c,
+      {
+        error:
+          'Resource Link must begin with http:// or https://.'
+      },
+      400
+    );
+
+  const next=
+    await c.env.DB
+      .prepare(`
+        SELECT
+          COALESCE(
+            MAX(visible_order),
+            -1
+          )+1 next_order
+        FROM advancement_requirements
+        WHERE rank=?
+      `)
+      .bind(rank)
+      .first<any>();
+
+  const row=
+    await c.env.DB
+      .prepare(`
+        INSERT INTO advancement_requirements(
+          rank,
+          requirement_name,
+          video_url,
+          visible_order
+        )
+        VALUES(?,?,?,?)
+        RETURNING
+          id,
+          rank,
+          requirement_name,
+          video_url,
+          visible_order
+      `)
+      .bind(
+        rank,
+        requirementName,
+        resourceLink,
+        Number(
+          next?.next_order??0
+        )
+      )
+      .first<any>();
+
+  return json(c,{
+    requirement:row
+  },201);
+});
+
+app.post('/api/admin/advancement-requirements/delete',async c=>{
+  const d=admin(c,'ADV');
+  if(d)return d;
+
+  const body=
+    await c.req.json<any>();
+
+  const ids=
+    Array.isArray(body.ids)?
+      [...new Set(
+        body.ids.map(
+          (x:any)=>Number(x)
+        )
+      )]:
+      [];
+
+  if(
+    !ids.length||
+    ids.some(
+      (id:number)=>
+        !Number.isInteger(id)||
+        id<1
+    )
+  )
+    return json(
+      c,
+      {
+        error:
+          'At least one valid requirement must be selected.'
+      },
+      400
+    );
+
+  const placeholders=
+    ids.map(()=>'?').join(',');
+
+  const result=
+    await c.env.DB
+      .prepare(`
+        DELETE FROM advancement_requirements
+        WHERE id IN(${placeholders})
+      `)
+      .bind(...ids)
+      .run();
+
+  return json(c,{
+    ok:true,
+    deleted:
+      Number(
+        result.meta.changes||0
+      )
   });
 });
 
