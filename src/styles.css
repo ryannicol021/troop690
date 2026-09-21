@@ -2156,7 +2156,6 @@ tbody tr:nth-child(even){
 }
 
 .advancement-rank-modal{
-  width:max-content;
   max-width:100%
 }
 
@@ -2308,7 +2307,7 @@ tbody tr:nth-child(even){
   display:grid;
   place-items:center;
   text-align:center;
-  font-size:.95rem;
+  font-size:1rem;
   line-height:1.15;
   overflow-wrap:anywhere
 }
@@ -3171,7 +3170,6 @@ footer a:hover{
       repeat(3,minmax(0,1fr))
   }
 
-  .advancement-rank-modal,
   .advancement-add-modal{
     width:100%
   }
