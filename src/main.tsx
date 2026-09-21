@@ -7939,18 +7939,17 @@ const usedColumns: number[]=[
       usedColumns.length
     );
 
-  const advancementModalColumns=
-    editing?
-      7:
-      normalColumns;
+const advancementModalColumns=
+  editing?
+    7:
+    normalColumns;
 
-  const advancementModalWidth=
-    advancementModalColumns*64+
-    (advancementModalColumns-1)*8+
-    44;
+const advancementGridWidth=
+  advancementModalColumns*64+
+  (advancementModalColumns-1)*8;
 
-  const hasAvailableSpace=
-    occupiedPositions.size<91;
+const hasAvailableSpace=
+  occupiedPositions.size<91;
 
   return <Page
     title="Advancement"
@@ -8086,8 +8085,9 @@ const usedColumns: number[]=[
   role="dialog"
   aria-modal="true"
   style={{
-    width:`${advancementModalWidth}px`
-  }}
+    '--advancement-grid-width':
+      `${advancementGridWidth}px`
+  } as React.CSSProperties}
 >
           <div className="modal-header">
             <h2>
