@@ -7939,17 +7939,20 @@ const usedColumns: number[]=[
       usedColumns.length
     );
 
-const advancementModalColumns=
-  editing?
-    7:
-    normalColumns;
+  const advancementModalColumns=
+    editing?
+      7:
+      normalColumns;
 
-const advancementGridWidth=
-  advancementModalColumns*64+
-  (advancementModalColumns-1)*8;
+  const advancementGridWidth=
+    advancementModalColumns*64+
+    (advancementModalColumns-1)*8;
 
-const hasAvailableSpace=
-  occupiedPositions.size<91;
+  const advancementModalWidth=
+    advancementGridWidth+46;
+
+  const hasAvailableSpace=
+    occupiedPositions.size<91;
 
   return <Page
     title="Advancement"
@@ -8081,18 +8084,15 @@ const hasAvailableSpace=
         }}
       >
 <div
-  className={
-    `modal-card advancement-rank-modal ${
-      editing?
-        'advancement-rank-modal-editing':
-        ''
-    }`
-  }
+  className="modal-card advancement-rank-modal"
   role="dialog"
   aria-modal="true"
+  data-editing={editing?'true':'false'}
   style={{
-    '--advancement-grid-width':
-      `${advancementGridWidth}px`
+    '--advancement-modal-width':
+      `${advancementModalWidth}px`,
+    '--advancement-normal-columns':
+      `${normalColumns}`
   } as React.CSSProperties}
 >
           <div className="modal-header">
