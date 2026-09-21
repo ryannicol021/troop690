@@ -987,6 +987,55 @@ const requirePerm = (permission: string) => (c: any) => {
   return null;
 };
 
+const canManageEventAttendance = async (
+  c:any,
+  eventId:number
+)=>{
+  const user=c.get('user') as User|null;
+
+  if(!user||!user.personId)
+    return false;
+
+  if(user.isAdministrator)
+    return true;
+
+  if(user.permissions.includes('ATTM'))
+    return true;
+
+  const leader=await c.env.DB
+    .prepare(`
+      SELECT 1
+      FROM events
+      WHERE
+        id=?
+        AND (
+          leader_1_id=?
+          OR leader_2_id=?
+        )
+      LIMIT 1
+    `)
+    .bind(
+      eventId,
+      user.personId,
+      user.personId
+    )
+    .first();
+
+  if(!leader)
+    return false;
+
+  const person=await c.env.DB
+    .prepare(`
+      SELECT adult
+      FROM people
+      WHERE id=?
+    `)
+    .bind(user.personId)
+    .first<any>();
+
+  return Number(person?.adult)===1;
+};
+
 const newYorkToday=()=>{
   const parts=new Intl.DateTimeFormat(
     'en-US',
@@ -2008,86 +2057,161 @@ app.post('/api/events/:id/attendance',async c=>{
   const u=c.get('user');
 
   if(!u||!u.personId)
-    return json(c,{error:'Login required'},401);
+    return json(
+      c,
+      {error:'Login required'},
+      401
+    );
+
+  await ensureFamilySchema(c);
 
   const id=Number(c.req.param('id'));
-  const x=await c.req.json();
-  const target=Number(x.personId||u.personId);
 
-  if(target!==u.personId){
-    const rel=await c.env.DB
+  const event=await c.env.DB
+    .prepare(`
+      SELECT
+        id,
+        end_at
+      FROM events
+      WHERE id=?
+    `)
+    .bind(id)
+    .first<any>();
+
+  if(!event)
+    return json(
+      c,
+      {error:'Event not found'},
+      404
+    );
+
+  if(
+    event.end_at &&
+    new Date(event.end_at).getTime()<=Date.now()
+  ){
+    return json(
+      c,
+      {
+        error:
+          'Attendance responses can no longer be changed because the event has ended.'
+      },
+      403
+    );
+  }
+
+  const x=await c.req.json();
+
+  const target=Number(
+    x.personId??u.personId
+  );
+
+  const response=
+    String(x.response||'Unsure');
+
+  if(
+    !['Yes','Unsure','No'].includes(response)
+  ){
+    return json(
+      c,
+      {error:'Attendance must be Yes, Unsure, or No.'},
+      400
+    );
+  }
+
+  const caller=await c.env.DB
+    .prepare(`
+      SELECT
+        id,
+        adult
+      FROM people
+      WHERE id=?
+        AND archived=0
+    `)
+    .bind(u.personId)
+    .first<any>();
+
+  if(!caller)
+    return json(
+      c,
+      {error:'You cannot manage attendance.'},
+      403
+    );
+
+  /*
+   * Youth cannot access attendance at all.
+   */
+  if(Number(caller.adult)!==1)
+    return json(
+      c,
+      {error:'Youth cannot manage attendance.'},
+      403
+    );
+
+  /*
+   * An adult may manage their own attendance
+   * and the attendance of every member of their family.
+   */
+  const family=await c.env.DB
+    .prepare(`
+      SELECT family_id
+      FROM family_members
+      WHERE person_id=?
+      LIMIT 1
+    `)
+    .bind(u.personId)
+    .first<any>();
+
+  if(family?.family_id){
+    const allowed=await c.env.DB
       .prepare(`
         SELECT 1
-        FROM family_members a
-        JOIN family_members b
-          ON b.family_id=a.family_id
-        JOIN people caller
-          ON caller.id=a.person_id
-        JOIN people target_person
-          ON target_person.id=b.person_id
+        FROM family_members
         WHERE
-          a.person_id=?
-          AND b.person_id=?
-          AND caller.adult=1
-          AND target_person.adult=0
+          family_id=?
+          AND person_id=?
+        LIMIT 1
       `)
       .bind(
-        u.personId,
+        Number(family.family_id),
         target
       )
       .first();
 
-    if(!rel)
+    if(!allowed)
       return json(
         c,
         {
           error:
-            'Only a parent can manage a youth member in their family'
+            'You can only manage attendance for members of your family.'
         },
         403
       );
+  }else if(target!==u.personId){
+    return json(
+      c,
+      {
+        error:
+          'You can only manage your own attendance.'
+      },
+      403
+    );
   }
 
-  if(target===u.personId){
-    const caller=await c.env.DB
-      .prepare(
-        'SELECT adult FROM people WHERE id=?'
-      )
-      .bind(u.personId)
-      .first<any>();
+  const targetPerson=await c.env.DB
+    .prepare(`
+      SELECT id,archived
+      FROM people
+      WHERE id=?
+    `)
+    .bind(target)
+    .first<any>();
 
-    if(!Number(caller?.adult)){
-      const existing=await c.env.DB
-        .prepare(`
-          SELECT marked_by
-          FROM event_attendance
-          WHERE event_id=?
-            AND person_id=?
-        `)
-        .bind(id,target)
-        .first<any>();
-
-      if(existing?.marked_by){
-        const marker=await c.env.DB
-          .prepare(
-            'SELECT adult FROM people WHERE id=?'
-          )
-          .bind(existing.marked_by)
-          .first<any>();
-
-        if(Number(marker?.adult)){
-          return json(
-            c,
-            {
-              error:
-                'A parent has already set this attendance.'
-            },
-            403
-          );
-        }
-      }
-    }
-  }
+  if(!targetPerson||Number(targetPerson.archived)===1)
+    return json(
+      c,
+      {error:'That member is unavailable.'},
+      404
+    );
 
   await c.env.DB
     .prepare(`
@@ -2095,20 +2219,27 @@ app.post('/api/events/:id/attendance',async c=>{
         event_id,
         person_id,
         status,
-        marked_by
+        marked_by,
+        response
       )
-      VALUES(?,?,?,?)
+      VALUES(
+        ?,
+        ?,
+        'Absent',
+        ?,
+        ?
+      )
       ON CONFLICT(event_id,person_id)
       DO UPDATE SET
-        status=excluded.status,
+        response=excluded.response,
         marked_by=excluded.marked_by,
         updated_at=CURRENT_TIMESTAMP
     `)
     .bind(
       id,
       target,
-      x.status||'Attending',
-      u.personId
+      u.personId,
+      response
     )
     .run();
 
@@ -2116,62 +2247,297 @@ app.post('/api/events/:id/attendance',async c=>{
 });
 
 app.get('/api/events/:id/attendance',async c=>{
-  const d=requirePerm('CAL')(c);
-  if(d)return d;
+  const u=c.get('user') as User|null;
+
+  if(!u)
+    return json(
+      c,
+      {error:'Login required'},
+      401
+    );
+
+  await ensureFamilySchema(c);
 
   const id=Number(c.req.param('id'));
-  const u=c.get('user') as User;
+
+  const manager=
+    await canManageEventAttendance(c,id);
+
+  const event=await c.env.DB
+    .prepare(`
+      SELECT
+        id,
+        title,
+        start_at,
+        end_at,
+        leader_1_id,
+        leader_2_id
+      FROM events
+      WHERE id=?
+    `)
+    .bind(id)
+    .first<any>();
+
+  if(!event)
+    return json(
+      c,
+      {error:'Event not found'},
+      404
+    );
+
+  const ended=
+    !!event.end_at &&
+    new Date(event.end_at).getTime()<=Date.now();
 
   const rows=await c.env.DB
     .prepare(`
       SELECT
-        ea.*,
+        p.id,
+        p.prefix,
         p.first_name,
-        p.last_name
-      FROM event_attendance ea
-      JOIN people p ON p.id=ea.person_id
-      WHERE ea.event_id=?
+        p.middle_name,
+        p.last_name,
+        p.suffix,
+        p.adult,
+        p.adult_leader,
+        ea.response,
+        ea.status,
+        ea.marked_by,
+        ea.updated_at
+      FROM people p
+      LEFT JOIN event_attendance ea
+        ON ea.person_id=p.id
+        AND ea.event_id=?
+      WHERE
+        p.archived=0
+      ORDER BY
+        p.last_name COLLATE NOCASE,
+        p.first_name COLLATE NOCASE,
+        p.suffix COLLATE NOCASE
     `)
     .bind(id)
     .all<any>();
 
-  return json(c,{
-    attendance:u.permissions.includes('ATTM')?
-      rows.results:
-      (rows.results??[]).filter(
-        (x:any)=>x.person_id===u.personId
+  /*
+   * Every active member appears in manager mode.
+   * Everyone defaults to Unsure.
+   */
+  if(manager){
+    const members=(rows.results??[]).map((x:any)=>({
+      ...x,
+      response:
+        ended&&x.response==='Unsure'?
+          'No':
+          (x.response||'Unsure')
+    }));
+
+    return json(c,{
+      event,
+      manager:true,
+      ended,
+      members
+    });
+  }
+
+  /*
+   * Non-managers may only retrieve their own
+   * attendance state. Youth are intentionally
+   * not given an attendance interface.
+   */
+  const person=await c.env.DB
+    .prepare(`
+      SELECT adult
+      FROM people
+      WHERE id=?
+    `)
+    .bind(u.personId)
+    .first<any>();
+
+  if(Number(person?.adult)!==1)
+    return json(c,{
+      event,
+      manager:false,
+      ended,
+      members:[]
+    });
+
+  const family=await c.env.DB
+    .prepare(`
+      SELECT family_id
+      FROM family_members
+      WHERE person_id=?
+      LIMIT 1
+    `)
+    .bind(u.personId)
+    .first<any>();
+
+  let familyRows:any[]=[];
+
+  if(family?.family_id){
+    const result=await c.env.DB
+      .prepare(`
+        SELECT
+          p.id,
+          p.prefix,
+          p.first_name,
+          p.middle_name,
+          p.last_name,
+          p.suffix,
+          p.adult,
+          p.adult_leader,
+          ea.response,
+          ea.status,
+          ea.marked_by,
+          ea.updated_at
+        FROM family_members fm
+        JOIN people p
+          ON p.id=fm.person_id
+        LEFT JOIN event_attendance ea
+          ON ea.person_id=p.id
+          AND ea.event_id=?
+        WHERE
+          fm.family_id=?
+          AND p.archived=0
+        ORDER BY
+          p.last_name COLLATE NOCASE,
+          p.first_name COLLATE NOCASE,
+          p.suffix COLLATE NOCASE
+      `)
+      .bind(
+        id,
+        Number(family.family_id)
       )
+      .all<any>();
+
+    familyRows=result.results??[];
+  }else{
+    familyRows=(rows.results??[])
+      .filter(
+        (x:any)=>x.id===u.personId
+      );
+  }
+
+  return json(c,{
+    event,
+    manager:false,
+    ended,
+    members:familyRows.map((x:any)=>({
+      ...x,
+      response:
+        ended&&x.response==='Unsure'?
+          'No':
+          (x.response||'Unsure')
+    }))
   });
 });
 
-app.post('/api/admin/events/:id/attendance/confirm',async c=>{
-  const d=admin(c,'ATTM');
-  if(d)return d;
-
+app.post('/api/events/:id/attendance/manage',async c=>{
   const id=Number(c.req.param('id'));
+
+  if(!(await canManageEventAttendance(c,id)))
+    return json(
+      c,
+      {error:'You do not have attendance-management permission for this event.'},
+      403
+    );
+
+  await ensureFamilySchema(c);
+
+  const event=await c.env.DB
+    .prepare(`
+      SELECT
+        id,
+        end_at
+      FROM events
+      WHERE id=?
+    `)
+    .bind(id)
+    .first<any>();
+
+  if(!event)
+    return json(
+      c,
+      {error:'Event not found'},
+      404
+    );
+
   const x=await c.req.json();
 
-  for(const item of (x.items||[])){
+  if(!Array.isArray(x.members))
+    return json(
+      c,
+      {error:'Attendance members are required.'},
+      400
+    );
+
+  const now=Date.now();
+
+  for(const item of x.members){
+    const personId=Number(item.personId);
+    let response=String(item.response||'Unsure');
+
+    if(!['Yes','Unsure','No'].includes(response))
+      return json(
+        c,
+        {error:'Invalid attendance response.'},
+        400
+      );
+
+    const person=await c.env.DB
+      .prepare(`
+        SELECT id,archived
+        FROM people
+        WHERE id=?
+      `)
+      .bind(personId)
+      .first<any>();
+
+    if(!person||Number(person.archived)===1)
+      continue;
+
+    /*
+     * Once the event has ended, Unsure is never retained
+     * as an effective attendance response.
+     */
+    if(
+      event.end_at &&
+      new Date(event.end_at).getTime()<=now &&
+      response==='Unsure'
+    ){
+      response='No';
+    }
+
     await c.env.DB
       .prepare(`
         INSERT INTO event_attendance(
           event_id,
           person_id,
           status,
-          marked_by
+          marked_by,
+          response
         )
-        VALUES(?,?,?,?)
+        VALUES(
+          ?,
+          ?,
+          ?,
+          ?,
+          ?
+        )
         ON CONFLICT(event_id,person_id)
         DO UPDATE SET
           status=excluded.status,
           marked_by=excluded.marked_by,
+          response=excluded.response,
           updated_at=CURRENT_TIMESTAMP
       `)
       .bind(
         id,
-        item.personId,
-        item.status,
-        x.markedBy||null
+        personId,
+        response==='Yes'?
+          'Present':
+        'Absent',
+        (c.get('user') as User).personId,
+        response
       )
       .run();
   }
@@ -7445,6 +7811,78 @@ app.put('/api/update-info',async c=>{
       )
       .run();
   }
+
+  return json(c,{ok:true});
+});
+
+app.get('/api/events/:id/permission-checkoffs',async c=>{
+  const id=Number(c.req.param('id'));
+
+  if(!(await canManageEventAttendance(c,id)))
+    return json(
+      c,
+      {error:'Forbidden'},
+      403
+    );
+
+  const rows=await c.env.DB
+    .prepare(`
+      SELECT
+        scout_person_id,
+        checked
+      FROM permission_checkoffs
+      WHERE event_id=?
+    `)
+    .bind(id)
+    .all<any>();
+
+  return json(c,{
+    checkoffs:Object.fromEntries(
+      (rows.results??[]).map((x:any)=>[
+        String(x.scout_person_id),
+        Number(x.checked)===1
+      ])
+    )
+  });
+});
+
+app.put('/api/events/:id/permission-checkoffs',async c=>{
+  const id=Number(c.req.param('id'));
+
+  if(!(await canManageEventAttendance(c,id)))
+    return json(
+      c,
+      {error:'Forbidden'},
+      403
+    );
+
+  const x=await c.req.json();
+
+  const scoutPersonId=
+    Number(x.scoutPersonId);
+
+  const checked=
+    x.checked?1:0;
+
+  await c.env.DB
+    .prepare(`
+      INSERT INTO permission_checkoffs(
+        event_id,
+        scout_person_id,
+        checked
+      )
+      VALUES(?,?,?)
+      ON CONFLICT(event_id,scout_person_id)
+      DO UPDATE SET
+        checked=excluded.checked,
+        updated_at=CURRENT_TIMESTAMP
+    `)
+    .bind(
+      id,
+      scoutPersonId,
+      checked
+    )
+    .run();
 
   return json(c,{ok:true});
 });
