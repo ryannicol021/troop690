@@ -7672,6 +7672,18 @@ function Advancement({me}:{me:any}){
     useState(false);
   const [draggedRequirement,setDraggedRequirement]=
     useState<number|null>(null);
+  const [selectedAwards,setSelectedAwards]=
+  useState<Record<number,boolean>>({});
+  const [showAddAwardModal,setShowAddAwardModal]=
+    useState(false);
+  const [awardName,setAwardName]=
+    useState('');
+  const [awardResourceLink,setAwardResourceLink]=
+    useState('');
+  const [awardError,setAwardError]=
+    useState('');
+  const [savingAward,setSavingAward]=
+    useState(false);
 
   const canEdit=
     !!me?.isAdministrator||
@@ -7756,6 +7768,119 @@ function Advancement({me}:{me:any}){
       [id]:!current[id]
     }));
   };
+
+const selectedAwardIds=
+  Object.entries(
+    selectedAwards
+  )
+    .filter(([,selected])=>selected)
+    .map(([id])=>Number(id));
+
+const toggleAward=(id:number)=>{
+  setSelectedAwards(current=>({
+    ...current,
+    [id]:!current[id]
+  }));
+};
+
+const openAddAward=()=>{
+  setAwardName('');
+  setAwardResourceLink('');
+  setAwardError('');
+  setShowAddAwardModal(true);
+};
+
+const closeAddAward=()=>{
+  if(savingAward)
+    return;
+
+  setShowAddAwardModal(false);
+  setAwardName('');
+  setAwardResourceLink('');
+  setAwardError('');
+};
+
+const deleteSelectedAwards=async()=>{
+  if(!selectedAwardIds.length)
+    return;
+
+  if(!window.confirm(
+    `Delete ${selectedAwardIds.length} selected award${selectedAwardIds.length===1?'':'s'}?`
+  ))
+    return;
+
+  try{
+    setError('');
+
+    await post(
+      '/admin/awards/delete',
+      {
+        ids:selectedAwardIds
+      }
+    );
+
+    setSelectedAwards({});
+    await load();
+  }catch(e:any){
+    setError(
+      e?.message||
+      'Unable to delete the selected awards.'
+    );
+  }
+};
+
+const addAward=async(
+  e:React.FormEvent
+)=>{
+  e.preventDefault();
+
+  const name=
+    awardName.trim();
+
+  const link=
+    awardResourceLink.trim();
+
+  if(!name){
+    setAwardError(
+      'Award is required.'
+    );
+    return;
+  }
+
+  if(
+    link&&
+    !/^https?:\/\//i.test(link)
+  ){
+    setAwardError(
+      'Resource Link must begin with http:// or https://.'
+    );
+    return;
+  }
+
+  try{
+    setSavingAward(true);
+    setAwardError('');
+    setError('');
+
+    await post(
+      '/admin/awards',
+      {
+        name,
+        url:link
+      }
+    );
+
+    await load();
+    closeAddAward();
+  }catch(e:any){
+    setAwardError(
+      e?.message||
+      'Unable to add the award.'
+    );
+  }finally{
+    setSavingAward(false);
+  }
+};
 
   const moveRequirement=async(
     id:number,
@@ -7964,6 +8089,7 @@ const usedColumns: number[]=[
         onClick={()=>{
           setEditing(value=>!value);
           setSelectedRequirements({});
+          setSelectedAwards({});
         }}
       >
         {editing?'Done':'Edit'}
@@ -8021,29 +8147,87 @@ const usedColumns: number[]=[
       </a>
     </section>
 
-    <section>
-      <h2>Awards</h2>
+<section>
+  <h2>Awards</h2>
 
-      <div className="button-grid">
-        {d.awards.map((a:any)=>
-          <a
-            className={
-              'button '+(
-                !a.url?
-                  'disabled':
-                  ''
-              )
-            }
-            key={a.id}
-            href={a.url||undefined}
-            target="_blank"
-            rel="noreferrer"
-          >
-            {a.name}
-          </a>
-        )}
+  {editing&&canEdit&&
+    <div className="advancement-awards-actions">
+      <button
+        type="button"
+        className="home-add-button"
+        aria-label="Add award"
+        onClick={openAddAward}
+      >
+        +
+      </button>
+
+      <button
+        type="button"
+        className="home-history-delete-button"
+        aria-label="Delete selected awards"
+        disabled={!selectedAwardIds.length}
+        onClick={
+          deleteSelectedAwards
+        }
+      >
+        −
+      </button>
+    </div>
+  }
+
+  <div className="advancement-awards-grid">
+    {d.awards.map((a:any)=>
+      <div
+        className="advancement-award-item"
+        key={a.id}
+      >
+        <a
+          className={
+            'button advancement-award-button '+
+            (
+              !a.url?
+                'disabled':
+                ''
+            )
+          }
+          href={a.url||undefined}
+          target="_blank"
+          rel="noreferrer"
+          onClick={e=>{
+            if(
+              editing||
+              !a.url
+            )
+              e.preventDefault();
+          }}
+        >
+          {a.name}
+        </a>
+
+        {editing&&canEdit&&
+          <label className="advancement-award-select">
+            <input
+              type="checkbox"
+              checked={
+                !!selectedAwards[
+                  Number(a.id)
+                ]
+              }
+              onChange={()=>
+                toggleAward(
+                  Number(a.id)
+                )
+              }
+              aria-label={
+                `Select ${a.name}`
+              }
+            />
+          </label>
+        }
       </div>
-    </section>
+    )}
+  </div>
+</section>
 
     {selectedRank&&
       <div
@@ -8384,6 +8568,91 @@ const usedColumns: number[]=[
         </div>
       </div>
     }
+
+    {showAddAwardModal&&
+  <div
+    className="modal-backdrop advancement-add-modal-backdrop"
+    onMouseDown={e=>{
+      if(e.target===e.currentTarget)
+        closeAddAward();
+    }}
+  >
+    <div
+      className="modal-card advancement-add-modal"
+      role="dialog"
+      aria-modal="true"
+    >
+      <div className="modal-header">
+        <h2>Add Award</h2>
+
+        <button
+          type="button"
+          className="modal-close"
+          aria-label="Close"
+          onClick={closeAddAward}
+        >
+          ×
+        </button>
+      </div>
+
+      <form
+        className="form"
+        onSubmit={addAward}
+      >
+        <label>
+          Award
+          <input
+            value={awardName}
+            onChange={e=>
+              setAwardName(
+                e.target.value
+              )
+            }
+            autoFocus
+          />
+        </label>
+
+        <label>
+          Resource Link
+          <input
+            type="url"
+            value={awardResourceLink}
+            onChange={e=>
+              setAwardResourceLink(
+                e.target.value
+              )
+            }
+            placeholder="https://"
+          />
+        </label>
+
+        {awardError&&
+          <p className="error">
+            {awardError}
+          </p>
+        }
+
+        <div className="button-row">
+          <button
+            type="submit"
+            className="primary"
+            disabled={savingAward}
+          >
+            Add Award
+          </button>
+
+          <button
+            type="button"
+            disabled={savingAward}
+            onClick={closeAddAward}
+          >
+            Cancel
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}
   </Page>
 }
 
