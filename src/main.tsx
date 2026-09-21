@@ -7896,12 +7896,12 @@ function Advancement({me}:{me:any}){
               openRank(rank)
             }
             aria-label={
-              `${rank} rank requirements`
+              `${rank}`
             }
           >
             <img
               src={
-                `/images/${rankImages[rank]}`
+                `/images/advancement/${rankImages[rank]}`
               }
               alt=""
             />
@@ -7997,7 +7997,7 @@ function Advancement({me}:{me:any}){
         >
           <div className="modal-header">
             <h2>
-              {selectedRank} Rank Requirements
+              {selectedRank}
             </h2>
 
             <div className="advancement-rank-modal-actions">
