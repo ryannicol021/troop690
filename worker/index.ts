@@ -1504,6 +1504,22 @@ const canManageEventAttendance = async (
   if(!user||!user.personId)
     return false;
 
+  const person=await c.env.DB
+    .prepare(`
+      SELECT adult,archived
+      FROM people
+      WHERE id=?
+    `)
+    .bind(user.personId)
+    .first();
+
+  if(
+    !person||
+    Number(person.archived)===1||
+    Number(person.adult)!==1
+  )
+    return false;
+
   if(user.isAdministrator)
     return true;
 
@@ -1529,19 +1545,7 @@ const canManageEventAttendance = async (
     )
     .first();
 
-  if(!leader)
-    return false;
-
-  const person=await c.env.DB
-    .prepare(`
-      SELECT adult
-      FROM people
-      WHERE id=?
-    `)
-    .bind(user.personId)
-    .first();
-
-  return Number(person?.adult)===1;
+  return !!leader;
 };
 
 const newYorkToday=()=>{
@@ -2797,6 +2801,22 @@ app.get('/api/events/:id/attendance',async c=>{
     !!event.end_at &&
     new Date(event.end_at).getTime()<=Date.now();
 
+  if(ended){
+    await c.env.DB
+      .prepare(`
+        UPDATE event_attendance
+        SET
+          response='No',
+          status='Absent',
+          updated_at=CURRENT_TIMESTAMP
+        WHERE
+          event_id=?
+          AND response='Unsure'
+      `)
+      .bind(id)
+      .run();
+  }
+  
   const rows=await c.env.DB
     .prepare(`
       SELECT
@@ -3041,9 +3061,18 @@ app.post('/api/events/:id/attendance/manage',async c=>{
       .bind(
         id,
         personId,
-        response==='Yes'?
-          'Present':
-        'Absent',
+        event.end_at &&
+        new Date(event.end_at).getTime()<=Date.now()?
+          (
+            response==='Yes'?
+              'Present':
+              'Absent'
+          ):
+          (
+            response==='No'?
+              'Absent':
+              'Attending'
+          ),
         (c.get('user') as User).personId,
         response
       )
