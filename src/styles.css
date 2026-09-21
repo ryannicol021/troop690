@@ -2321,6 +2321,67 @@ tbody tr:nth-child(even){
   width:min(560px,100%)
 }
 
+.advancement-awards-actions{
+  display:flex;
+  gap:6px;
+  margin-bottom:12px
+}
+
+.advancement-awards-actions
+.home-add-button,
+.advancement-awards-actions
+.home-history-delete-button{
+  width:34px;
+  height:34px;
+  min-width:34px;
+  min-height:34px;
+  padding:0
+}
+
+.advancement-awards-grid{
+  display:grid;
+  grid-template-columns:
+    repeat(2,minmax(0,1fr));
+  gap:12px
+}
+
+.advancement-award-item{
+  position:relative;
+  min-width:0
+}
+
+.advancement-award-button{
+  width:100%;
+  min-height:64px;
+  display:grid;
+  place-items:center;
+  text-align:center;
+  box-sizing:border-box
+}
+
+.advancement-award-select{
+  position:absolute;
+  top:3px;
+  right:3px;
+  width:22px;
+  height:22px;
+  min-height:22px;
+  display:grid;
+  place-items:center;
+  padding:0;
+  border:1px solid #bdb5a6;
+  border-radius:3px;
+  background:rgba(255,255,255,.94)
+}
+
+.advancement-award-select input{
+  width:15px;
+  height:15px;
+  min-height:15px;
+  margin:0;
+  padding:0
+}
+
 .req-grid{
   display:flex;
   flex-wrap:wrap;
