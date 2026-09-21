@@ -2156,9 +2156,7 @@ tbody tr:nth-child(even){
 }
 
 .advancement-rank-modal{
-  width:calc(
-    var(--advancement-grid-width) + 46px
-  );
+  width:var(--advancement-modal-width);
   min-width:0;
   max-width:100%;
   box-sizing:border-box;
@@ -2190,7 +2188,8 @@ tbody tr:nth-child(even){
 }
 
 .advancement-rank-modal[data-editing="true"]{
-  width:542px
+  width:542px;
+  max-width:100%
 }
 
 .advancement-rank-modal[data-editing="true"] .advancement-edit-grid{
@@ -3134,36 +3133,31 @@ footer a:hover{
     height:44px
   }
 
-  .advancement-rank-modal{
+  .advancement-rank-modal,
+  .advancement-rank-modal[data-editing="true"]{
     width:100%;
     max-width:100%
   }
 
   .advancement-edit-grid{
-    --advancement-edit-cell-size:
-      min(
-        64px,
-        calc((100vw - 102px)/7)
-      );
-
     grid-template-columns:
-      repeat(7,var(--advancement-edit-cell-size));
+      repeat(7,minmax(0,1fr));
     grid-template-rows:
-      repeat(
-        13,
-        var(--advancement-edit-cell-size)
-      );
-    width:max-content;
+      repeat(13,auto);
+    width:100%;
     min-width:0;
-    max-width:none
+    max-width:none;
+    overflow:hidden;
+    padding:0
   }
 
   .advancement-edit-grid
   .advancement-grid-cell{
-    width:var(--advancement-edit-cell-size);
-    height:var(--advancement-edit-cell-size);
-    min-width:var(--advancement-edit-cell-size);
-    min-height:var(--advancement-edit-cell-size)
+    width:100%;
+    height:auto;
+    min-width:0;
+    min-height:0;
+    aspect-ratio:1
   }
 
   .advancement-edit-grid
