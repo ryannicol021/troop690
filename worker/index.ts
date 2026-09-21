@@ -3309,19 +3309,48 @@ app.post('/api/admin/advancement-requirements',async c=>{
       400
     );
 
-  const next=
+  const existing=
     await c.env.DB
       .prepare(`
-        SELECT
-          COALESCE(
-            MAX(visible_order),
-            -1
-          )+1 next_order
+        SELECT visible_order
         FROM advancement_requirements
         WHERE rank=?
+        ORDER BY visible_order
       `)
       .bind(rank)
-      .first<any>();
+      .all<any>();
+
+  const occupied=new Set<number>(
+    (existing.results??[]).map(
+      (x:any)=>Number(x.visible_order)
+    )
+  );
+
+  let placement:number|null=null;
+
+  for(let row=12;row>=0;row--){
+    for(let col=0;col<7;col++){
+      const index=row*7+col;
+
+      if(!occupied.has(index)){
+        placement=index;
+        break;
+      }
+    }
+
+    if(placement!==null)
+      break;
+  }
+
+  if(placement===null)
+    return json(
+      c,
+      {
+        error:
+          'There are no available requirement spaces for this rank.'
+      },
+      400
+    );
 
   const row=
     await c.env.DB
@@ -3344,15 +3373,88 @@ app.post('/api/admin/advancement-requirements',async c=>{
         rank,
         requirementName,
         resourceLink,
-        Number(
-          next?.next_order??0
-        )
+        placement
       )
       .first<any>();
 
   return json(c,{
     requirement:row
   },201);
+});
+
+app.put('/api/admin/advancement-requirements/:id/position',async c=>{
+  const d=admin(c,'ADV');
+  if(d)return d;
+
+  const id=Number(c.req.param('id'));
+  const body=await c.req.json<any>();
+  const position=Number(body.position);
+
+  if(
+    !Number.isInteger(id)||
+    !Number.isInteger(position)||
+    position<0||
+    position>=91
+  )
+    return json(
+      c,
+      {error:'Invalid requirement position.'},
+      400
+    );
+
+  const requirement=
+    await c.env.DB
+      .prepare(`
+        SELECT id,rank
+        FROM advancement_requirements
+        WHERE id=?
+      `)
+      .bind(id)
+      .first<any>();
+
+  if(!requirement)
+    return json(
+      c,
+      {error:'Requirement not found.'},
+      404
+    );
+
+  const occupied=
+    await c.env.DB
+      .prepare(`
+        SELECT id
+        FROM advancement_requirements
+        WHERE rank=?
+          AND visible_order=?
+          AND id<>?
+      `)
+      .bind(
+        requirement.rank,
+        position,
+        id
+      )
+      .first<any>();
+
+  if(occupied)
+    return json(
+      c,
+      {error:'That requirement space is already occupied.'},
+      409
+    );
+
+  await c.env.DB
+    .prepare(`
+      UPDATE advancement_requirements
+      SET visible_order=?
+      WHERE id=?
+    `)
+    .bind(
+      position,
+      id
+    )
+    .run();
+
+  return json(c,{ok:true});
 });
 
 app.post('/api/admin/advancement-requirements/delete',async c=>{
