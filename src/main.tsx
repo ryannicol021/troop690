@@ -305,7 +305,7 @@ const requiredPermission=
       me={me}
     />;
   if(p==='/leadership')return <Leadership me={me}/>;
-  if(p==='/advancement')return <Advancement/>;
+  if(p==='/advancement')return <Advancement me={me}/>;
   if(p==='/summer-camp')return <SummerCamp/>;
   if(p==='/uniform')return <Uniform/>;
   if(p==='/member-info')
@@ -7652,15 +7652,28 @@ function Leadership({me}:{me:any}){
   </Page>
 }
 
-function Advancement(){
+function Advancement({me}:{me:any}){
   const [d,setD]=useState<any>();
+  const [error,setError]=useState('');
+  const [editing,setEditing]=useState(false);
+  const [selectedRank,setSelectedRank]=
+    useState<string|null>(null);
+  const [selectedRequirements,setSelectedRequirements]=
+    useState<Record<number,boolean>>({});
+  const [showAddRequirementModal,setShowAddRequirementModal]=
+    useState(false);
+  const [requirementName,setRequirementName]=
+    useState('');
+  const [resourceLink,setResourceLink]=
+    useState('');
+  const [requirementError,setRequirementError]=
+    useState('');
+  const [savingRequirement,setSavingRequirement]=
+    useState(false);
 
-  useEffect(()=>{
-    api('/advancement').then(setD)
-  },[]);
-
-  if(!d)
-    return <Page title="Advancement"><Loading/></Page>;
+  const canEdit=
+    !!me?.isAdministrator||
+    !!me?.permissions?.includes('ADV');
 
   const ranks=[
     'Scout',
@@ -7672,29 +7685,230 @@ function Advancement(){
     'Eagle Scout'
   ];
 
-  return <Page title="Advancement">
-    {ranks.map(r=>
-      <section key={r}>
-        <h2>{r}</h2>
+  const rankImages:Record<string,string>={
+    'Scout':'scout.png',
+    'Tenderfoot':'tenderfoot.png',
+    'Second Class':'second-class.png',
+    'First Class':'first-class.png',
+    'Star':'star.png',
+    'Life':'life.png',
+    'Eagle Scout':'eagle-scout.png'
+  };
 
-        <div className="req-grid">
-          {d.requirements
-            .filter((x:any)=>x.rank===r)
-            .map((x:any)=>
-              <a
-                className={'req '+(!x.video_url?'disabled':'')}
-                key={x.id}
-                href={x.video_url||undefined}
-                target="_blank"
-                rel="noreferrer"
-              >
-                {x.requirement_name}
-              </a>
-            )
-          }
-        </div>
-      </section>
-    )}
+  const load=async()=>{
+    try{
+      setError('');
+      setD(
+        await api('/advancement')
+      );
+    }catch(e:any){
+      setError(
+        e?.message||
+        'Unable to load advancement information.'
+      );
+    }
+  };
+
+  useEffect(()=>{
+    load();
+  },[]);
+
+  const openRank=(rank:string)=>{
+    setSelectedRank(rank);
+    setSelectedRequirements({});
+  };
+
+  const closeRank=()=>{
+    setSelectedRank(null);
+    setSelectedRequirements({});
+    setShowAddRequirementModal(false);
+  };
+
+  const openAddRequirement=()=>{
+    setRequirementName('');
+    setResourceLink('');
+    setRequirementError('');
+    setShowAddRequirementModal(true);
+  };
+
+  const closeAddRequirement=()=>{
+    if(savingRequirement)
+      return;
+
+    setShowAddRequirementModal(false);
+    setRequirementName('');
+    setResourceLink('');
+    setRequirementError('');
+  };
+
+  const selectedIds=
+    Object.entries(
+      selectedRequirements
+    )
+      .filter(([,selected])=>selected)
+      .map(([id])=>Number(id));
+
+  const toggleRequirement=(id:number)=>{
+    setSelectedRequirements(current=>({
+      ...current,
+      [id]:!current[id]
+    }));
+  };
+
+  const deleteSelectedRequirements=async()=>{
+    if(!selectedIds.length)
+      return;
+
+    if(!window.confirm(
+      `Delete ${selectedIds.length} selected requirement${selectedIds.length===1?'':'s'}?`
+    ))
+      return;
+
+    try{
+      setError('');
+
+      await post(
+        '/admin/advancement-requirements/delete',
+        {
+          ids:selectedIds
+        }
+      );
+
+      setSelectedRequirements({});
+      await load();
+    }catch(e:any){
+      setError(
+        e?.message||
+        'Unable to delete the selected requirements.'
+      );
+    }
+  };
+
+  const addRequirement=async(
+    e:React.FormEvent
+  )=>{
+    e.preventDefault();
+
+    if(!selectedRank)
+      return;
+
+    const name=
+      requirementName.trim();
+
+    const link=
+      resourceLink.trim();
+
+    if(!name){
+      setRequirementError(
+        'Requirement is required.'
+      );
+      return;
+    }
+
+    if(
+      link&&
+      !/^https?:\/\//i.test(link)
+    ){
+      setRequirementError(
+        'Resource Link must begin with http:// or https://.'
+      );
+      return;
+    }
+
+    try{
+      setSavingRequirement(true);
+      setRequirementError('');
+      setError('');
+
+      await post(
+        '/admin/advancement-requirements',
+        {
+          rank:selectedRank,
+          requirement_name:name,
+          resource_link:link
+        }
+      );
+
+      await load();
+      closeAddRequirement();
+    }catch(e:any){
+      setRequirementError(
+        e?.message||
+        'Unable to add the requirement.'
+      );
+    }finally{
+      setSavingRequirement(false);
+    }
+  };
+
+  if(!d)
+    return <Page title="Advancement">
+      {error?
+        <p className="error">
+          {error}
+        </p>:
+        <Loading/>
+      }
+    </Page>;
+
+  const requirements=
+    d.requirements??[];
+
+  const selectedRequirementsForRank=
+    selectedRank?
+      requirements.filter(
+        (x:any)=>x.rank===selectedRank
+      ):
+      [];
+
+  return <Page
+    title="Advancement"
+    actions={
+      canEdit&&
+      <button
+        type="button"
+        className="button leadership-edit-button"
+        onClick={()=>{
+          setEditing(value=>!value);
+          setSelectedRequirements({});
+        }}
+      >
+        {editing?'Done':'Edit'}
+      </button>
+    }
+  >
+    {error&&
+      <p className="error">
+        {error}
+      </p>
+    }
+
+    <section>
+      <h2>Rank Requirements</h2>
+
+      <div className="advancement-rank-grid">
+        {ranks.map(rank=>
+          <button
+            type="button"
+            className="advancement-rank-button"
+            key={rank}
+            onClick={()=>
+              openRank(rank)
+            }
+            aria-label={
+              `${rank} rank requirements`
+            }
+          >
+            <img
+              src={
+                `/images/${rankImages[rank]}`
+              }
+              alt=""
+            />
+          </button>
+        )}
+      </div>
+    </section>
 
     <section>
       <h2>Know Your Knots</h2>
@@ -7702,9 +7916,18 @@ function Advancement(){
       <div className="button-grid">
         {d.knots.map((k:any)=>
           <a
-            className={'button '+(!k.video_url?'disabled':'')}
+            className={
+              'button '+(
+                !k.video_url?
+                  'disabled':
+                  ''
+              )
+            }
             key={k.id}
-            href={k.video_url||undefined}
+            href={
+              k.video_url||
+              undefined
+            }
             target="_blank"
             rel="noreferrer"
           >
@@ -7738,7 +7961,13 @@ function Advancement(){
       <div className="button-grid">
         {d.awards.map((a:any)=>
           <a
-            className={'button '+(!a.url?'disabled':'')}
+            className={
+              'button '+(
+                !a.url?
+                  'disabled':
+                  ''
+              )
+            }
             key={a.id}
             href={a.url||undefined}
             target="_blank"
@@ -7749,6 +7978,226 @@ function Advancement(){
         )}
       </div>
     </section>
+
+    {selectedRank&&
+      <div
+        className="modal-backdrop"
+        onMouseDown={e=>{
+          if(
+            e.target===e.currentTarget&&
+            !showAddRequirementModal
+          )
+            closeRank();
+        }}
+      >
+        <div
+          className="modal-card advancement-rank-modal"
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="modal-header">
+            <h2>
+              {selectedRank} Rank Requirements
+            </h2>
+
+            <div className="advancement-rank-modal-actions">
+              {editing&&canEdit&&
+                <>
+                  <button
+                    type="button"
+                    className="home-add-button"
+                    aria-label="Add requirement"
+                    onClick={openAddRequirement}
+                  >
+                    +
+                  </button>
+
+                  <button
+                    type="button"
+                    className="home-history-delete-button"
+                    aria-label="Delete selected requirements"
+                    disabled={!selectedIds.length}
+                    onClick={
+                      deleteSelectedRequirements
+                    }
+                  >
+                    −
+                  </button>
+                </>
+              }
+
+              <button
+                type="button"
+                className="modal-close"
+                aria-label="Close"
+                onClick={closeRank}
+              >
+                ×
+              </button>
+            </div>
+          </div>
+
+          {selectedRequirementsForRank.length?
+            <div className="advancement-requirement-grid">
+              {selectedRequirementsForRank.map(
+                (x:any)=>{
+                  const checked=
+                    !!selectedRequirements[
+                      Number(x.id)
+                    ];
+
+                  const disabled=
+                    !x.video_url;
+
+                  return (
+                    <div
+                      className="advancement-requirement-item"
+                      key={x.id}
+                    >
+                      <a
+                        className={
+                          'advancement-requirement-button '+
+                          (
+                            disabled?
+                              'disabled':
+                              ''
+                          )
+                        }
+                        href={
+                          disabled?
+                            undefined:
+                            x.video_url
+                        }
+                        target="_blank"
+                        rel="noreferrer"
+                        aria-disabled={disabled}
+                        tabIndex={
+                          disabled?
+                            -1:
+                            undefined
+                        }
+                        onClick={e=>{
+                          if(disabled)
+                            e.preventDefault();
+                        }}
+                      >
+                        {x.requirement_name}
+                      </a>
+
+                      {editing&&canEdit&&
+                        <label className="advancement-requirement-select">
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={()=>
+                              toggleRequirement(
+                                Number(x.id)
+                              )
+                            }
+                            aria-label={
+                              `Select ${x.requirement_name}`
+                            }
+                          />
+                        </label>
+                      }
+                    </div>
+                  );
+                }
+              )}
+            </div>:
+            <p className="muted">
+              No requirements have been added yet.
+            </p>
+          }
+        </div>
+      </div>
+    }
+
+    {showAddRequirementModal&&
+      selectedRank&&
+      <div
+        className="modal-backdrop advancement-add-modal-backdrop"
+        onMouseDown={e=>{
+          if(e.target===e.currentTarget)
+            closeAddRequirement();
+        }}
+      >
+        <div
+          className="modal-card advancement-add-modal"
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="modal-header">
+            <h2>Add Requirement</h2>
+
+            <button
+              type="button"
+              className="modal-close"
+              aria-label="Close"
+              onClick={closeAddRequirement}
+            >
+              ×
+            </button>
+          </div>
+
+          <form
+            className="form"
+            onSubmit={addRequirement}
+          >
+            <label>
+              Requirement
+              <input
+                value={requirementName}
+                onChange={e=>
+                  setRequirementName(
+                    e.target.value
+                  )
+                }
+                autoFocus
+              />
+            </label>
+
+            <label>
+              Resource Link
+              <input
+                type="url"
+                value={resourceLink}
+                onChange={e=>
+                  setResourceLink(
+                    e.target.value
+                  )
+                }
+                placeholder="https://"
+              />
+            </label>
+
+            {requirementError&&
+              <p className="error">
+                {requirementError}
+              </p>
+            }
+
+            <div className="button-row">
+              <button
+                type="submit"
+                className="primary"
+                disabled={savingRequirement}
+              >
+                Add Requirement
+              </button>
+
+              <button
+                type="button"
+                disabled={savingRequirement}
+                onClick={closeAddRequirement}
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    }
   </Page>
 }
 
