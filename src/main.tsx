@@ -7909,25 +7909,29 @@ function Advancement({me}:{me:any}){
       )
     );
 
-  const usedRows=[
-    ...new Set(
-      selectedRequirementsForRank.map(
-        (x:any)=>
-          Math.floor(
-            Number(x.visible_order)/7
-          )
-      )
+const usedRows: number[]=[
+  ...new Set<number>(
+    selectedRequirementsForRank.map(
+      (x:any)=>
+        Math.floor(
+          Number(x.visible_order)/7
+        )
     )
-  ].sort((a,b)=>a-b);
+  )
+].sort(
+  (a:number,b:number)=>a-b
+);
 
-  const usedColumns=[
-    ...new Set(
-      selectedRequirementsForRank.map(
-        (x:any)=>
-          Number(x.visible_order)%7
-      )
+const usedColumns: number[]=[
+  ...new Set<number>(
+    selectedRequirementsForRank.map(
+      (x:any)=>
+        Number(x.visible_order)%7
     )
-  ].sort((a,b)=>a-b);
+  )
+].sort(
+  (a:number,b:number)=>a-b
+);
 
   const normalColumns=
     Math.max(
@@ -8255,8 +8259,8 @@ function Advancement({me}:{me:any}){
           `repeat(${normalColumns},64px)`
       }}
     >
-      {usedRows.flatMap(row=>
-        usedColumns.map(column=>{
+{usedRows.flatMap((row:number)=>
+  usedColumns.map((column:number)=>{
           const position=
             row*7+column;
 
