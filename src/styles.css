@@ -2245,6 +2245,87 @@ tbody tr:nth-child(even){
   width:min(560px,100%)
 }
 
+.advancement-edit-grid{
+  display:grid;
+  grid-template-columns:
+    repeat(7,64px);
+  grid-template-rows:
+    repeat(13,64px);
+  gap:8px;
+  width:max-content;
+  max-width:100%;
+  overflow:auto;
+  padding:2px
+}
+
+.advancement-normal-grid{
+  display:grid;
+  gap:8px;
+  width:max-content
+}
+
+.advancement-grid-cell{
+  width:64px;
+  height:64px;
+  min-width:64px;
+  min-height:64px;
+  border:1px dashed #c8bda9;
+  border-radius:3px;
+  display:grid;
+  place-items:center
+}
+
+.advancement-grid-cell-filled{
+  border-color:transparent
+}
+
+.advancement-requirement-item{
+  position:relative;
+  width:64px;
+  height:64px
+}
+
+.advancement-requirement-button{
+  width:64px;
+  height:64px;
+  min-width:64px;
+  min-height:64px;
+  padding:6px;
+  display:grid;
+  place-items:center;
+  text-align:center;
+  font-size:.78rem;
+  line-height:1.15;
+  overflow-wrap:anywhere
+}
+
+.advancement-requirement-select{
+  position:absolute;
+  top:3px;
+  right:3px;
+  width:22px;
+  height:22px;
+  min-height:22px;
+  display:grid;
+  place-items:center;
+  padding:0;
+  border:1px solid #bdb5a6;
+  border-radius:3px;
+  background:rgba(255,255,255,.94)
+}
+
+.advancement-requirement-select input{
+  width:15px;
+  height:15px;
+  min-height:15px;
+  margin:0;
+  padding:0
+}
+
+.advancement-rank-modal .modal-header{
+  align-items:flex-start
+}
+
 .req-grid{
   display:flex;
   flex-wrap:wrap;
