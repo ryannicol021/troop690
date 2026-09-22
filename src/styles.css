@@ -2080,11 +2080,126 @@ tbody tr:nth-child(even){
 }
 
 .album-grid,
-.button-grid,
-.uniform-grid{
+.button-grid{
   display:grid;
   grid-template-columns:repeat(3,minmax(0,1fr));
   gap:16px
+}
+
+.uniform-card-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:18px
+}
+
+.uniform-card-grid .card{
+  margin-top:0
+}
+
+.uniform-card-header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:14px
+}
+
+.uniform-card-header h2{
+  margin:0
+}
+
+.uniform-edit-button{
+  min-height:34px;
+  height:34px;
+  padding:4px 8px;
+  font-size:.8rem;
+  flex-shrink:0
+}
+
+.uniform-insignia-card{
+  grid-column:1 / -1
+}
+
+.uniform-insignia-stage{
+  position:relative;
+  width:100%;
+  max-width:1490px;
+  margin:0 auto;
+  overflow:hidden
+}
+
+.uniform-insignia-image{
+  display:block;
+  width:100%;
+  height:auto;
+  user-select:none
+}
+
+.uniform-insignia-stage.editing{
+  cursor:crosshair
+}
+
+.uniform-insignia-marker{
+  position:absolute;
+  transform:translate(-50%,-50%);
+  width:30px;
+  height:30px;
+  min-width:30px;
+  min-height:30px;
+  padding:0;
+  border:2px solid #fff;
+  border-radius:50%;
+  background:var(--red);
+  color:#fff;
+  box-shadow:0 1px 4px rgba(0,0,0,.28);
+  display:grid;
+  place-items:center;
+  font-size:.82rem;
+  font-weight:700;
+  line-height:1;
+  cursor:pointer;
+  z-index:2
+}
+
+.uniform-insignia-marker.draft{
+  cursor:default
+}
+
+.uniform-insignia-modal{
+  width:min(560px,100%)
+}
+
+.uniform-insignia-description{
+  margin:0;
+  white-space:pre-wrap
+}
+
+.uniform-insignia-modal-footer{
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:12px
+}
+
+.uniform-insignia-delete-button{
+  width:34px;
+  height:34px;
+  min-width:34px;
+  min-height:34px;
+  padding:0;
+  border:1px solid #bdb5a6;
+  border-radius:3px;
+  background:var(--khaki-light);
+  color:var(--red);
+  display:grid;
+  place-items:center;
+  font-size:1.35rem;
+  line-height:1;
+  cursor:pointer
+}
+
+.uniform-insignia-delete-button:hover{
+  background:var(--khaki)
 }
 
 .advancement-rank-grid{
@@ -3170,7 +3285,6 @@ footer a:hover{
   .grid.three,
   .album-grid,
   .button-grid,
-  .uniform-grid,
   .admin-grid,
   .check-grid,
   .leadership-youth-grid,
