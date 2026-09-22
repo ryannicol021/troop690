@@ -2105,7 +2105,20 @@ tbody tr:nth-child(even){
 }
 
 .uniform-card-header h2{
-  margin:0
+  position:relative;
+  margin:0;
+  padding-left:12px
+}
+
+.uniform-card-header h2::before{
+  content:"";
+  position:absolute;
+  left:0;
+  top:0;
+  bottom:0;
+  width:4px;
+  background:var(--red);
+  border-radius:1px
 }
 
 .uniform-edit-button{
