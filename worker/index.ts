@@ -7419,82 +7419,42 @@ app.get('/api/admin/event-location-search',async c=>{
   if(q.length<3)
     return json(c,{results:[]});
 
-  if(!c.env.GEOAPIFY_API_KEY)
-    return json(c,{results:[]});
+  const like=`%${q}%`;
 
-  const url=new URL(
-    'https://api.geoapify.com/v1/geocode/autocomplete'
-  );
-
-  url.searchParams.set('text',q);
-  url.searchParams.set('format','json');
-  url.searchParams.set('limit','5');
-  url.searchParams.set(
-    'filter',
-    'countrycode:us'
-  );
-  url.searchParams.set(
-    'apiKey',
-    c.env.GEOAPIFY_API_KEY
-  );
-
-  const response=await fetch(
-    url.toString()
-  );
-
-  if(!response.ok){
-    const body=await response.text();
-
-    return json(
-      c,
-      {
-        error:
-          `Geoapify error ${response.status}: `+
-          body
-      },
-      502
-    );
-  }
-
-  const data=await response.json() as any;
-
-  const results=(data.results||[])
-    .map((x:any)=>{
-      const name=String(
-        x.name||
-        x.address_line1||
-        (
-          [x.housenumber,x.street]
-            .filter(Boolean)
-            .join(' ')
-        )||
-        x.formatted||
-        ''
-      ).trim();
-
-      const address=String(
-        x.address_line2||
-        [
-          x.city,
-          x.state_code||x.state,
-          x.postcode
-        ]
-          .filter(Boolean)
-          .join(', ')||
-        ''
-      ).trim();
-
-      if(!name)
-        return null;
-
-      return {
+  const rows=await c.env.DB
+    .prepare(`
+      SELECT
+        id,
         name,
         address
-      };
-    })
-    .filter((x:any)=>x);
+      FROM places
+      WHERE
+        name LIKE ? COLLATE NOCASE
+        OR address LIKE ? COLLATE NOCASE
+      ORDER BY
+        CASE
+          WHEN name LIKE ? COLLATE NOCASE
+          THEN 0
+          ELSE 1
+        END,
+        name COLLATE NOCASE,
+        address COLLATE NOCASE
+      LIMIT 5
+    `)
+    .bind(
+      like,
+      like,
+      like
+    )
+    .all<any>();
 
-  return json(c,{results});
+  return json(c,{
+    results:(rows.results??[]).map((x:any)=>({
+      place_id:Number(x.id),
+      name:String(x.name||''),
+      address:String(x.address||'')
+    }))
+  });
 });
 
 app.post('/api/admin/events',async c=>{
