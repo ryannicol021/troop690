@@ -4101,12 +4101,6 @@ function EventAttendanceManagerModal({
           </button>
         </div>
 
-        <p className="muted attendance-manager-help">
-          {ended?
-            'The event has ended. This is attendance management.':
-            'Drag each member into Attending, Not Attending, or Unsure, then save.'}
-        </p>
-
         {error&&
           <p className="error">
             {error}
