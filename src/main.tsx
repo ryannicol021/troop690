@@ -4514,8 +4514,12 @@ function EventAttendancePanel({
                 )?.permissionSigned
             }))
       });
-    }catch{
+    }catch(err:any){
       setData(null);
+      setError(
+        err?.message||
+        'Unable to load attendance.'
+      );
     }
   };
 
@@ -4556,7 +4560,17 @@ function EventAttendancePanel({
   };
 
   if(!data)
-    return null;
+    return (
+      <section className="event-attendance card">
+        <h2>Attendance</h2>
+
+        {error&&
+          <p className="error">
+            {error}
+          </p>
+        }
+      </section>
+    );
 
   const manager=!!data.manager;
 
