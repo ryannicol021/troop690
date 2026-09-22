@@ -661,6 +661,8 @@ tbody tr:nth-child(even){
 .calendar-top-actions .button{
   width:124px;
   height:34px;
+  min-height:34px;
+  padding:2px 9px;
 }
 
 .calendar-navigation{
