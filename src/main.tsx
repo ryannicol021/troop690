@@ -12410,6 +12410,13 @@ function Administration({me}:{me:any}){
     x:number;
     y:number;
   }|null>(null);
+  const [places,setPlaces]=useState<any[]>([]);
+  const [editingPlace,setEditingPlace]=useState<number|null>(null);
+  
+  const [newPlace,setNewPlace]=useState({
+    name:'',
+    address:''
+  });
 
   const showPermissionTip=(
   e:React.SyntheticEvent<HTMLButtonElement>,
@@ -12439,6 +12446,20 @@ function Administration({me}:{me:any}){
         api('/admin/site-administrator'),
         api('/admin/account-logins')
       ]);
+      
+      if(can('EVT')){
+        const p=await api('/admin/places');
+      
+        setPlaces(
+          (p.places||[])
+            .sort((x:any,y:any)=>
+              `${x.name} ${x.address}`
+                .localeCompare(
+                  `${y.name} ${y.address}`
+                )
+            )
+        );
+      }
 
       setSiteAdministrators(
         (sa.administrators||[]).sort((x:any,y:any)=>
@@ -12642,6 +12663,122 @@ function Administration({me}:{me:any}){
     }
   };
 
+const createPlace=async(
+  e:React.FormEvent
+)=>{
+  e.preventDefault();
+
+  try{
+    const r=await post(
+      '/admin/places',
+      newPlace
+    );
+
+    setNewPlace({
+      name:'',
+      address:''
+    });
+
+    await load();
+
+    setMsg(
+      `Created ${r.place?.name||'place'}`
+    );
+
+    setTimeout(
+      ()=>setMsg(''),
+      1800
+    );
+  }catch(e:any){
+    setMsg(e.message);
+    setTimeout(
+      ()=>setMsg(''),
+      2200
+    );
+  }
+};
+
+const savePlace=async(
+  place:any
+)=>{
+  try{
+    await put(
+      '/admin/places/'+place.id,
+      {
+        name:place.name,
+        address:place.address
+      }
+    );
+
+    setEditingPlace(null);
+    await load();
+
+    setMsg('Saved');
+
+    setTimeout(
+      ()=>setMsg(''),
+      1800
+    );
+  }catch(e:any){
+    setMsg(e.message);
+
+    setTimeout(
+      ()=>setMsg(''),
+      2200
+    );
+  }
+};
+
+const deletePlace=async(
+  id:number
+)=>{
+  if(!confirm(
+    'Are you sure you want to delete this place? This will not change any existing events.'
+  ))
+    return;
+
+  try{
+    const r=await fetch(
+      '/api/admin/places/'+id,
+      {
+        method:'DELETE',
+        credentials:'include'
+      }
+    );
+
+    if(!r.ok){
+      const x=await r.json().catch(()=>({}));
+
+      setMsg(
+        x.error||'Delete failed'
+      );
+
+      setTimeout(
+        ()=>setMsg(''),
+        2200
+      );
+
+      return;
+    }
+
+    await load();
+
+    setMsg('Deleted');
+
+    setTimeout(
+      ()=>setMsg(''),
+      1800
+    );
+  }catch(e:any){
+    setMsg(e.message);
+
+    setTimeout(
+      ()=>setMsg(''),
+      2200
+    );
+  }
+};
+  
   return <Page title="Administration">
 
         {can('ACCT')&&
@@ -12815,6 +12952,167 @@ function Administration({me}:{me:any}){
       </section>
     }
 
+{can('EVT')&&
+  <section>
+    <h2>Manage Places</h2>
+
+    <form
+      className="manage-place-form"
+      onSubmit={createPlace}
+    >
+      <label>
+        Place Name
+        <input
+          value={newPlace.name}
+          onChange={e=>
+            setNewPlace({
+              ...newPlace,
+              name:e.target.value
+            })
+          }
+          required
+        />
+      </label>
+
+      <label>
+        Address
+        <input
+          value={newPlace.address}
+          onChange={e=>
+            setNewPlace({
+              ...newPlace,
+              address:e.target.value
+            })
+          }
+          required
+        />
+      </label>
+
+      <button
+        className="primary admin-action-button"
+        type="submit"
+      >
+        Add Place
+      </button>
+    </form>
+
+    <div className="admin-table-wrap">
+      <table className="admin-table">
+        <thead>
+          <tr>
+            <th>Place Name</th>
+            <th>Address</th>
+            <th>Options</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {places.map((place:any)=>
+            <tr key={place.id}>
+              <td>
+                {editingPlace===place.id?
+                  <input
+                    value={place.name}
+                    onChange={e=>
+                      setPlaces(
+                        places.map(x=>
+                          x.id===place.id?
+                            {
+                              ...x,
+                              name:e.target.value
+                            }:
+                            x
+                        )
+                      )
+                    }
+                  />
+                  :
+                  <b>{place.name}</b>
+                }
+              </td>
+
+              <td>
+                {editingPlace===place.id?
+                  <input
+                    value={place.address}
+                    onChange={e=>
+                      setPlaces(
+                        places.map(x=>
+                          x.id===place.id?
+                            {
+                              ...x,
+                              address:e.target.value
+                            }:
+                            x
+                        )
+                      )
+                    }
+                  />
+                  :
+                  place.address
+                }
+              </td>
+
+              <td>
+                <div className="admin-action-row">
+                  {editingPlace===place.id?
+                    <>
+                      <button
+                        type="button"
+                        className="primary admin-action-button"
+                        onClick={()=>
+                          savePlace(place)
+                        }
+                      >
+                        Save
+                      </button>
+
+                      <button
+                        type="button"
+                        className="admin-action-button"
+                        onClick={()=>{
+                          setEditingPlace(null);
+                          load().catch(e=>
+                            setMsg(e.message)
+                          );
+                        }}
+                      >
+                        Cancel
+                      </button>
+                    </>
+                    :
+                    <>
+                      <button
+                        type="button"
+                        className="admin-action-button"
+                        onClick={()=>
+                          setEditingPlace(place.id)
+                        }
+                      >
+                        Edit
+                      </button>
+
+                      <button
+                        type="button"
+                        className="admin-action-button"
+                        onClick={()=>
+                          deletePlace(place.id)
+                        }
+                      >
+                        Delete
+                      </button>
+                    </>
+                  }
+                </div>
+              </td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+    </div>
+  </section>
+}
+    
       {can('PMAP')&&
       <section>
         <h2>Position-to-Permission Mapping</h2>
