@@ -35,7 +35,7 @@ const ATTENDANCE_PERMISSION_PARAGRAPHS = [
 
   `With appreciation of the dangers and risks associated with programs and activities including preparations for and transportation to and from the activity, on my own behalf and/or on behalf of my child, I hereby fully and completely release and waive any and all claims for personal injury, death, or loss that may arise against Scouting America, the local council, the activity coordinators, and all employees, volunteers, related parties, or other organizations associated with any program or activity.`,
 
-  `By clicking 'Agree,' I acknowledge and agree that your action constitutes a binding legal agreement and serves as your electronic signature under applicable law.`
+  `By clicking 'Agree,' I acknowledge and agree that my action constitutes a binding legal agreement and serves as my electronic signature under applicable law.`
 ];
 
 const permissionPersonName=(
