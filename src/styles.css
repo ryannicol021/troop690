@@ -2362,6 +2362,11 @@ tbody tr:nth-child(even){
   flex-direction:column
 }
 
+.advancement-sections>section>.button{
+  align-self:flex-start;
+  width:max-content
+}
+
 .advancement-sections>section>h2{
   margin:0 0 14px
 }
