@@ -7457,6 +7457,196 @@ app.get('/api/admin/event-location-search',async c=>{
   });
 });
 
+app.get('/api/admin/places',async c=>{
+  const d=admin(c,'EVT');
+  if(d)return d;
+
+  const rows=await c.env.DB
+    .prepare(`
+      SELECT
+        id,
+        name,
+        address
+      FROM places
+      ORDER BY
+        name COLLATE NOCASE,
+        address COLLATE NOCASE
+    `)
+    .all<any>();
+
+  return json(c,{
+    places:rows.results??[]
+  });
+});
+
+app.post('/api/admin/places',async c=>{
+  const d=admin(c,'EVT');
+  if(d)return d;
+
+  const x=await c.req.json<any>();
+
+  const name=
+    String(x.name??'').trim();
+
+  const address=
+    String(x.address??'').trim();
+
+  if(!name)
+    return json(
+      c,
+      {error:'Place Name is required.'},
+      400
+    );
+
+  if(!address)
+    return json(
+      c,
+      {error:'Address is required.'},
+      400
+    );
+
+  try{
+    const row=await c.env.DB
+      .prepare(`
+        INSERT INTO places(
+          name,
+          address
+        )
+        VALUES(?,?)
+        RETURNING
+          id,
+          name,
+          address
+      `)
+      .bind(
+        name,
+        address
+      )
+      .first<any>();
+
+    return json(c,{
+      place:row
+    },201);
+  }catch(e:any){
+    if(String(e?.message||'').includes('UNIQUE'))
+      return json(
+        c,
+        {error:'That place and address already exists.'},
+        409
+      );
+
+    throw e;
+  }
+});
+
+app.put('/api/admin/places/:id',async c=>{
+  const d=admin(c,'EVT');
+  if(d)return d;
+
+  const id=Number(c.req.param('id'));
+
+  if(!Number.isInteger(id))
+    return json(
+      c,
+      {error:'Invalid place.'},
+      400
+    );
+
+  const x=await c.req.json<any>();
+
+  const name=
+    String(x.name??'').trim();
+
+  const address=
+    String(x.address??'').trim();
+
+  if(!name)
+    return json(
+      c,
+      {error:'Place Name is required.'},
+      400
+    );
+
+  if(!address)
+    return json(
+      c,
+      {error:'Address is required.'},
+      400
+    );
+
+  try{
+    const row=await c.env.DB
+      .prepare(`
+        UPDATE places
+        SET
+          name=?,
+          address=?,
+          updated_at=CURRENT_TIMESTAMP
+        WHERE id=?
+        RETURNING
+          id,
+          name,
+          address
+      `)
+      .bind(
+        name,
+        address,
+        id
+      )
+      .first<any>();
+
+    if(!row)
+      return json(
+        c,
+        {error:'Place not found.'},
+        404
+      );
+
+    return json(c,{
+      place:row
+    });
+  }catch(e:any){
+    if(String(e?.message||'').includes('UNIQUE'))
+      return json(
+        c,
+        {error:'That place and address already exists.'},
+        409
+      );
+
+    throw e;
+  }
+});
+
+app.delete('/api/admin/places/:id',async c=>{
+  const d=admin(c,'EVT');
+  if(d)return d;
+
+  const id=Number(c.req.param('id'));
+
+  if(!Number.isInteger(id))
+    return json(
+      c,
+      {error:'Invalid place.'},
+      400
+    );
+
+  const result=await c.env.DB
+    .prepare(
+      'DELETE FROM places WHERE id=?'
+    )
+    .bind(id)
+    .run();
+
+  if(!result.meta.changes)
+    return json(
+      c,
+      {error:'Place not found.'},
+      404
+    );
+
+  return json(c,{ok:true});
+});
+
 app.post('/api/admin/events',async c=>{
   const d=admin(c,'EVT');
   if(d)return d;
