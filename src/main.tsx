@@ -9153,7 +9153,8 @@ const usedColumns: number[]=[
         {error}
       </p>
     }
-
+    
+    <div className="advancement-sections">
     <section>
       <h2>Rank Requirements</h2>
 
@@ -9280,6 +9281,7 @@ const usedColumns: number[]=[
     )}
   </div>
 </section>
+    </div>
 
     {selectedRank&&
       <div
