@@ -2347,6 +2347,16 @@ tbody tr:nth-child(even){
   padding:0
 }
 
+.advancement-sections{
+  display:flex;
+  flex-direction:column;
+  gap:28px
+}
+
+.advancement-sections>section>h2{
+  margin-top:0
+}
+
 .req-grid{
   display:flex;
   flex-wrap:wrap;
