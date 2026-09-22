@@ -5305,10 +5305,6 @@ onMouseDown={e=>{
             Searching…
           </div>
         }
-
-        <div className="place-attribution">
-          Powered by Geoapify
-        </div>
       </div>
     }
   </div>;
