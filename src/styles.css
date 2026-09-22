@@ -3367,6 +3367,16 @@ footer a:hover{
   font-weight:600
 }
 
+.attendance-permission-button{
+  min-height:34px;
+  height:34px;
+  padding:3px 9px;
+  align-self:center;
+  order:-1;
+  font-size:.78rem;
+  font-weight:600
+}
+
 .attendance-choice.selected{
   background:var(--navy);
   color:#fff;
@@ -3407,10 +3417,6 @@ footer a:hover{
 
 .attendance-manager-modal{
   width:min(1100px,100%)
-}
-
-.attendance-manager-help{
-  margin:0 0 14px
 }
 
 .attendance-manager-grid{
@@ -3526,5 +3532,9 @@ footer a:hover{
 
   .event-permissions-row{
     grid-template-columns:1fr auto
+  }
+  
+  .attendance-permission-button{
+    order:2
   }
 }
