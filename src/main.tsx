@@ -4089,7 +4089,7 @@ function EventAttendanceManagerModal({
       >
         <div className="modal-header">
           <h2 id="attendance-manager-title">
-            Open Attendance
+            Take Attendance
           </h2>
 
           <button
@@ -4363,7 +4363,7 @@ function EventPermissionsManagerModal({
       >
         <div className="modal-header">
           <h2 id="event-permissions-title">
-            Open Permissions
+            Review Permissions
           </h2>
 
           <button
@@ -4605,6 +4605,11 @@ if(!loaded||!data)
 
   const manager=!!data.manager;
 
+  const permissionEnabled=
+  ['Summer Camp','Trip'].includes(
+    String(event.event_type||'')
+  );
+
   const members=
     [...(data.members||[])]
       .sort(attendanceSort);
@@ -4620,37 +4625,33 @@ if(!loaded||!data)
           <div className="event-attendance-header">
             <div>
               <h2>Attendance</h2>
-
-              {ended&&
-                <p className="muted">
-                  The event has ended. Parent attendance responses are now closed.
-                </p>
-              }
             </div>
 
-            {manager&&
-              <div className="event-attendance-manager-actions">
-                <button
-                  type="button"
-                  className="button"
-                  onClick={()=>
-                    setAttendanceModalOpen(true)
-                  }
-                >
-                  Open Attendance
-                </button>
+{manager&&
+  <div className="event-attendance-manager-actions">
+    <button
+      type="button"
+      className="button"
+      onClick={()=>
+        setAttendanceModalOpen(true)
+      }
+    >
+      Open Attendance
+    </button>
 
-                <button
-                  type="button"
-                  className="button"
-                  onClick={()=>
-                    setPermissionsModalOpen(true)
-                  }
-                >
-                  Open Permissions
-                </button>
-              </div>
-            }
+    {permissionEnabled&&
+      <button
+        type="button"
+        className="button"
+        onClick={()=>
+          setPermissionsModalOpen(true)
+        }
+      >
+        Open Permissions
+      </button>
+    }
+  </div>
+}
           </div>
 
 {familyMembers.length>0&&
@@ -4716,11 +4717,12 @@ if(!loaded||!data)
                         </span>
                       }
 
-                      {isYouth&&
+                      {permissionEnabled&&
+                       isYouth&&
                        permissionSigned&&
                         <button
                           type="button"
-                          className="button attendance-revoke-button"
+                          className="button attendance-permission-button attendance-revoke-button"
                           onClick={async()=>{
                             if(!confirm(
                               `Revoke permission for ${attendanceName(member)}?`
@@ -4750,12 +4752,13 @@ if(!loaded||!data)
                         </button>
                       }
 
-                      {isYouth&&
-                       !permissionSigned&&
-                       response==='Yes'&&
-                       !ended&&
-                        <button
-                          type="button"
+{permissionEnabled&&
+ isYouth&&
+ !permissionSigned&&
+ response==='Yes'&&
+ !ended&&
+  <button
+                          type="button attendance-permission-button"
                           className="button"
                           onClick={()=>
                             setPermissionYouthId(
