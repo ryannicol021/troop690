@@ -9,7 +9,7 @@ import {BrowserRouter,useNavigate,useLocation} from 'react-router-dom';
 import './styles.css';
 import {api,post,put} from './lib/api';
 
-const nav=[['/','Home','public'],['/eagles','Eagle Scouts','public'],['/calendar','Calendar','CAL'],['/photos','Photos','PHV'],['/leadership','Leadership','public'],['/advancement','Advancement','public'],['/summer-camp','Summer Camp','public'],['/uniform','Scout Uniform','public']];
+const nav=[['/','Home','public'],['/eagles','Eagle Scouts','public'],['/calendar','Calendar','CAL'],['/photos','Photos','PHV'],['/leadership','Leadership','public'],['/advancement','Advancement','public'],['/uniform','Scout Uniform','public']];
 const adminNav=[['/email','Email','EML'],['/member-info','Member Info','MIV'],['/administration','Administration','__ADMIN_ROLE__']];
 
 function App(){
@@ -315,7 +315,6 @@ const requiredPermission=
     />;
   if(p==='/leadership')return <Leadership me={me}/>;
   if(p==='/advancement')return <Advancement me={me}/>;
-  if(p==='/summer-camp')return <SummerCamp/>;
   if(p==='/uniform')return <Uniform/>;
   if(p==='/member-info')
   return <MemberInfo me={me}/>;
@@ -9707,35 +9706,6 @@ const usedColumns: number[]=[
     </div>
   </div>
 }
-  </Page>
-}
-
-function SummerCamp(){
-  const [d,setD]=useState<any>();
-
-  useEffect(()=>{
-    api('/summer-camp').then(setD)
-  },[]);
-
-  if(!d)
-    return <Page title="Summer Camp"><Loading/></Page>;
-
-  return <Page title="Summer Camp">
-    <h2>Onteora Scout Reservation</h2>
-    <p>{d.camp.description}</p>
-
-    <h2>Merit Badges</h2>
-    <p>{d.camp.merit_badges}</p>
-
-    <h2>Year-to-Year Information</h2>
-
-    <p>
-      <b>Costs:</b> {d.camp.costs}
-    </p>
-
-    <p>
-      <b>Deadlines:</b> {d.camp.deadlines}
-    </p>
   </Page>
 }
 
