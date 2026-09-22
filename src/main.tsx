@@ -7823,9 +7823,6 @@ function Leadership({me}:{me:any}){
     useState(false);
   const [error,setError]=useState('');
 
-  const [collapsedSections,setCollapsedSections]=
-    useState<Record<string,boolean>>({});
-
   const [historyModalType,setHistoryModalType]=
     useState<'SPL'|'Scoutmaster'|null>(null);
   const [historyStartYear,setHistoryStartYear]=
@@ -7976,8 +7973,7 @@ function Leadership({me}:{me:any}){
   },[
     d,
     editing,
-    editingDescription,
-    collapsedSections
+    editingDescription
   ]);
 
   const load=async()=>{
@@ -8206,13 +8202,6 @@ function Leadership({me}:{me:any}){
       }
     </Page>;
 
-  const toggleSection=(key:string)=>{
-    setCollapsedSections(current=>({
-      ...current,
-      [key]:!current[key]
-    }));
-  };
-
   const splHistory=
     d.history?.spl??[];
 
@@ -8248,22 +8237,9 @@ function Leadership({me}:{me:any}){
     }
 
     <section>
-      <button
-        type="button"
-        className="leadership-section-toggle"
-        onClick={()=>
-          toggleSection('youth')
-        }
-        aria-expanded={!collapsedSections.youth}
-      >
-        <span className="leadership-section-arrow">
-          {collapsedSections.youth?'▸':'▾'}
-        </span>
-        <span>Youth Leaders</span>
-      </button>
+      <h2>Youth Leaders</h2>
 
-      {!collapsedSections.youth&&
-        <div className="leadership-section-content">
+      <div className="leadership-section-content">
           <div
             className="leadership-youth-grid"
             ref={youthGridRef}
@@ -8365,25 +8341,12 @@ function Leadership({me}:{me:any}){
             })}
           </div>
         </div>
-      }
     </section>
 
-    <section>
-      <button
-        type="button"
-        className="leadership-section-toggle"
-        onClick={()=>
-          toggleSection('adult')
-        }
-        aria-expanded={!collapsedSections.adult}
-      >
-        <span className="leadership-section-arrow">
-          {collapsedSections.adult?'▸':'▾'}
-        </span>
-        <span>Adult Leaders</span>
-      </button>
+    {me&&
+      <section>
+        <h2>Adult Leaders</h2>
 
-      {!collapsedSections.adult&&
         <div className="leadership-section-content">
           <div
             className="leadership-adult-grid"
@@ -8458,24 +8421,13 @@ function Leadership({me}:{me:any}){
             </article>
           </div>
         </div>
-      }
     </section>
+      }
 
-    <section>
-      <div className="leadership-section-header">
-        <button
-          type="button"
-          className="leadership-section-toggle"
-          onClick={()=>
-            toggleSection('splHistory')
-          }
-          aria-expanded={!collapsedSections.splHistory}
-        >
-          <span className="leadership-section-arrow">
-            {collapsedSections.splHistory?'▸':'▾'}
-          </span>
-          <span>Senior Patrol Leader History</span>
-        </button>
+    {me&&
+      <section>
+        <div className="leadership-section-header">
+          <h2>Senior Patrol Leader History</h2>
 
         {editing&&canEditHistory&&
           <button
@@ -8491,7 +8443,6 @@ function Leadership({me}:{me:any}){
         }
       </div>
 
-      {!collapsedSections.splHistory&&
         <div className="leadership-section-content">
           {splHistory.length?
             <div className="leadership-history-grid">
@@ -8552,24 +8503,13 @@ function Leadership({me}:{me:any}){
             </p>
           }
         </div>
-      }
     </section>
+    }
 
-    <section>
-      <div className="leadership-section-header">
-        <button
-          type="button"
-          className="leadership-section-toggle"
-          onClick={()=>
-            toggleSection('scoutmasterHistory')
-          }
-          aria-expanded={!collapsedSections.scoutmasterHistory}
-        >
-          <span className="leadership-section-arrow">
-            {collapsedSections.scoutmasterHistory?'▸':'▾'}
-          </span>
-          <span>Scoutmaster History</span>
-        </button>
+    {me&&
+      <section>
+        <div className="leadership-section-header">
+          <h2>Scoutmaster History</h2>
 
         {editing&&canEditHistory&&
           <button
@@ -8585,7 +8525,6 @@ function Leadership({me}:{me:any}){
         }
       </div>
 
-      {!collapsedSections.scoutmasterHistory&&
         <div className="leadership-section-content">
           {scoutmasterHistory.length?
             <div className="leadership-history-grid">
@@ -8628,8 +8567,8 @@ function Leadership({me}:{me:any}){
             </p>
           }
         </div>
-      }
     </section>
+    }
 
     {historyModalType&&
       <div
