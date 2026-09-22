@@ -88,12 +88,21 @@ const me=
           </button>
 {open==='account'&&
   <div className="menu account-menu">
-    <button onClick={()=>{
-      setOpen(null);
-      actualMe?navg('/update-info'):navg('/login')
-    }}>
-      {actualMe?'Update Info':'Log In'}
-    </button>
+    {!actualMe?
+      <button onClick={()=>{
+        setOpen(null);
+        navg('/login');
+      }}>
+        Log In
+      </button>:
+      can('SET')&&
+      <button onClick={()=>{
+        setOpen(null);
+        navg('/update-info');
+      }}>
+        Update Info
+      </button>
+    }
 
 {actualMe?.isAdministrator&&
   <button
