@@ -4633,26 +4633,189 @@ app.post('/api/admin/advancement-requirements/delete',async c=>{
 });
 
 app.get('/api/uniform',async c=>{
-  const ctn=await c.env.DB
-    .prepare(
-      "SELECT key,value FROM site_content WHERE key LIKE 'uniform_%'"
-    )
-    .all<any>();
-
-  const key=await c.env.DB
-    .prepare(
-      'SELECT * FROM uniform_key ORDER BY image_area,number'
-    )
+  const insignia=await c.env.DB
+    .prepare(`
+      SELECT
+        id,
+        x_percent,
+        y_percent,
+        name,
+        description
+      FROM uniform_insignia
+      ORDER BY id
+    `)
     .all<any>();
 
   return json(c,{
-    content:Object.fromEntries(
-      (ctn.results??[]).map(
-        x=>[x.key,x.value]
-      )
-    ),
-    key:key.results
+    insignia:insignia.results??[]
   });
+});
+
+app.post('/api/admin/uniform-insignia',async c=>{
+  const d=admin(c,'UNIF');
+  if(d)return d;
+
+  const x=await c.req.json<any>();
+
+  const xPercent=Number(x.x_percent);
+  const yPercent=Number(x.y_percent);
+
+  if(
+    !Number.isFinite(xPercent)||
+    !Number.isFinite(yPercent)||
+    xPercent<0||
+    xPercent>100||
+    yPercent<0||
+    yPercent>100
+  )
+    return json(
+      c,
+      {error:'Label position is invalid.'},
+      400
+    );
+
+  const name=
+    String(x.name??'').trim();
+
+  const description=
+    String(x.description??'').trim();
+
+  const result=await c.env.DB
+    .prepare(`
+      INSERT INTO uniform_insignia(
+        x_percent,
+        y_percent,
+        name,
+        description
+      )
+      VALUES(?,?,?,?)
+    `)
+    .bind(
+      xPercent,
+      yPercent,
+      name,
+      description
+    )
+    .run();
+
+  const row=await c.env.DB
+    .prepare(`
+      SELECT
+        id,
+        x_percent,
+        y_percent,
+        name,
+        description
+      FROM uniform_insignia
+      WHERE id=?
+    `)
+    .bind(result.meta.last_row_id)
+    .first<any>();
+
+  return json(c,{label:row},201);
+});
+
+app.put('/api/admin/uniform-insignia/:id',async c=>{
+  const d=admin(c,'UNIF');
+  if(d)return d;
+
+  const id=Number(c.req.param('id'));
+
+  if(!Number.isInteger(id))
+    return json(
+      c,
+      {error:'Invalid insignia label.'},
+      400
+    );
+
+  const x=await c.req.json<any>();
+
+  const xPercent=Number(x.x_percent);
+  const yPercent=Number(x.y_percent);
+
+  if(
+    !Number.isFinite(xPercent)||
+    !Number.isFinite(yPercent)||
+    xPercent<0||
+    xPercent>100||
+    yPercent<0||
+    yPercent>100
+  )
+    return json(
+      c,
+      {error:'Label position is invalid.'},
+      400
+    );
+
+  const name=
+    String(x.name??'').trim();
+
+  const description=
+    String(x.description??'').trim();
+
+  const row=await c.env.DB
+    .prepare(`
+      UPDATE uniform_insignia
+      SET
+        x_percent=?,
+        y_percent=?,
+        name=?,
+        description=?
+      WHERE id=?
+      RETURNING
+        id,
+        x_percent,
+        y_percent,
+        name,
+        description
+    `)
+    .bind(
+      xPercent,
+      yPercent,
+      name,
+      description,
+      id
+    )
+    .first<any>();
+
+  if(!row)
+    return json(
+      c,
+      {error:'Insignia label not found.'},
+      404
+    );
+
+  return json(c,{label:row});
+});
+
+app.delete('/api/admin/uniform-insignia/:id',async c=>{
+  const d=admin(c,'UNIF');
+  if(d)return d;
+
+  const id=Number(c.req.param('id'));
+
+  if(!Number.isInteger(id))
+    return json(
+      c,
+      {error:'Invalid insignia label.'},
+      400
+    );
+
+  const result=await c.env.DB
+    .prepare(
+      'DELETE FROM uniform_insignia WHERE id=?'
+    )
+    .bind(id)
+    .run();
+
+  if(!result.success||!result.meta.changes)
+    return json(
+      c,
+      {error:'Insignia label not found.'},
+      404
+    );
+
+  return json(c,{ok:true});
 });
 
 const admin = (
