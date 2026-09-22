@@ -655,7 +655,6 @@ const permissions=[
   ['LEAD','Manage Leadership','Manage Leadership'],
   ['HIST','Manage Leadership History','Manage Leadership History'],
   ['ADV','Manage Advancement','Manage Advancement'],
-  ['CAMP','Manage Summer Camp','Manage Summer Camp'],
   ['UNIF','Manage Uniform','Manage Uniform'],
   ['HOME','Manage Homepage','Manage Homepage'],
   ['CONT','Manage Contact','Manage Contact'],
@@ -4630,18 +4629,6 @@ app.post('/api/admin/advancement-requirements/delete',async c=>{
       Number(
         result.meta.changes||0
       )
-  });
-});
-
-app.get('/api/summer-camp',async c=>{
-  const camp=await c.env.DB
-    .prepare(
-      'SELECT * FROM summer_camp WHERE id=1'
-    )
-    .first<any>();
-
-  return json(c,{
-    camp
   });
 });
 
