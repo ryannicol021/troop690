@@ -3009,7 +3009,7 @@ function Calendar({me}:{me:any}){
     </div>
 
 <div className="calendar-top-actions">
-  {canEdit?
+  {canEdit&&
     <button
       type="button"
       className="button"
@@ -3018,11 +3018,10 @@ function Calendar({me}:{me:any}){
       }}
     >
       Add Event
-    </button>:
-    <span />
+    </button>
   }
 
-  {canEdit?
+  {canEdit&&
     <button
       type="button"
       className="button"
@@ -3031,8 +3030,7 @@ function Calendar({me}:{me:any}){
       }}
     >
       Copy Event
-    </button>:
-    <span />
+    </button>
   }
 
   <button
