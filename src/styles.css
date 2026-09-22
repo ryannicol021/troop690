@@ -654,12 +654,12 @@ tbody tr:nth-child(even){
   justify-content:center;
   align-items:center;
   flex-wrap:wrap;
-  gap:9px;
+  gap:10px;
   margin-bottom:18px;
 }
 
 .calendar-top-actions .button{
-  width:124px;
+  width:120px;
   height:34px;
 }
 
