@@ -9943,13 +9943,17 @@ function Uniform({me}:{me:any}){
     <div className="uniform-card-grid">
       <section className="card uniform-card">
         <h2>Class A Uniform</h2>
+        <div className="uniform-image-frame">
         <ImgSlot src="/images/uniform/class-a.png"/>
+        </div>
         <p>The Class A uniform is the troop's formal Scout uniform.</p>
       </section>
 
       <section className="card uniform-card">
         <h2>Class B Uniform</h2>
+        <div className="uniform-image-frame">
         <ImgSlot src="/images/uniform/class-b.png"/>
+        </div>
         <p>The Class B uniform is the troop's activity uniform.</p>
       </section>
 
