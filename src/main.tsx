@@ -4758,8 +4758,8 @@ if(!loaded||!data)
  response==='Yes'&&
  !ended&&
   <button
-                          type="button attendance-permission-button"
-                          className="button"
+                          type="button"
+                          className="button attendance-permission-button"
                           onClick={()=>
                             setPermissionYouthId(
                               Number(member.id)
