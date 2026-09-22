@@ -1548,6 +1548,25 @@ const canManageEventAttendance = async (
   return !!leader;
 };
 
+const isPermissionEvent = async (
+  c:any,
+  eventId:number
+)=>{
+  const event=await c.env.DB
+    .prepare(`
+      SELECT event_type
+      FROM events
+      WHERE id=?
+    `)
+    .bind(eventId)
+    .first();
+
+  return !!event &&
+    ['Summer Camp','Trip'].includes(
+      String(event.event_type||'')
+    );
+};
+
 const newYorkToday=()=>{
   const parts=new Intl.DateTimeFormat(
     'en-US',
@@ -8416,6 +8435,13 @@ app.put('/api/update-info',async c=>{
 app.get('/api/events/:id/permission-checkoffs',async c=>{
   const id=Number(c.req.param('id'));
 
+  if(!(await isPermissionEvent(c,id)))
+    return json(
+      c,
+      {error:'Permission management is not available for this event.'},
+      403
+    );
+
   if(!(await canManageEventAttendance(c,id)))
     return json(
       c,
@@ -8446,6 +8472,13 @@ app.get('/api/events/:id/permission-checkoffs',async c=>{
 
 app.put('/api/events/:id/permission-checkoffs',async c=>{
   const id=Number(c.req.param('id'));
+
+  if(!(await isPermissionEvent(c,id)))
+    return json(
+      c,
+      {error:'Permission management is not available for this event.'},
+      403
+    );
 
   if(!(await canManageEventAttendance(c,id)))
     return json(
@@ -8500,6 +8533,11 @@ app.get('/api/events/:id/my-permissions',async c=>{
   const eventId=Number(
     c.req.param('id')
   );
+
+  if(!(await isPermissionEvent(c,eventId)))
+    return json(c,{
+      members:[]
+    });
 
   const person=await c.env.DB
     .prepare(`
@@ -8615,6 +8653,13 @@ app.get('/api/events/:id/permissions',async c=>{
     c.req.param('id')
   );
 
+  if(!(await isPermissionEvent(c,id)))
+    return json(
+      c,
+      {error:'Permission management is not available for this event.'},
+      403
+    );
+
   if(!(await canManageEventAttendance(c,id)))
     return json(
       c,
@@ -8715,6 +8760,14 @@ app.get('/api/events/:id/permissions/:scoutId/export',async c=>{
   const scoutId=Number(
     c.req.param('scoutId')
   );
+
+  if(!(await isPermissionEvent(c,eventId)))
+    return new Response(
+      'Permission management is not available for this event.',
+      {
+        status:403
+      }
+    );
 
   if(!(await canManageEventAttendance(c,eventId)))
     return new Response(
@@ -8846,6 +8899,14 @@ app.get('/api/events/:id/permissions/export-all',async c=>{
   const eventId=Number(
     c.req.param('id')
   );
+
+  if(!(await isPermissionEvent(c,eventId)))
+    return new Response(
+      'Permission management is not available for this event.',
+      {
+        status:403
+      }
+    );
 
   if(!(await canManageEventAttendance(c,eventId)))
     return new Response(
@@ -9042,14 +9103,20 @@ app.post('/api/permissions/sign',async c=>{
     x.scoutPersonId
   );
 
-  if(
-    !Number.isInteger(eventId)||
+  if(!Number.isInteger(eventId)||
     !Number.isInteger(scoutPersonId)
   )
     return json(
       c,
       {error:'Invalid event or Scout.'},
       400
+    );
+
+  if(!(await isPermissionEvent(c,eventId)))
+    return json(
+      c,
+      {error:'Permission management is not available for this event.'},
+      403
     );
 
   const event=await c.env.DB
@@ -9304,6 +9371,13 @@ app.post('/api/permissions/revoke',async c=>{
       c,
       {error:'Invalid event or Scout.'},
       400
+    );
+
+  if(!(await isPermissionEvent(c,eventId)))
+    return json(
+      c,
+      {error:'Permission management is not available for this event.'},
+      403
     );
 
   await ensureFamilySchema(c);
