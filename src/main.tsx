@@ -4502,18 +4502,26 @@ function EventAttendancePanel({
           )
         );
 
-      setData({
-        ...attendance,
-        members:
-          (attendance.members||[])
-            .map((member:any)=>({
-              ...member,
-              permissionSigned:
-                !!permissionMap.get(
-                  Number(member.id)
-                )?.permissionSigned
-            }))
-      });
+setData({
+  ...attendance,
+  members:
+    (attendance.members||[])
+      .map((member:any)=>({
+        ...member,
+        permissionSigned:
+          !!permissionMap.get(
+            Number(member.id)
+          )?.permissionSigned
+      })),
+  familyMembers:
+    (permissions.members||[]).map(
+      (member:any)=>({
+        ...member,
+        permissionSigned:
+          !!member.permissionSigned
+      })
+    )
+});
     }catch(err:any){
       setData(null);
       setError(
@@ -4578,10 +4586,14 @@ function EventAttendancePanel({
     [...(data.members||[])]
       .sort(attendanceSort);
 
+  const familyMembers=
+  [...(data.familyMembers||[])]
+    .sort(attendanceSort);
+
   return (
     <>
-      {(manager||members.length>0)&&
-        <section className="event-attendance card">
+{(manager||familyMembers.length>0)&&
+  <section className="event-attendance card">
           <div className="event-attendance-header">
             <div>
               <h2>Attendance</h2>
@@ -4618,9 +4630,9 @@ function EventAttendancePanel({
             }
           </div>
 
-          {!manager&&members.length>0&&
-            <div className="event-family-attendance">
-              {members.map(member=>{
+{familyMembers.length>0&&
+  <div className="event-family-attendance">
+    {familyMembers.map(member=>{
                 const isYouth=
                   Number(member.adult)===0;
 
@@ -4776,7 +4788,7 @@ function EventAttendancePanel({
         <EventPermissionModal
           eventId={eventId}
           youth={
-            members.find(
+            familyMembers.find(
               member=>
                 Number(member.id)===
                 permissionYouthId
