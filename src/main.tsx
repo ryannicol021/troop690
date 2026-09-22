@@ -3917,7 +3917,7 @@ function EventPermissionModal({
         </p>
 
         <p className="event-permission-italic">
-          By clicking 'Agree,' I acknowledge and agree that your action constitutes a binding legal agreement and serves as your electronic signature under applicable law.
+          By clicking 'Agree,' I acknowledge and agree that my action constitutes a binding legal agreement and serves as my electronic signature under applicable law.
         </p>
 
         {error&&
