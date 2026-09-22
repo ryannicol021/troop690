@@ -4474,23 +4474,31 @@ function EventAttendancePanel({
   const [error,setError]=
     useState('');
 
-  const load=async()=>{
+const load=async()=>{
     try{
-      const [
-        attendance,
-        permissions
-      ]=await Promise.all([
-        api(
+      const attendance=
+        await api(
           '/events/'+eventId+
           '/attendance'
-        ),
-        api(
-          '/events/'+eventId+
-          '/my-permissions'
-        ).catch(()=>({
-          members:[]
-        }))
-      ]);
+        );
+
+      let permissions:any={
+        members:[]
+      };
+
+      try{
+        permissions=
+          await api(
+            '/events/'+eventId+
+            '/my-permissions'
+          );
+      }catch{
+        /*
+         * Permission information is optional here.
+         * Attendance must continue to work even if
+         * the permission-status request fails.
+         */
+      }
 
       const permissionMap=
         new Map<number,any>(
@@ -4502,26 +4510,37 @@ function EventAttendancePanel({
           )
         );
 
-setData({
-  ...attendance,
-  members:
-    (attendance.members||[])
-      .map((member:any)=>({
-        ...member,
-        permissionSigned:
-          !!permissionMap.get(
-            Number(member.id)
-          )?.permissionSigned
-      })),
-  familyMembers:
-    (permissions.members||[]).map(
-      (member:any)=>({
-        ...member,
-        permissionSigned:
-          !!member.permissionSigned
-      })
-    )
-});
+      const familySource=
+        attendance.manager?
+          (attendance.familyMembers||[]):
+          (attendance.members||[]);
+
+      const familyMembers=
+        familySource.map(
+          (member:any)=>({
+            ...member,
+            permissionSigned:
+              !!permissionMap.get(
+                Number(member.id)
+              )?.permissionSigned
+          })
+        );
+
+      setData({
+        ...attendance,
+
+        members:
+          (attendance.members||[])
+            .map((member:any)=>({
+              ...member,
+              permissionSigned:
+                !!permissionMap.get(
+                  Number(member.id)
+                )?.permissionSigned
+            })),
+
+        familyMembers
+      });
     }catch(err:any){
       setData(null);
       setError(
@@ -4530,7 +4549,7 @@ setData({
       );
     }
   };
-
+  
   useEffect(()=>{
     load();
   },[eventId]);
