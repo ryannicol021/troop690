@@ -2355,8 +2355,19 @@ tbody tr:nth-child(even){
   gap:28px
 }
 
+.advancement-sections>section{
+  margin:0;
+  padding:0;
+  display:flex;
+  flex-direction:column
+}
+
 .advancement-sections>section>h2{
-  margin-top:0
+  margin:0 0 14px
+}
+
+.advancement-sections>section>p{
+  margin:0 0 14px
 }
 
 .req-grid{
