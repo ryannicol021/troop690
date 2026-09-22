@@ -4459,6 +4459,9 @@ function EventAttendancePanel({
   const [data,setData]=
     useState<any>();
 
+  const [loaded,setLoaded]=
+  useState(false);
+
   const [attendanceModalOpen,setAttendanceModalOpen]=
     useState(false);
 
@@ -4541,14 +4544,16 @@ const load=async()=>{
 
         familyMembers
       });
-    }catch(err:any){
-      setData(null);
-      setError(
-        err?.message||
-        'Unable to load attendance.'
-      );
-    }
-  };
+  }catch(err:any){
+    setData(null);
+    setError(
+      err?.message||
+      'Unable to load attendance.'
+    );
+  }finally{
+    setLoaded(true);
+  }
+};
   
   useEffect(()=>{
     load();
@@ -4586,18 +4591,8 @@ const load=async()=>{
     }
   };
 
-  if(!data)
-    return (
-      <section className="event-attendance card">
-        <h2>Attendance</h2>
-
-        {error&&
-          <p className="error">
-            {error}
-          </p>
-        }
-      </section>
-    );
+if(!loaded||!data)
+  return null;
 
   const manager=!!data.manager;
 
