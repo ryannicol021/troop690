@@ -315,7 +315,7 @@ const requiredPermission=
     />;
   if(p==='/leadership')return <Leadership me={me}/>;
   if(p==='/advancement')return <Advancement me={me}/>;
-  if(p==='/uniform')return <Uniform/>;
+  if(p==='/uniform')return <Uniform me={me}/>;
   if(p==='/member-info')
   return <MemberInfo me={me}/>;
   if(p==='/email')return <Email/>;
@@ -9709,74 +9709,439 @@ const usedColumns: number[]=[
   </Page>
 }
 
-function Uniform(){
+function Uniform({me}:{me:any}){
   const [d,setD]=useState<any>();
+  const [editing,setEditing]=useState(false);
+  const [labelModal,setLabelModal]=
+    useState<'add'|'edit'|'view'|null>(null);
+  const [selectedLabel,setSelectedLabel]=
+    useState<any|null>(null);
+  const [draftX,setDraftX]=useState<number|null>(null);
+  const [draftY,setDraftY]=useState<number|null>(null);
+  const [nameDraft,setNameDraft]=useState('');
+  const [descriptionDraft,setDescriptionDraft]=useState('');
+  const [error,setError]=useState('');
+  const [saving,setSaving]=useState(false);
+
+  const canEdit=
+    !!me?.permissions?.includes('UNIF');
+
+  const load=async()=>{
+    try{
+      const x=await api('/uniform');
+      setD(x);
+    }catch(e:any){
+      setError(
+        e?.message||
+        'Unable to load the uniform guide.'
+      );
+    }
+  };
 
   useEffect(()=>{
-    api('/uniform').then(setD)
+    load();
   },[]);
 
-  if(!d)
-    return <Page title="Scout Uniform"><Loading/></Page>;
+  const closeLabelModal=()=>{
+    setLabelModal(null);
+    setSelectedLabel(null);
+    setDraftX(null);
+    setDraftY(null);
+    setNameDraft('');
+    setDescriptionDraft('');
+  };
 
-  const areas=[
-    ['/images/uniform/class-a.png','Class A'],
-    ['/images/uniform/class-b.png','Class B'],
-    ['/images/uniform/right-sleeve.png','Right sleeve'],
-    ['/images/uniform/left-sleeve.png','Left sleeve'],
-    ['/images/uniform/right-pocket.png','Right pocket'],
-    ['/images/uniform/left-pocket.png','Left pocket']
-  ];
+  const toggleEditing=()=>{
+    setEditing(value=>!value);
+    closeLabelModal();
+  };
+
+  const openAddLabel=(
+    event:React.MouseEvent<HTMLDivElement>
+  )=>{
+    if(!editing)
+      return;
+
+    const image=
+      event.currentTarget.querySelector(
+        '.uniform-insignia-image'
+      ) as HTMLImageElement|null;
+
+    if(!image)
+      return;
+
+    const rect=image.getBoundingClientRect();
+
+    if(!rect.width||!rect.height)
+      return;
+
+    const x=Math.max(
+      0,
+      Math.min(
+        100,
+        ((event.clientX-rect.left)/rect.width)*100
+      )
+    );
+
+    const y=Math.max(
+      0,
+      Math.min(
+        100,
+        ((event.clientY-rect.top)/rect.height)*100
+      )
+    );
+
+    setSelectedLabel(null);
+    setDraftX(x);
+    setDraftY(y);
+    setNameDraft('');
+    setDescriptionDraft('');
+    setError('');
+    setLabelModal('add');
+  };
+
+  const openLabel=(
+    label:any,
+    event:React.MouseEvent<HTMLButtonElement>
+  )=>{
+    event.stopPropagation();
+
+    setSelectedLabel(label);
+    setDraftX(Number(label.x_percent));
+    setDraftY(Number(label.y_percent));
+    setNameDraft(String(label.name||''));
+    setDescriptionDraft(
+      String(label.description||'')
+    );
+    setError('');
+    setLabelModal(
+      editing?
+        'edit':
+        'view'
+    );
+  };
+
+  const saveLabel=async(
+    event:React.FormEvent
+  )=>{
+    event.preventDefault();
+
+    if(
+      draftX==null||
+      draftY==null
+    )
+      return;
+
+    try{
+      setSaving(true);
+      setError('');
+
+      if(labelModal==='add'){
+        await post(
+          '/admin/uniform-insignia',
+          {
+            x_percent:draftX,
+            y_percent:draftY,
+            name:nameDraft,
+            description:descriptionDraft
+          }
+        );
+      }else if(
+        labelModal==='edit'&&
+        selectedLabel
+      ){
+        await put(
+          `/admin/uniform-insignia/${selectedLabel.id}`,
+          {
+            x_percent:draftX,
+            y_percent:draftY,
+            name:nameDraft,
+            description:descriptionDraft
+          }
+        );
+      }
+
+      await load();
+      closeLabelModal();
+    }catch(e:any){
+      setError(
+        e?.message||
+        'Unable to save the insignia label.'
+      );
+    }finally{
+      setSaving(false);
+    }
+  };
+
+  const deleteLabel=async()=>{
+    if(
+      !selectedLabel||
+      saving
+    )
+      return;
+
+    const title=
+      String(selectedLabel.name||'').trim()||
+      'Insignia';
+
+    if(!window.confirm(
+      `Delete the insignia label "${title}"?`
+    ))
+      return;
+
+    try{
+      setSaving(true);
+      setError('');
+
+      await api(
+        `/admin/uniform-insignia/${selectedLabel.id}`,
+        {method:'DELETE'}
+      );
+
+      await load();
+      closeLabelModal();
+    }catch(e:any){
+      setError(
+        e?.message||
+        'Unable to delete the insignia label.'
+      );
+    }finally{
+      setSaving(false);
+    }
+  };
+
+  if(!d)
+    return <Page title="Scout Uniform">
+      {error?
+        <p className="error">{error}</p>:
+        <Loading/>
+      }
+    </Page>;
+
+  const insignia=
+    d.insignia??[];
+
+  const displayLabels=
+    labelModal==='add'&&
+    draftX!=null&&
+    draftY!=null?
+      [
+        ...insignia,
+        {
+          id:'draft',
+          x_percent:draftX,
+          y_percent:draftY
+        }
+      ]:
+      insignia;
 
   return <Page title="Scout Uniform">
-    <section>
-      <h2>Class A uniform</h2>
-      <p>The Class A uniform is the troop's formal Scout uniform.</p>
-      <ImgSlot src="/images/uniform/class-a.png"/>
-    </section>
+    {error&&
+      <p className="error">{error}</p>
+    }
 
-    <section>
-      <h2>Class B uniform</h2>
-      <p>The Class B uniform is the troop's activity uniform.</p>
-      <ImgSlot src="/images/uniform/class-b.png"/>
-    </section>
+    <div className="uniform-card-grid">
+      <section className="card uniform-card">
+        <h2>Class A Uniform</h2>
+        <ImgSlot src="/images/uniform/class-a.png"/>
+        <p>The Class A uniform is the troop's formal Scout uniform.</p>
+      </section>
 
-    <section>
-      <h2>Insignia Guide</h2>
+      <section className="card uniform-card">
+        <h2>Class B Uniform</h2>
+        <ImgSlot src="/images/uniform/class-b.png"/>
+        <p>The Class B uniform is the troop's activity uniform.</p>
+      </section>
 
-      <div className="uniform-grid">
-        {areas.slice(2).map(([src,n])=>
-          <div className="card" key={src}>
-            <h3>{n}</h3>
-            <ImgSlot src={src}/>
+      <section className="card uniform-insignia-card">
+        <div className="uniform-card-header">
+          <h2>Insignia Guide</h2>
+
+          {canEdit&&
+            <button
+              type="button"
+              className="button uniform-edit-button"
+              onClick={toggleEditing}
+            >
+              {editing?'Done':'Edit'}
+            </button>
+          }
+        </div>
+
+        <div
+          className={
+            'uniform-insignia-stage'+
+            (editing?' editing':'')
+          }
+          onClick={openAddLabel}
+        >
+          <img
+            className="uniform-insignia-image"
+            src="/images/uniform/insignia.png"
+            alt="Uniform insignia guide"
+            draggable={false}
+          />
+
+          {displayLabels.map(
+            (label:any,index:number)=>
+              <button
+                type="button"
+                className={
+                  'uniform-insignia-marker'+
+                  (label.id==='draft'?' draft':'')
+                }
+                style={{
+                  left:`${label.x_percent}%`,
+                  top:`${label.y_percent}%`
+                }}
+                key={label.id}
+                onClick={e=>
+                  label.id==='draft'?
+                    e.stopPropagation():
+                    openLabel(label,e)
+                }
+                aria-label={
+                  `Insignia ${index+1}`
+                }
+              >
+                {index+1}
+              </button>
+          )}
+        </div>
+
+        {labelModal==='view'&&selectedLabel&&
+          <div className="modal-backdrop">
+            <div
+              className="modal-card uniform-insignia-modal"
+              role="dialog"
+              aria-modal="true"
+            >
+              <div className="modal-header">
+                <h2>
+                  {String(selectedLabel.name||'').trim()||
+                    'Insignia'}
+                </h2>
+
+                <button
+                  type="button"
+                  className="modal-close"
+                  aria-label="Close"
+                  onClick={closeLabelModal}
+                >
+                  ×
+                </button>
+              </div>
+
+              {String(selectedLabel.description||'').trim()&&
+                <p className="uniform-insignia-description">
+                  {selectedLabel.description}
+                </p>
+              }
+            </div>
           </div>
-        )}
-      </div>
+        }
 
-      <h3>Key</h3>
+        {(labelModal==='add'||labelModal==='edit')&&
+          <div
+            className="modal-backdrop"
+            onMouseDown={e=>{
+              if(e.target===e.currentTarget)
+                closeLabelModal();
+            }}
+          >
+            <div
+              className="modal-card uniform-insignia-modal"
+              role="dialog"
+              aria-modal="true"
+            >
+              <div className="modal-header">
+                <h2>
+                  {labelModal==='add'?
+                    'Add Label':
+                    'Edit Label'}
+                </h2>
 
-      <div className="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Area</th>
-              <th>Number</th>
-              <th>Insignia</th>
-            </tr>
-          </thead>
+                <button
+                  type="button"
+                  className="modal-close"
+                  aria-label="Close"
+                  onClick={closeLabelModal}
+                >
+                  ×
+                </button>
+              </div>
 
-          <tbody>
-            {d.key.map((x:any)=>
-              <tr key={x.id}>
-                <td>{x.image_area}</td>
-                <td>{x.number}</td>
-                <td>{x.label}</td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-    </section>
+              <form
+                className="form"
+                onSubmit={saveLabel}
+              >
+                <label>
+                  Insignia Name
+                  <input
+                    type="text"
+                    value={nameDraft}
+                    onChange={e=>
+                      setNameDraft(e.target.value)
+                    }
+                  />
+                </label>
+
+                <label>
+                  Description
+                  <textarea
+                    rows={5}
+                    value={descriptionDraft}
+                    onChange={e=>
+                      setDescriptionDraft(
+                        e.target.value
+                      )
+                    }
+                  />
+                </label>
+
+                <div className="uniform-insignia-modal-footer">
+                  <div className="button-row">
+                    <button
+                      type="submit"
+                      className="primary"
+                      disabled={saving}
+                    >
+                      {labelModal==='add'?
+                        'Add Label':
+                        'Save'}
+                    </button>
+
+                    <button
+                      type="button"
+                      disabled={saving}
+                      onClick={closeLabelModal}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+
+                  {labelModal==='edit'&&
+                    <button
+                      type="button"
+                      className="uniform-insignia-delete-button"
+                      aria-label="Delete label"
+                      disabled={saving}
+                      onClick={deleteLabel}
+                    >
+                      −
+                    </button>
+                  }
+                </div>
+
+                {error&&
+                  <p className="error">{error}</p>
+                }
+              </form>
+            </div>
+          </div>
+        }
+      </section>
+    </div>
   </Page>
 }
 
