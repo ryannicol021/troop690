@@ -2850,7 +2850,7 @@ app.get('/api/events/:id/attendance',async c=>{
    * Every active member appears in manager mode.
    * Everyone defaults to Unsure.
    */
-  if(manager){
+if(manager){
     const members=(rows.results??[]).map((x:any)=>({
       ...x,
       response:
@@ -2859,11 +2859,72 @@ app.get('/api/events/:id/attendance',async c=>{
           (x.response||'Unsure')
     }));
 
+    let familyMembers:any[]=[];
+
+    const family=await c.env.DB
+      .prepare(`
+        SELECT family_id
+        FROM family_members
+        WHERE person_id=?
+        LIMIT 1
+      `)
+      .bind(u.personId)
+      .first();
+
+    if(family?.family_id){
+      const familyResult=await c.env.DB
+        .prepare(`
+          SELECT
+            p.id,
+            p.prefix,
+            p.first_name,
+            p.middle_name,
+            p.last_name,
+            p.suffix,
+            p.adult,
+            p.adult_leader,
+            ea.response,
+            ea.status,
+            ea.marked_by,
+            ea.updated_at
+          FROM family_members fm
+          JOIN people p
+            ON p.id=fm.person_id
+          LEFT JOIN event_attendance ea
+            ON ea.person_id=p.id
+            AND ea.event_id=?
+          WHERE
+            fm.family_id=?
+            AND p.archived=0
+          ORDER BY
+            p.last_name COLLATE NOCASE,
+            p.first_name COLLATE NOCASE,
+            p.suffix COLLATE NOCASE
+        `)
+        .bind(
+          id,
+          Number(family.family_id)
+        )
+        .all();
+
+      familyMembers=
+        (familyResult.results??[]).map(
+          (x:any)=>({
+            ...x,
+            response:
+              ended&&x.response==='Unsure'?
+                'No':
+                (x.response||'Unsure')
+          })
+        );
+    }
+
     return json(c,{
       event,
       manager:true,
       ended,
-      members
+      members,
+      familyMembers
     });
   }
 
