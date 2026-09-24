@@ -711,12 +711,21 @@ tbody tr:nth-child(even){
 }
 
 .calendar-subscribe-section ol{
-  margin:0 0 14px;
+  margin:0 0 10px;
   padding-left:22px
 }
 
 .calendar-subscribe-section li{
   margin-bottom:7px
+}
+
+.calendar-subscribe-section li:last-child{
+  margin-bottom:0
+}
+
+.calendar-navigation .button{
+  font-size:1.35rem;
+  line-height:1
 }
 
 .copy-event-modal{
@@ -1220,9 +1229,23 @@ tbody tr:nth-child(even){
     padding:16px
   }
 
-  .event-form-row,
-  .event-details dl{
+  .event-form-row{
     grid-template-columns:1fr
+  }
+
+  .event-details dl{
+    display:grid;
+    grid-template-columns:1fr
+  }
+
+  .event-details dt{
+    padding:9px 0 2px;
+    border-bottom:0
+  }
+
+  .event-details dd{
+    padding:0 0 9px;
+    border-bottom:1px solid var(--border)
   }
 
   .calendar-grid-wrap{
@@ -1294,6 +1317,69 @@ tbody tr:nth-child(even){
   height:34px;
   padding-top:4px;
   padding-bottom:4px;
+}
+
+.event-page-actions,
+.photo-album-page-actions{
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:8px
+}
+
+.event-page-actions > .button:not(.page-close-button){
+  min-height:34px;
+  height:34px;
+  padding-top:4px;
+  padding-bottom:4px
+}
+
+.event-attendance-manager-actions > .button{
+  min-height:34px;
+  height:34px;
+  padding-top:4px;
+  padding-bottom:4px
+}
+
+.photo-page-actions .button{
+  min-height:34px;
+  height:34px;
+  padding-top:4px;
+  padding-bottom:4px
+}
+
+.page-close-button{
+  width:44px;
+  height:44px;
+  min-width:44px;
+  min-height:44px;
+  padding:0;
+  display:grid;
+  place-items:center;
+  font-size:2.2rem;
+  line-height:1
+}
+
+@media(max-width:700px){
+  .page-head:has(.mobile-top-right-actions){
+    position:relative;
+    align-items:flex-start;
+    padding-right:44px
+  }
+
+  .mobile-top-right-actions{
+    width:100%
+  }
+
+  .mobile-top-right-actions .page-close-button{
+    position:absolute;
+    top:0;
+    right:0
+  }
+
+  .event-page-actions{
+    flex-wrap:nowrap
+  }
 }
 
 .storage-usage{
@@ -1556,7 +1642,10 @@ tbody tr:nth-child(even){
   background:transparent;
   color:#fff;
   cursor:pointer;
-  box-shadow:none
+  box-shadow:none;
+  display:grid;
+  place-items:center;
+  line-height:1
 }
 
 .photo-viewer-arrow:hover,
@@ -2254,6 +2343,16 @@ tbody tr:nth-child(even){
   overflow-x:hidden
 }
 
+.advancement-rank-modal-backdrop{
+  overflow:hidden
+}
+
+.advancement-rank-modal{
+  max-height:calc(100dvh - 20px);
+  overflow-y:auto;
+  overscroll-behavior:contain
+}
+
 .advancement-rank-modal .modal-header{
   align-items:flex-start
 }
@@ -2878,6 +2977,10 @@ tbody tr:nth-child(even){
 
 .update-info-member>h2{
   margin:0 0 12px
+}
+
+.update-info-address-grid{
+  margin-top:14px
 }
 
 .member-name-grid{
