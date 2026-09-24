@@ -9942,7 +9942,7 @@ function Uniform({me}:{me:any}){
         <div className="uniform-image-frame">
         <ImgSlot src="/images/uniform/class-a.png"/>
         </div>
-        <p>Class A is the troop's formal field uniform.</p>
+        <p>Class A is the troop's field uniform.</p>
       </section>
 
       <section className="card uniform-card">
@@ -9950,7 +9950,7 @@ function Uniform({me}:{me:any}){
         <div className="uniform-image-frame">
         <ImgSlot src="/images/uniform/class-b.png"/>
         </div>
-        <p>Class B is the troop's special activity uniform.</p>
+        <p>Class B is the troop's activity uniform.</p>
       </section>
 
       <section className="card uniform-insignia-card">
