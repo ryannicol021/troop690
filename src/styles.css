@@ -2701,6 +2701,26 @@ tbody tr:nth-child(even){
   padding:5px 10px;
 }
 
+.manage-place-form{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(0,2fr) auto;
+  gap:10px;
+  align-items:end;
+  margin-bottom:16px
+}
+
+.manage-place-form label{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  font-weight:600
+}
+
+.manage-place-form input{
+  width:100%;
+  box-sizing:border-box
+}
+
 .toast{
   position:fixed;
   left:50%;
@@ -3314,7 +3334,8 @@ footer a:hover{
   .admin-grid,
   .check-grid,
   .leadership-youth-grid,
-  .leadership-adult-grid{
+  .leadership-adult-grid,
+  .manage-place-form{
     grid-template-columns:1fr
   }
 
