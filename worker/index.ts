@@ -9213,7 +9213,7 @@ app.get('/api/events/:id/permissions/:scoutId/export',async c=>{
         }
       );
 
-    bytes=
+    const bytes=
       await buildPermissionPdf(
         parent,
         scout,
