@@ -9139,7 +9139,7 @@ app.get('/api/events/:id/permissions/:scoutId/export',async c=>{
     .prepare(`
       SELECT
         pf.id,
-        pf.pdf_storage_key,
+        pf.signed_at,
         p.prefix,
         p.first_name,
         p.middle_name,
@@ -9169,23 +9169,6 @@ app.get('/api/events/:id/permissions/:scoutId/export',async c=>{
       }
     );
 
-  let bytes:Uint8Array|null=null;
-
-  if(row.pdf_storage_key){
-    const stored=
-      await c.env.FILES.get(
-        row.pdf_storage_key
-      );
-
-    if(stored){
-      bytes=
-        new Uint8Array(
-          await stored.arrayBuffer()
-        );
-    }
-  }
-
-  if(!bytes){
     const parent=await c.env.DB
       .prepare(`
         SELECT
@@ -9233,9 +9216,9 @@ app.get('/api/events/:id/permissions/:scoutId/export',async c=>{
     bytes=
       await buildPermissionPdf(
         parent,
-        scout
+        scout,
+        row.signed_at
       );
-  }
 
   const filename=
     `${permissionFilePart(row.last_name)}-${permissionFilePart(row.first_name)}.pdf`;
@@ -9299,6 +9282,7 @@ app.get('/api/events/:id/permissions/export-all',async c=>{
       SELECT
         pf.id permission_id,
         pf.parent_person_id,
+        pf.signed_at,
         p.id scout_id,
         p.prefix,
         p.first_name,
@@ -9411,7 +9395,8 @@ app.get('/api/events/:id/permissions/export-all',async c=>{
       bytes:
         await buildPermissionPdf(
           parent,
-          scout
+          scout,
+          row.signed_at
         )
     });
   }
@@ -9649,25 +9634,6 @@ app.post('/api/permissions/sign',async c=>{
       400
     );
 
-  const pdfBytes=
-    await buildPermissionPdf(
-      parent,
-      scout
-    );
-
-  const key=
-    `permissions/${eventId}/${Date.now()}-${u.personId}-${scoutPersonId}.pdf`;
-
-  await c.env.FILES.put(
-    key,
-    pdfBytes,
-    {
-      httpMetadata:{
-        contentType:'application/pdf'
-      }
-    }
-  );
-
   const signature=
     permissionPersonName(
       parent,
@@ -9681,7 +9647,7 @@ app.post('/api/permissions/sign',async c=>{
         parent_person_id,
         scout_person_id,
         signature,
-        pdf_storage_key
+        signed_at
       )
       VALUES(?,?,?,?,?)
     `)
@@ -9690,7 +9656,7 @@ app.post('/api/permissions/sign',async c=>{
       u.personId,
       scoutPersonId,
       signature,
-      key
+      new Date().toISOString()
     )
     .run();
 
