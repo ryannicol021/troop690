@@ -96,6 +96,53 @@ const permissionPhone=(value:string)=>{
   return String(value||'').trim();
 };
 
+const permissionSignedAtLabel=(value:any)=>{
+  let raw=String(value||'').trim();
+
+  if(!raw)
+    return '';
+
+  if(
+    /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(raw)
+  ){
+    raw=
+      raw.replace(' ','T')+
+      'Z';
+  }
+
+  const date=new Date(raw);
+
+  if(Number.isNaN(date.getTime()))
+    return '';
+
+  const parts=
+    new Intl.DateTimeFormat(
+      'en-US',
+      {
+        timeZone:'America/New_York',
+        year:'numeric',
+        month:'long',
+        day:'numeric',
+        hour:'numeric',
+        minute:'2-digit',
+        hour12:true,
+        timeZoneName:'short'
+      }
+    ).formatToParts(date);
+
+  const get=(type:string)=>
+    parts.find(
+      part=>part.type===type
+    )?.value||'';
+
+  const dayPeriod=
+    get('dayPeriod').toUpperCase()==='AM'?
+      'a.m.':
+      'p.m.';
+
+  return `${get('month')} ${get('day')}, ${get('year')}, at ${get('hour')}:${get('minute')} ${dayPeriod} ${get('timeZoneName')}`;
+};
+
 const drawWrappedPermissionText=(
   page:any,
   text:string,
@@ -160,7 +207,8 @@ const drawWrappedPermissionText=(
 
 const buildPermissionPdf=async(
   parent:any,
-  scout:any
+  scout:any,
+  signedAt:any
 )=>{
   const pdf=await PDFDocument.create();
 
@@ -324,7 +372,17 @@ const buildPermissionPdf=async(
   if(email)
     signatureLines.push(email);
 
-  if(y<margin+90){
+  const signedAtLabel=
+    permissionSignedAtLabel(
+      signedAt
+    );
+
+  if(signedAtLabel)
+    signatureLines.push(
+      `Permission Granted: ${signedAtLabel}`
+    );
+
+  if(y<margin+105){
     page=pdf.addPage();
     y=page.getSize().height-margin;
   }
