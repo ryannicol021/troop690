@@ -1739,10 +1739,8 @@ function UpdateInfo({me}:{me:any}){
               />
             </label>
           </div>
-        </div>
 
-        <div className="member-form-card">
-          <div className="member-address-grid">
+          <div className="member-address-grid update-info-address-grid">
             <label>
               Street Address
               <input
@@ -4949,10 +4947,10 @@ function CalendarEvent({
     <Page
       title={e.title}
 actions={
-  <>
+  <div className="event-page-actions mobile-top-right-actions">
     <button
       type="button"
-      className="button secondary"
+      className="button secondary page-close-button"
       onClick={()=>{
         nav('/calendar');
       }}
@@ -5004,7 +5002,7 @@ actions={
         </button>
       </>
     }
-  </>
+  </div>
 }
     >
       <article className="event-details card">
@@ -5690,6 +5688,9 @@ function EventForm({
         {x.last_name}, {x.first_name}
         {x.middle_name?
           ` ${x.middle_name}`:
+          ''}
+        {x.suffix?
+          ` ${x.suffix}`:
           ''}
       </option>
     )
@@ -6930,17 +6931,19 @@ function PhotoAlbum({
 
   return <Page
     title={d.event.title}
-    actions={
-      <button
-        type="button"
-        className="button secondary"
-        onClick={()=>{
-          nav('/photos');
-        }}
-      >
-        ×
-      </button>
-    }
+actions={
+  <div className="photo-album-page-actions mobile-top-right-actions">
+    <button
+      type="button"
+      className="button secondary page-close-button"
+      onClick={()=>{
+        nav('/photos');
+      }}
+    >
+      ×
+    </button>
+  </div>
+}
   >
     <div className="photo-page-actions">
       {canManage&&
@@ -8227,7 +8230,7 @@ function Leadership({me}:{me:any}){
     }
 
     <section>
-      <h2>Youth Leaders</h2>
+      {me&&<h2>Youth Leaders</h2>}
 
       <div className="leadership-section-content">
           <div
@@ -9278,9 +9281,9 @@ const usedColumns: number[]=[
 </section>
     </div>
 
-    {selectedRank&&
-      <div
-        className="modal-backdrop"
+{selectedRank&&
+  <div
+    className="modal-backdrop advancement-rank-modal-backdrop"
         onMouseDown={e=>{
           if(
             e.target===e.currentTarget&&
