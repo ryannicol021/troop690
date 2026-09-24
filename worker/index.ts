@@ -7430,6 +7430,7 @@ app.get('/api/admin/event-options',async c=>{
         first_name,
         middle_name,
         last_name,
+        suffix,
         adult,
         adult_leader
       FROM people
@@ -7457,6 +7458,9 @@ app.get('/api/admin/event-options',async c=>{
       ),
       last_name:String(
         x.last_name||''
+      ),
+      suffix:String(
+        x.suffix||''
       ),
       adult:Number(x.adult),
       adult_leader:Number(
@@ -8951,7 +8955,6 @@ app.get('/api/events/:id/my-permissions',async c=>{
           WHERE
             pf.event_id=?
             AND pf.scout_person_id=p.id
-            AND pf.parent_person_id=?
             AND pf.revoked_at IS NULL
           ORDER BY pf.id DESC
           LIMIT 1
@@ -8963,7 +8966,6 @@ app.get('/api/events/:id/my-permissions',async c=>{
           WHERE
             pf2.event_id=?
             AND pf2.scout_person_id=p.id
-            AND pf2.parent_person_id=?
             AND pf2.revoked_at IS NULL
         ) permission_signed
 
@@ -8983,9 +8985,7 @@ app.get('/api/events/:id/my-permissions',async c=>{
     `)
     .bind(
       eventId,
-      u.personId,
       eventId,
-      u.personId,
       eventId,
       Number(family.family_id)
     )
@@ -9570,7 +9570,6 @@ app.post('/api/permissions/sign',async c=>{
       FROM permission_forms
       WHERE
         event_id=?
-        AND parent_person_id=?
         AND scout_person_id=?
         AND revoked_at IS NULL
       ORDER BY id DESC
@@ -9578,7 +9577,6 @@ app.post('/api/permissions/sign',async c=>{
     `)
     .bind(
       eventId,
-      u.personId,
       scoutPersonId
     )
     .first<any>();
@@ -9710,21 +9708,13 @@ app.post('/api/permissions/revoke',async c=>{
     .prepare(`
       UPDATE permission_forms
       SET revoked_at=CURRENT_TIMESTAMP
-      WHERE id=(
-        SELECT id
-        FROM permission_forms
-        WHERE
-          event_id=?
-          AND parent_person_id=?
-          AND scout_person_id=?
-          AND revoked_at IS NULL
-        ORDER BY id DESC
-        LIMIT 1
-      )
+      WHERE
+        event_id=?
+        AND scout_person_id=?
+        AND revoked_at IS NULL
     `)
     .bind(
       eventId,
-      u.personId,
       scoutPersonId
     )
     .run();
