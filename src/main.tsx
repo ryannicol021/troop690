@@ -12717,6 +12717,18 @@ function Email(){
       `${date} · ${start}`;
   };
 
+    const formatNewsletterTableDate=(event:any)=>{
+    return new Date(
+      event.start_at
+    ).toLocaleDateString(
+      'en-US',
+      {
+        month:'numeric',
+        day:'numeric'
+      }
+    );
+  };
+
 const newsletterAnnouncements=
   announcements.filter(
     (announcement:any)=>
@@ -13016,7 +13028,7 @@ const newsletterBody=[
       />
     </th>
 
-    <th>Date / Time</th>
+    <th>Date</th>
     <th>Title</th>
   </tr>
 </thead>
@@ -13046,9 +13058,9 @@ const newsletterBody=[
     />
   </td>
 
-  <td>
-    {formatNewsletterDate(event)}
-  </td>
+<td>
+  {formatNewsletterTableDate(event)}
+</td>
 
   <td>
     {event.title}
