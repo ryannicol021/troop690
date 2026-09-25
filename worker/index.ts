@@ -7,7 +7,21 @@ import {
   rgb
 } from 'pdf-lib';
 
-type Env = { DB: D1Database; FILES: R2Bucket; ASSETS: Fetcher; PUBLIC_SITE_URL:string; INTERIM_SITE_URL:string; SESSION_TTL_DAYS:string; BOOTSTRAP_SECRET?:string; GEOAPIFY_API_KEY?:string; CLOUDFLARE_ACCOUNT_ID?:string; CLOUDFLARE_API_TOKEN?:string };
+type Env = {
+  DB:D1Database;
+  FILES:R2Bucket;
+  ASSETS:Fetcher;
+  PUBLIC_SITE_URL:string;
+  INTERIM_SITE_URL:string;
+  SESSION_TTL_DAYS:string;
+  BOOTSTRAP_SECRET?:string;
+  GEOAPIFY_API_KEY?:string;
+  CLOUDFLARE_ACCOUNT_ID?:string;
+  CLOUDFLARE_API_TOKEN?:string;
+  GMAIL_CLIENT_ID?:string;
+  GMAIL_CLIENT_SECRET?:string;
+  GMAIL_REFRESH_TOKEN?:string;
+};
 type User = {
   accountId:number;
   personId:number|null;
@@ -26,6 +40,123 @@ type AppEnv = {
 const app = new Hono<{Bindings:Env,Variables:{user:User|null}}>();
 
 const json = (c:any, data:any, status=200) => c.json(data,status);
+const GMAIL_TEST_SENDER=
+  'ryannicol021@gmail.com';
+
+const GMAIL_TEST_RECIPIENT=
+  'ryan@ryannicol.com';
+
+const GMAIL_TEST_SUBJECT=
+  'Troop 690 Test Newsletter';
+
+const base64UrlEncode=(value:string|Uint8Array)=>{
+  const bytes=
+    typeof value==='string'?
+      new TextEncoder().encode(value):
+      value;
+
+  let binary='';
+
+  for(
+    let i=0;
+    i<bytes.length;
+    i+=0x8000
+  ){
+    binary+=String.fromCharCode(
+      ...bytes.subarray(
+        i,
+        i+0x8000
+      )
+    );
+  }
+
+  return btoa(binary)
+    .replace(/\+/g,'-')
+    .replace(/\//g,'_')
+    .replace(/=+$/,'');
+};
+
+const gmailHtmlEscape=(value:any)=>{
+  return String(value??'')
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;')
+    .replace(/'/g,'&#39;');
+};
+
+const gmailHtmlText=(value:any)=>{
+  return gmailHtmlEscape(value)
+    .replace(/\r?\n/g,'<br>');
+};
+
+const getGmailAccessToken=async(
+  c:any
+)=>{
+  const clientId=
+    String(
+      c.env.GMAIL_CLIENT_ID||''
+    ).trim();
+
+  const clientSecret=
+    String(
+      c.env.GMAIL_CLIENT_SECRET||''
+    ).trim();
+
+  const refreshToken=
+    String(
+      c.env.GMAIL_REFRESH_TOKEN||''
+    ).trim();
+
+  if(
+    !clientId||
+    !clientSecret||
+    !refreshToken
+  ){
+    throw new Error(
+      'Gmail API credentials are not configured.'
+    );
+  }
+
+  const response=
+    await fetch(
+      'https://oauth2.googleapis.com/token',
+      {
+        method:'POST',
+        headers:{
+          'Content-Type':
+            'application/x-www-form-urlencoded'
+        },
+        body:
+          new URLSearchParams({
+            client_id:clientId,
+            client_secret:clientSecret,
+            refresh_token:refreshToken,
+            grant_type:'refresh_token'
+          }).toString()
+      }
+    );
+
+  const data=
+    await response.json<any>();
+
+  if(
+    !response.ok||
+    !data.access_token
+  ){
+    throw new Error(
+      String(
+        data.error_description||
+        data.error||
+        'Unable to obtain Gmail access token.'
+      )
+    );
+  }
+
+  return String(
+    data.access_token
+  );
+};
 const sha256 = async (s:string) => Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s)))).map(x=>x.toString(16).padStart(2,'0')).join('');
 const random = (n=32) => { const b=new Uint8Array(n); crypto.getRandomValues(b); return b; };
 const ATTENDANCE_PERMISSION_PARAGRAPHS = [
@@ -4880,6 +5011,159 @@ const admin = (
   c:any,
   permission='PMAP'
 ) => requirePerm(permission)(c);
+
+app.post(
+  '/api/admin/email/test-newsletter',
+  async c=>{
+    const d=admin(c,'EMS');
+
+    if(d)
+      return d;
+
+    try{
+      const body=
+        await c.req.json<{
+          html?:string;
+          text?:string;
+        }>();
+
+      const html=
+        String(body?.html||'').trim();
+
+      const text=
+        String(body?.text||'').trim();
+
+      if(!html)
+        return json(
+          c,
+          {error:'Newsletter content is empty.'},
+          400
+        );
+
+      const accessToken=
+        await getGmailAccessToken(c);
+
+      const profileResponse=
+        await fetch(
+          'https://gmail.googleapis.com/gmail/v1/users/me/profile',
+          {
+            headers:{
+              Authorization:
+                `Bearer ${accessToken}`
+            }
+          }
+        );
+
+      const profile=
+        await profileResponse.json<any>();
+
+      const authenticatedEmail=
+        String(
+          profile?.emailAddress||''
+        )
+          .trim()
+          .toLowerCase();
+
+      if(
+        !profileResponse.ok||
+        authenticatedEmail!==
+          GMAIL_TEST_SENDER
+            .toLowerCase()
+      ){
+        return json(
+          c,
+          {
+            error:
+              `The connected Gmail account must be ${GMAIL_TEST_SENDER}.`
+          },
+          403
+        );
+      }
+
+      const boundary=
+        `----=_Troop690_${crypto.randomUUID()}`;
+
+      const mime=[
+        `From: ${GMAIL_TEST_SENDER}`,
+        `To: ${GMAIL_TEST_RECIPIENT}`,
+        `Subject: ${GMAIL_TEST_SUBJECT}`,
+        'MIME-Version: 1.0',
+        `Content-Type: multipart/alternative; boundary="${boundary}"`,
+        '',
+        `--${boundary}`,
+        'Content-Type: text/plain; charset=UTF-8',
+        'Content-Transfer-Encoding: 8bit',
+        '',
+        text,
+        '',
+        `--${boundary}`,
+        'Content-Type: text/html; charset=UTF-8',
+        'Content-Transfer-Encoding: 8bit',
+        '',
+        html,
+        '',
+        `--${boundary}--`
+      ].join('\r\n');
+
+      const raw=
+        base64UrlEncode(mime);
+
+      const sendResponse=
+        await fetch(
+          'https://gmail.googleapis.com/gmail/v1/users/me/messages/send',
+          {
+            method:'POST',
+            headers:{
+              Authorization:
+                `Bearer ${accessToken}`,
+              'Content-Type':
+                'application/json'
+            },
+            body:JSON.stringify({
+              raw
+            })
+          }
+        );
+
+      const result=
+        await sendResponse.json<any>();
+
+      if(!sendResponse.ok){
+        return json(
+          c,
+          {
+            error:
+              String(
+                result?.error?.message||
+                'Gmail failed to send the test newsletter.'
+              )
+          },
+          502
+        );
+      }
+
+      return json(c,{
+        ok:true,
+        recipient:GMAIL_TEST_RECIPIENT,
+        message_id:String(
+          result?.id||''
+        )
+      });
+    }catch(error:any){
+      return json(
+        c,
+        {
+          error:
+            String(
+              error?.message||
+              'Unable to send the test newsletter.'
+            )
+        },
+        500
+      );
+    }
+  }
+);
 
 app.get('/api/admin/members',async c=>{
   const d=admin(c,'MIV');
