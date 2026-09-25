@@ -12728,7 +12728,7 @@ setSelectedEvents(
       `${date} · ${start}`;
   };
 
-    const formatNewsletterTableDate=(event:any)=>{
+  const formatNewsletterTableDate=(event:any)=>{
     return new Date(
       event.start_at
     ).toLocaleDateString(
@@ -12738,6 +12738,127 @@ setSelectedEvents(
         day:'numeric'
       }
     );
+  };
+
+    const newsletterEventColor=(type:string)=>{
+    switch(
+      String(type||'Other')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g,'-')
+    ){
+      case 'ceremony':
+        return '#d6a800';
+
+      case 'court-of-honor':
+        return '#b42323';
+
+      case 'fundraiser':
+        return '#6fa35c';
+
+      case 'mass':
+        return '#7b4aa8';
+
+      case 'meeting':
+        return '#336fa8';
+
+      case 'service':
+        return '#d06b92';
+
+      case 'summer-camp':
+        return '#356b3b';
+
+      case 'trip':
+        return '#7a5635';
+
+      default:
+        return '#222222';
+    }
+  };
+
+  const formatNewsletterEventDateTime=(event:any)=>{
+    const start=
+      new Date(event.start_at);
+
+    const end=
+      event.end_at?
+        new Date(event.end_at):
+        start;
+
+    const dateKey=(value:Date)=>
+      value.toLocaleDateString(
+        'en-US',
+        {
+          year:'numeric',
+          month:'numeric',
+          day:'numeric'
+        }
+      );
+
+    const datePart=(value:Date)=>
+      value.toLocaleDateString(
+        'en-US',
+        {
+          month:'long',
+          day:'numeric'
+        }
+      );
+
+    let dateText;
+
+    if(
+      dateKey(start)===
+      dateKey(end)
+    ){
+      dateText=
+        datePart(start);
+    }else if(
+      start.getMonth()===
+      end.getMonth()&&
+      start.getFullYear()===
+      end.getFullYear()
+    ){
+      dateText=
+        `${datePart(start)}–${end.getDate()}`;
+    }else{
+      dateText=
+        `${datePart(start)}–${datePart(end)}`;
+    }
+
+    if(Number(event.all_day))
+      return `${dateText} • All Day`;
+
+    const startTime=
+      start.toLocaleTimeString(
+        'en-US',
+        {
+          hour:'numeric',
+          minute:'2-digit'
+        }
+      );
+
+    const endTime=
+      event.end_at?
+        end.toLocaleTimeString(
+          'en-US',
+          {
+            hour:'numeric',
+            minute:'2-digit'
+          }
+        ):
+        '';
+
+    return endTime?
+      `${dateText} • ${startTime}–${endTime}`:
+      `${dateText} • ${startTime}`;
+  };
+
+  const newsletterEventUrl=(event:any)=>{
+    return new URL(
+      `/calendar/${encodeURIComponent(
+        String(event.id)
+      )}`,
+      window.location.origin
+    ).href;
   };
 
   const selectedNewsletterAnnouncements=
@@ -12794,14 +12915,23 @@ const newsletterText=[
   '',
   ...(
     selectedNewsletterEvents.length?
-      selectedNewsletterEvents.map(
-        (event:any)=>
-          `${String(
-            event.title||''
-          ).trim()} — ${
-            formatNewsletterDate(event)
-          }`
-      ):
+selectedNewsletterEvents.flatMap(
+  (event:any)=>[
+    String(
+      event.title||''
+    ).trim(),
+
+    formatNewsletterEventDateTime(
+      event
+    ),
+
+    String(
+      event.location_name||''
+    ).trim(),
+
+    ''
+  ]
+):
       ['No upcoming events selected.']
   )
 ].join('\n');
@@ -12930,6 +13060,7 @@ const newsletterHtml=`
                               style="
                                 padding:12px 14px 4px;
                                 color:#003F87;
+                                font-family:'Roboto Slab',Georgia,serif;
                                 font-size:17px;
                                 font-weight:600;
                               "
@@ -12945,6 +13076,7 @@ const newsletterHtml=`
                               style="
                                 padding:4px 14px 12px;
                                 color:#1A1A1A;
+                                font-family:'IBM Plex Sans',Arial,sans-serif;
                                 font-size:15px;
                                 line-height:1.55;
                               "
@@ -13018,66 +13150,107 @@ const newsletterHtml=`
                   padding:0;
                 "
               >
-                ${
-                  selectedNewsletterEvents.length?
-                    selectedNewsletterEvents.map(
-                      (event:any)=>`
-                        <table
-                          role="presentation"
-                          width="100%"
-                          cellspacing="0"
-                          cellpadding="0"
-                          border="0"
-                          style="
-                            margin:0 0 10px;
-                            border:1px solid #E5E5E5;
-                          "
-                        >
-                          <tr>
-                            <td
-                              style="
-                                width:175px;
-                                padding:11px 12px;
-                                color:#003F87;
-                                background:#EFEBDF;
-                                font-size:14px;
-                                font-weight:600;
-                                vertical-align:top;
-                              "
-                            >
-                              ${newsletterHtmlEscape(
-                                formatNewsletterDate(event)
-                              )}
-                            </td>
+${
+  selectedNewsletterEvents.length?
+    selectedNewsletterEvents.map(
+      (event:any)=>{
+        const eventColor=
+          newsletterEventColor(
+            event.event_type
+          );
 
-                            <td
-                              style="
-                                padding:11px 12px;
-                                color:#1A1A1A;
-                                font-size:15px;
-                                font-weight:600;
-                                vertical-align:top;
-                              "
-                            >
-                              ${newsletterHtmlEscape(
-                                event.title
-                              )}
-                            </td>
-                          </tr>
-                        </table>
-                      `
-                    ).join(''):
-                    `
-                      <div
-                        style="
-                          color:#515354;
-                          font-size:15px;
-                        "
-                      >
-                        No upcoming events selected.
-                      </div>
-                    `
-                }
+        const eventUrl=
+          newsletterEventUrl(
+            event
+          );
+
+        const location=
+          String(
+            event.location_name||''
+          ).trim();
+
+        return `
+          <a
+            href="${eventUrl}"
+            style="
+              display:block;
+              margin:0 0 12px;
+              padding:12px 14px;
+              border:1px solid #E5E5E5;
+              border-left:4px solid ${eventColor};
+              background:#FFFFFF;
+              color:#1A1A1A;
+              text-decoration:none;
+            "
+          >
+            <div
+              style="
+                margin:0;
+                color:${eventColor};
+                font-family:'IBM Plex Sans',Arial,sans-serif;
+                font-size:17px;
+                font-weight:700;
+                line-height:1.35;
+              "
+            >
+              ${newsletterHtmlEscape(
+                event.title
+              )}
+            </div>
+
+            <div
+              style="
+                margin:4px 0 0;
+                color:#515354;
+                font-family:'IBM Plex Sans',Arial,sans-serif;
+                font-size:14px;
+                font-weight:500;
+                line-height:1.4;
+              "
+            >
+              ${newsletterHtmlEscape(
+                formatNewsletterEventDateTime(
+                  event
+                )
+              )}
+            </div>
+
+            ${
+              location?
+                `
+                  <div
+                    style="
+                      margin:5px 0 0;
+                      color:#515354;
+                      font-family:'IBM Plex Sans',Arial,sans-serif;
+                      font-size:14px;
+                      font-style:italic;
+                      line-height:1.4;
+                    "
+                  >
+                    ${newsletterHtmlEscape(
+                      location
+                    )}
+                  </div>
+                `:
+                ''
+            }
+          </a>
+        `;
+      }
+    ).join(''):
+    `
+      <div
+        style="
+          color:#515354;
+          font-family:'IBM Plex Sans',Arial,sans-serif;
+          font-size:15px;
+        "
+      >
+        No upcoming events selected.
+      </div>
+    `
+}
               </td>
             </tr>
           </table>
