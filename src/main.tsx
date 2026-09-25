@@ -12328,8 +12328,6 @@ function Email(){
   const [selectedAnnouncements,setSelectedAnnouncements]=useState<Record<number,boolean>>({});
   const [selectedEvents,setSelectedEvents]=useState<Record<number,boolean>>({});
   const [newsletterSending,setNewsletterSending]=useState(false);
-  const [selectedAnnouncements,setSelectedAnnouncements]=useState<Record<number,boolean>>({});
-  const [selectedEvents,setSelectedEvents]=useState<Record<number,boolean>>({});
 
   useEffect(()=>{
     Promise.all([
@@ -12742,38 +12740,36 @@ setSelectedEvents(
     );
   };
 
-const newsletterAnnouncements=
-  announcements.filter(
-    (announcement:any)=>
-      !!selectedAnnouncements[
-        Number(announcement.id)
-      ]
-  );
+  const selectedNewsletterAnnouncements=
+    announcements.filter(
+      (announcement:any)=>
+        !!selectedAnnouncements[
+          Number(announcement.id)
+        ]
+    );
 
-const selectedNewsletterEvents=
-  newsletterEvents.filter(
-    (event:any)=>
-      !!selectedEvents[
-        Number(event.id)
-      ]
-  );
+  const selectedNewsletterEvents=
+    newsletterEvents.filter(
+      (event:any)=>
+        !!selectedEvents[
+          Number(event.id)
+        ]
+    );
 
-const selectedNewsletterAnnouncements=
-  announcements.filter(
-    (announcement:any)=>
-      !!selectedAnnouncements[
-        Number(announcement.id)
-      ]
-  );
+  const newsletterHtmlEscape=(value:any)=>{
+    return String(value??'')
+      .replace(/&/g,'&amp;')
+      .replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;')
+      .replace(/'/g,'&#39;');
+  };
 
-const selectedNewsletterEvents=
-  newsletterEvents.filter(
-    (event:any)=>
-      !!selectedEvents[
-        Number(event.id)
-      ]
-  );
-
+  const newsletterHtmlText=(value:any)=>{
+    return newsletterHtmlEscape(value)
+      .replace(/\r?\n/g,'<br>');
+  };
+  
 const newsletterText=[
   'Troop 690 Newsletter',
   '',
@@ -12938,7 +12934,7 @@ const newsletterHtml=`
                                 font-weight:600;
                               "
                             >
-                              ${gmailHtmlEscape(
+                              ${newsletterHtmlEscape(
                                 announcement.title
                               )}
                             </td>
@@ -12953,7 +12949,7 @@ const newsletterHtml=`
                                 line-height:1.55;
                               "
                             >
-                              ${gmailHtmlText(
+                              ${newsletterHtmlText(
                                 announcement.body||''
                               )}
                             </td>
@@ -13049,7 +13045,7 @@ const newsletterHtml=`
                                 vertical-align:top;
                               "
                             >
-                              ${gmailHtmlEscape(
+                              ${newsletterHtmlEscape(
                                 formatNewsletterDate(event)
                               )}
                             </td>
@@ -13063,7 +13059,7 @@ const newsletterHtml=`
                                 vertical-align:top;
                               "
                             >
-                              ${gmailHtmlEscape(
+                              ${newsletterHtmlEscape(
                                 event.title
                               )}
                             </td>
@@ -13373,7 +13369,7 @@ const newsletterHtml=`
                 {!newsletterEvents.length&&
                   <tr>
                     <td
-                      colSpan={2}
+                      colSpan={3}
                       className="email-message-empty"
                     >
                       No upcoming events in the next month.
