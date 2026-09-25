@@ -4950,22 +4950,36 @@ app.post(
         );
       }
 
-      const response=
-        await fetch(
-          scriptUrl,
-          {
-            method:'POST',
-            headers:{
-              'Content-Type':
-                'application/json'
-            },
-            body:JSON.stringify({
-              secret:scriptSecret,
-              html,
-              text
-            })
-          }
-        );
+const payload=
+  new URLSearchParams();
+
+payload.set(
+  'secret',
+  scriptSecret
+);
+
+payload.set(
+  'html',
+  html
+);
+
+payload.set(
+  'text',
+  text
+);
+
+const response=
+  await fetch(
+    scriptUrl,
+    {
+      method:'POST',
+      headers:{
+        'Content-Type':
+          'application/x-www-form-urlencoded;charset=UTF-8'
+      },
+      body:payload.toString()
+    }
+  );
 
       const result=
         await response.json<any>();
