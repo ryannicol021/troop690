@@ -4981,25 +4981,48 @@ const response=
     }
   );
 
-      const result=
-        await response.json<any>();
+const responseText=
+  await response.text();
 
-      if(
-        !response.ok||
-        !result?.ok
-      ){
-        return json(
-          c,
-          {
-            error:
-              String(
-                result?.error||
-                'The Apps Script newsletter sender failed.'
-              )
-          },
-          502
-        );
-      }
+let result:any=null;
+
+try{
+  result=
+    JSON.parse(
+      responseText
+    );
+}catch{
+  return json(
+    c,
+    {
+      error:
+        'Apps Script returned a non-JSON response.',
+      status:response.status,
+      detail:
+        responseText
+          .replace(/\s+/g,' ')
+          .slice(0,500)
+    },
+    502
+  );
+}
+
+if(
+  !response.ok||
+  !result?.ok
+){
+  return json(
+    c,
+    {
+      error:
+        String(
+          result?.error||
+          'The Apps Script newsletter sender failed.'
+        )
+    },
+    502
+  );
+}
 
       return json(c,{
         ok:true,
