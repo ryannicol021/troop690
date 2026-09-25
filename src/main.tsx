@@ -12899,7 +12899,7 @@ const newsletterBody=[
       </div>
 
       <a
-        className="primary button"
+        className="primary button email-create-button"
         href={createMessageHref()}
       >
         Create
