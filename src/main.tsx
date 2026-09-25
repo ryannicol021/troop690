@@ -12327,6 +12327,9 @@ function Email(){
   const [selected,setSelected]=useState<Record<number,boolean>>({});
   const [selectedAnnouncements,setSelectedAnnouncements]=useState<Record<number,boolean>>({});
   const [selectedEvents,setSelectedEvents]=useState<Record<number,boolean>>({});
+  const [newsletterSending,setNewsletterSending]=useState(false);
+  const [selectedAnnouncements,setSelectedAnnouncements]=useState<Record<number,boolean>>({});
+  const [selectedEvents,setSelectedEvents]=useState<Record<number,boolean>>({});
 
   useEffect(()=>{
     Promise.all([
@@ -12368,55 +12371,65 @@ function Email(){
           homeData.events||[]
         );
 
-        const nextAnnouncements:any={};
+const nextAnnouncements:any={};
 
-        for(const announcement of homeData.announcements||[]){
-          nextAnnouncements[
-            Number(announcement.id)
-          ]=true;
-        }
-        
-        setSelectedAnnouncements(
-          nextAnnouncements
-        );
-        
-        const now=Date.now();
-        
-        const nextMonth=
-          new Date();
-        
-        nextMonth.setMonth(
-          nextMonth.getMonth()+1
-        );
-        
-        const nextEvents:any={};
-        
-        for(const event of homeData.events||[]){
-          const start=
-            new Date(
-              event.start_at
-            ).getTime();
-        
-          if(
-            Number.isFinite(start)&&
-            start>now&&
-            start<nextMonth.getTime()
-          ){
-            nextEvents[
-              Number(event.id)
-            ]=true;
-          }
-        }
-        
-        setSelectedEvents(
-          nextEvents
-        );
+for(
+  const announcement of
+  homeData.announcements||[]
+){
+  nextAnnouncements[
+    Number(announcement.id)
+  ]=true;
+}
+
+setSelectedAnnouncements(
+  nextAnnouncements
+);
+
+const nextEvents:any={};
+
+const now=
+  Date.now();
+
+const oneMonthFromNow=
+  new Date();
+
+oneMonthFromNow.setMonth(
+  oneMonthFromNow.getMonth()+1
+);
+
+for(
+  const event of
+  homeData.events||[]
+){
+  const start=
+    new Date(
+      event.start_at
+    ).getTime();
+
+  if(
+    Number.isFinite(start)&&
+    start>now&&
+    start<oneMonthFromNow.getTime()
+  ){
+    nextEvents[
+      Number(event.id)
+    ]=true;
+  }
+}
+
+setSelectedEvents(
+  nextEvents
+);
       })
       .catch(()=>{
         setRows([]);
         setAnnouncements([]);
         setEvents([]);
         setSelected({});
+        setSelectedAnnouncements({});
+        setSelectedEvents({});
+        setNewsletterSending(false);
       });
   },[]);
 
@@ -12745,50 +12758,339 @@ const selectedNewsletterEvents=
       ]
   );
 
-const newsletterBody=[
-  '📢 Announcements',
+const selectedNewsletterAnnouncements=
+  announcements.filter(
+    (announcement:any)=>
+      !!selectedAnnouncements[
+        Number(announcement.id)
+      ]
+  );
+
+const selectedNewsletterEvents=
+  newsletterEvents.filter(
+    (event:any)=>
+      !!selectedEvents[
+        Number(event.id)
+      ]
+  );
+
+const newsletterText=[
+  'Troop 690 Newsletter',
+  '',
+  'Announcements',
   '',
   ...(
-    newsletterAnnouncements.length?
-      newsletterAnnouncements.flatMap(
-        (announcement:any,index:number)=>[
-          `${index+1}. ${String(announcement.title||'').trim()}`,
+    selectedNewsletterAnnouncements.length?
+      selectedNewsletterAnnouncements.flatMap(
+        (announcement:any)=>[
+          String(
+            announcement.title||''
+          ).trim(),
           String(
             announcement.body||''
           ).trim(),
           ''
         ]
       ):
-      ['No announcements.','']
+      ['No announcements selected.','']
   ),
-  '📅 Upcoming Events',
+  'Upcoming Events',
   '',
   ...(
     selectedNewsletterEvents.length?
       selectedNewsletterEvents.map(
         (event:any)=>
-          `• ${String(event.title||'').trim()} — ${formatNewsletterDate(event)}`
+          `${String(
+            event.title||''
+          ).trim()} — ${
+            formatNewsletterDate(event)
+          }`
       ):
-      ['No upcoming events.']
+      ['No upcoming events selected.']
   )
 ].join('\n');
 
-  const newsletterHref=
-    'mailto:?'+
-    [
-      'bcc='+
-        encodeURIComponent(
-          'ryan@ryannicol.com'
-        ),
-      'subject='+
-        encodeURIComponent(
-          'Troop 690 Newsletter'
-        ),
-      'body='+
-        encodeURIComponent(
-          newsletterBody
-        )
-    ].join('&');
+const newsletterHtml=`
+<!doctype html>
+<html>
+  <body
+    style="
+      margin:0;
+      padding:0;
+      background:#FFFFFF;
+      color:#1A1A1A;
+      font-family:'IBM Plex Sans',Arial,sans-serif;
+      line-height:1.5;
+    "
+  >
+    <table
+      role="presentation"
+      width="100%"
+      cellspacing="0"
+      cellpadding="0"
+      border="0"
+      style="background:#FFFFFF;"
+    >
+      <tr>
+        <td
+          align="center"
+          style="
+            padding:24px 12px 32px;
+          "
+        >
+          <table
+            role="presentation"
+            width="100%"
+            cellspacing="0"
+            cellpadding="0"
+            border="0"
+            style="
+              max-width:640px;
+              width:100%;
+              margin:0 auto;
+              background:#FFFFFF;
+            "
+          >
+            <tr>
+              <td
+                style="
+                  padding:0 0 26px;
+                  color:#003F87;
+                  font-family:'Roboto Slab',Georgia,serif;
+                  font-size:26px;
+                  font-weight:700;
+                  line-height:1.2;
+                "
+              >
+                Troop 690 Newsletter
+              </td>
+            </tr>
+
+            <tr>
+              <td
+                style="
+                  padding:0 0 10px;
+                "
+              >
+                <table
+                  role="presentation"
+                  cellspacing="0"
+                  cellpadding="0"
+                  border="0"
+                >
+                  <tr>
+                    <td
+                      style="
+                        width:4px;
+                        background:#CE1126;
+                        font-size:0;
+                        line-height:0;
+                      "
+                    >
+                      &nbsp;
+                    </td>
+
+                    <td
+                      style="
+                        padding-left:12px;
+                        color:#003F87;
+                        font-family:'Roboto Slab',Georgia,serif;
+                        font-size:21px;
+                        font-weight:700;
+                        line-height:1.25;
+                      "
+                    >
+                      Announcements
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+
+            <tr>
+              <td
+                style="
+                  padding:0 0 26px;
+                "
+              >
+                ${
+                  selectedNewsletterAnnouncements.length?
+                    selectedNewsletterAnnouncements.map(
+                      (announcement:any)=>`
+                        <table
+                          role="presentation"
+                          width="100%"
+                          cellspacing="0"
+                          cellpadding="0"
+                          border="0"
+                          style="
+                            margin:0 0 14px;
+                            border:1px solid #E5E5E5;
+                            background:#F9F9F9;
+                          "
+                        >
+                          <tr>
+                            <td
+                              style="
+                                padding:12px 14px 4px;
+                                color:#003F87;
+                                font-size:17px;
+                                font-weight:600;
+                              "
+                            >
+                              ${gmailHtmlEscape(
+                                announcement.title
+                              )}
+                            </td>
+                          </tr>
+
+                          <tr>
+                            <td
+                              style="
+                                padding:4px 14px 12px;
+                                color:#1A1A1A;
+                                font-size:15px;
+                                line-height:1.55;
+                              "
+                            >
+                              ${gmailHtmlText(
+                                announcement.body||''
+                              )}
+                            </td>
+                          </tr>
+                        </table>
+                      `
+                    ).join(''):
+                    `
+                      <div
+                        style="
+                          color:#515354;
+                          font-size:15px;
+                        "
+                      >
+                        No announcements selected.
+                      </div>
+                    `
+                }
+              </td>
+            </tr>
+
+            <tr>
+              <td
+                style="
+                  padding:0 0 10px;
+                "
+              >
+                <table
+                  role="presentation"
+                  cellspacing="0"
+                  cellpadding="0"
+                  border="0"
+                >
+                  <tr>
+                    <td
+                      style="
+                        width:4px;
+                        background:#CE1126;
+                        font-size:0;
+                        line-height:0;
+                      "
+                    >
+                      &nbsp;
+                    </td>
+
+                    <td
+                      style="
+                        padding-left:12px;
+                        color:#003F87;
+                        font-family:'Roboto Slab',Georgia,serif;
+                        font-size:21px;
+                        font-weight:700;
+                        line-height:1.25;
+                      "
+                    >
+                      Upcoming Events
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+
+            <tr>
+              <td
+                style="
+                  padding:0;
+                "
+              >
+                ${
+                  selectedNewsletterEvents.length?
+                    selectedNewsletterEvents.map(
+                      (event:any)=>`
+                        <table
+                          role="presentation"
+                          width="100%"
+                          cellspacing="0"
+                          cellpadding="0"
+                          border="0"
+                          style="
+                            margin:0 0 10px;
+                            border:1px solid #E5E5E5;
+                          "
+                        >
+                          <tr>
+                            <td
+                              style="
+                                width:175px;
+                                padding:11px 12px;
+                                color:#003F87;
+                                background:#EFEBDF;
+                                font-size:14px;
+                                font-weight:600;
+                                vertical-align:top;
+                              "
+                            >
+                              ${gmailHtmlEscape(
+                                formatNewsletterDate(event)
+                              )}
+                            </td>
+
+                            <td
+                              style="
+                                padding:11px 12px;
+                                color:#1A1A1A;
+                                font-size:15px;
+                                font-weight:600;
+                                vertical-align:top;
+                              "
+                            >
+                              ${gmailHtmlEscape(
+                                event.title
+                              )}
+                            </td>
+                          </tr>
+                        </table>
+                      `
+                    ).join(''):
+                    `
+                      <div
+                        style="
+                          color:#515354;
+                          font-size:15px;
+                        "
+                      >
+                        No upcoming events selected.
+                      </div>
+                    `
+                }
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
+`;
 
   const memberTable=(
     title:string,
@@ -13087,18 +13389,47 @@ const newsletterBody=[
       <button
         type="button"
         className="primary"
-        onClick={()=>{
-          if(
-            window.confirm(
-              "Are you sure you want to send this newsletter? You may want to make sure one hasn't been sent already."
-            )
-          ){
-            window.location.href=
-              newsletterHref;
-          }
-        }}
+        disabled={newsletterSending}
+onClick={async()=>{
+  if(
+    newsletterSending
+  )
+    return;
+
+  if(
+    !window.confirm(
+      "Are you sure you want to send this newsletter? You may want to make sure one hasn't been sent already."
+    )
+  )
+    return;
+
+  setNewsletterSending(true);
+
+  try{
+    await post(
+      '/admin/email/test-newsletter',
+      {
+        html:newsletterHtml,
+        text:newsletterText
+      }
+    );
+
+    window.alert(
+      'Test newsletter sent to ryan@ryannicol.com.'
+    );
+  }catch(error:any){
+    window.alert(
+      String(
+        error?.message||
+        'The test newsletter could not be sent.'
+      )
+    );
+  }finally{
+    setNewsletterSending(false);
+  }
+}}
       >
-        Send
+        {newsletterSending?'Sending…':'Send'}
       </button>
     </section>
   </Page>
