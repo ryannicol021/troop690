@@ -12322,68 +12322,611 @@ function MemberEditor({
 
 function Email(){
   const [rows,setRows]=useState<any[]>([]);
+  const [announcements,setAnnouncements]=useState<any[]>([]);
+  const [events,setEvents]=useState<any[]>([]);
   const [selected,setSelected]=useState<Record<number,boolean>>({});
 
   useEffect(()=>{
-    api('/admin/members').then(x=>{
-      setRows(x.members);
+    Promise.all([
+      api('/admin/members'),
+      api('/home')
+    ])
+      .then(([memberData,homeData])=>{
+        setRows(
+          memberData.members||[]
+        );
 
-      const s:any={};
+        const next:any={};
 
-      x.members.forEach((m:any)=>
-        s[m.id]=!m.email_default_opt_out
-      );
+        for(const member of memberData.members||[]){
+          const hasEmail=
+            String(member.email||'').trim()!=='';
 
-      setSelected(s)
-    })
+          const active=
+            !Number(member.archived);
+
+          const optedOut=
+            Number(member.email_default_opt_out)===1;
+
+          if(
+            hasEmail&&
+            active
+          ){
+            next[Number(member.id)]=!optedOut;
+          }
+        }
+
+        setSelected(next);
+
+        setAnnouncements(
+          homeData.announcements||[]
+        );
+
+        setEvents(
+          homeData.events||[]
+        );
+      })
+      .catch(()=>{
+        setRows([]);
+        setAnnouncements([]);
+        setEvents([]);
+        setSelected({});
+      });
   },[]);
 
-  const emails=
-    rows
-      .filter(x=>selected[x.id]&&x.email)
-      .map(x=>x.email);
+  const hasEmail=(x:any)=>{
+    return String(
+      x.email||''
+    ).trim()!=='';
+  };
+
+  const isOptedOut=(x:any)=>{
+    return Number(
+      x.email_default_opt_out
+    )===1;
+  };
+
+  const isScoutmaster=(x:any)=>{
+    return (
+      Array.isArray(x.position_names)&&
+      x.position_names.some(
+        (name:string)=>
+          String(name||'')
+            .trim()
+            .toLowerCase()==='scoutmaster'
+      )
+    );
+  };
+
+  const displayMessageName=(x:any)=>{
+    const middle=
+      String(x.middle_name||'')
+        .trim();
+
+    const middleInitial=
+      middle?
+        (
+          middle
+            .charAt(0)
+            .toUpperCase()+
+          '.'
+        ):
+        '';
+
+    return [
+      x.prefix,
+      x.first_name,
+      middleInitial,
+      x.last_name,
+      x.suffix
+    ]
+      .map(
+        (value:any)=>
+          String(value||'').trim()
+      )
+      .filter(Boolean)
+      .join(' ');
+  };
+
+  const suffixRank=(value:any)=>{
+    const suffix=
+      String(value||'')
+        .trim()
+        .toUpperCase();
+
+    if(suffix==='SR.')
+      return 0;
+
+    if(suffix==='JR.')
+      return 1;
+
+    const roman:any={
+      I:2,
+      II:3,
+      III:4,
+      IV:5,
+      V:6,
+      VI:7,
+      VII:8,
+      VIII:9,
+      IX:10,
+      X:11
+    };
+
+    return (
+      roman[suffix]??
+      100
+    );
+  };
+
+  const sortMembers=(list:any[])=>{
+    return [...list].sort(
+      (a:any,b:any)=>
+        String(a.last_name||'')
+          .localeCompare(
+            String(b.last_name||'')
+          )||
+        String(a.first_name||'')
+          .localeCompare(
+            String(b.first_name||'')
+          )||
+        suffixRank(a.suffix)-
+          suffixRank(b.suffix)||
+        String(a.middle_name||'')
+          .localeCompare(
+            String(b.middle_name||'')
+          )||
+        Number(a.id)-
+          Number(b.id)
+    );
+  };
+
+  const memberRows=
+    rows.filter(
+      (x:any)=>
+        !Number(x.archived)&&
+        hasEmail(x)
+    );
+
+  const youthRows=
+    sortMembers(
+      memberRows.filter(
+        (x:any)=>
+          !Number(x.adult)&&
+          !isOptedOut(x)
+      )
+    );
+
+  const adultRows=
+    sortMembers(
+      memberRows.filter(
+        (x:any)=>
+          Number(x.adult)===1&&
+          !Number(x.adult_leader)&&
+          !isOptedOut(x)
+      )
+    );
+
+  const adultLeaderRows=
+    sortMembers(
+      memberRows.filter(
+        (x:any)=>
+          Number(x.adult)===1&&
+          Number(x.adult_leader)===1&&
+          !isScoutmaster(x)&&
+          !isOptedOut(x)
+      )
+    );
+
+  const optedOutRows=
+    sortMembers(
+      memberRows.filter(
+        (x:any)=>
+          isOptedOut(x)
+      )
+    );
+
+  const setGroupSelected=(
+    list:any[],
+    checked:boolean
+  )=>{
+    setSelected(previous=>{
+      const next={
+        ...previous
+      };
+
+      for(const member of list){
+        next[
+          Number(member.id)
+        ]=checked;
+      }
+
+      return next;
+    });
+  };
+
+  const allSelected=(list:any[])=>{
+    return (
+      list.length>0&&
+      list.every(
+        (member:any)=>
+          !!selected[Number(member.id)]
+      )
+    );
+  };
+
+  const scoutmasterEmail=
+    rows.find(
+      (x:any)=>
+        !Number(x.archived)&&
+        hasEmail(x)&&
+        isScoutmaster(x)
+    )?.email||'';
+
+  const messageEmails=
+    memberRows
+      .filter(
+        (member:any)=>
+          !!selected[Number(member.id)]&&
+          !isScoutmaster(member)
+      )
+      .map(
+        (member:any)=>
+          String(member.email||'').trim()
+      )
+      .filter(Boolean);
+
+  const createMessageHref=()=>{
+    const params:string[]=[];
+
+    if(scoutmasterEmail){
+      params.push(
+        `cc=${encodeURIComponent(
+          scoutmasterEmail
+        )}`
+      );
+    }
+
+    if(messageEmails.length){
+      params.push(
+        `bcc=${encodeURIComponent(
+          messageEmails.join(',')
+        )}`
+      );
+    }
+
+    return 'mailto:?'+params.join('&');
+  };
+
+  const newsletterEvents=
+    events
+      .filter((event:any)=>{
+        const start=
+          new Date(event.start_at).getTime();
+
+        const now=
+          Date.now();
+
+        const end=
+          new Date();
+
+        end.setMonth(
+          end.getMonth()+1
+        );
+
+        return (
+          Number.isFinite(start)&&
+          start>=now&&
+          start<end.getTime()
+        );
+      })
+      .sort(
+        (a:any,b:any)=>
+          new Date(a.start_at).getTime()-
+          new Date(b.start_at).getTime()
+      );
+
+  const formatNewsletterDate=(event:any)=>{
+    const date=
+      new Date(
+        event.start_at
+      ).toLocaleDateString(
+        'en-US',
+        {
+          month:'long',
+          day:'numeric',
+          year:'numeric'
+        }
+      );
+
+    if(Number(event.all_day))
+      return `${date} · All Day`;
+
+    const start=
+      new Date(
+        event.start_at
+      ).toLocaleTimeString(
+        'en-US',
+        {
+          hour:'numeric',
+          minute:'2-digit'
+        }
+      );
+
+    const end=
+      event.end_at?
+        new Date(
+          event.end_at
+        ).toLocaleTimeString(
+          'en-US',
+          {
+            hour:'numeric',
+            minute:'2-digit'
+          }
+        ):
+        '';
+
+    return end?
+      `${date} · ${start}–${end}`:
+      `${date} · ${start}`;
+  };
+
+  const newsletterBody=[
+    '📢 Announcements',
+    '',
+    ...(
+      announcements.length?
+        announcements.flatMap(
+          (announcement:any,index:number)=>[
+            `${index+1}. ${String(announcement.title||'').trim()}`,
+            String(
+              announcement.body||''
+            ).trim(),
+            ''
+          ]
+        ):
+        ['No current announcements.','']
+    ),
+    '📅 Upcoming Events',
+    '',
+    ...(
+      newsletterEvents.length?
+        newsletterEvents.map(
+          (event:any)=>
+            `• ${String(event.title||'').trim()} — ${formatNewsletterDate(event)}`
+        ):
+        ['No upcoming events in the next month.']
+    )
+  ].join('\n');
+
+  const newsletterHref=
+    'mailto:?'+
+    [
+      'bcc='+
+        encodeURIComponent(
+          'ryan@ryannicol.com'
+        ),
+      'subject='+
+        encodeURIComponent(
+          'Troop 690 Newsletter'
+        ),
+      'body='+
+        encodeURIComponent(
+          newsletterBody
+        )
+    ].join('&');
+
+  const memberTable=(
+    title:string,
+    list:any[],
+    includeSelectAll:boolean
+  )=>
+    <section className="email-message-group">
+      <h3>{title}</h3>
+
+      <div className="email-message-table-wrap">
+        <table className="email-message-table">
+          <thead>
+            <tr>
+              <th>
+                {includeSelectAll?
+                  <input
+                    type="checkbox"
+                    checked={allSelected(list)}
+                    onChange={e=>
+                      setGroupSelected(
+                        list,
+                        e.target.checked
+                      )
+                    }
+                    aria-label={`Select all ${title}`}
+                  />:
+                  'Include'
+                }
+              </th>
+
+              <th>Name</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {list.map((member:any)=>
+              <tr key={member.id}>
+                <td>
+                  <input
+                    type="checkbox"
+                    checked={
+                      !!selected[
+                        Number(member.id)
+                      ]
+                    }
+                    onChange={e=>
+                      setSelected({
+                        ...selected,
+                        [Number(member.id)]:
+                          e.target.checked
+                      })
+                    }
+                    aria-label={
+                      `Include ${displayMessageName(member)}`
+                    }
+                  />
+                </td>
+
+                <td>
+                  {displayMessageName(member)}
+                </td>
+              </tr>
+            )}
+
+            {!list.length&&
+              <tr>
+                <td
+                  colSpan={2}
+                  className="email-message-empty"
+                >
+                  No members to display.
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>;
 
   return <Page title="Email">
-    <div className="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>Send</th>
-            <th>Name</th>
-            <th>Email</th>
-          </tr>
-        </thead>
+    <section>
+      <h2>Create Message List</h2>
 
-        <tbody>
-          {rows.map(x=>
-            <tr key={x.id}>
-              <td>
-                <input
-                  type="checkbox"
-                  checked={!!selected[x.id]}
-                  onChange={e=>
-                    setSelected({
-                      ...selected,
-                      [x.id]:e.target.checked
-                    })
-                  }
-                />
-              </td>
+      <div className="email-message-list-grid">
+        {memberTable(
+          'Youth',
+          youthRows,
+          true
+        )}
 
-              <td>{x.last_name}, {x.first_name}</td>
-              <td>{x.email}</td>
-            </tr>
-          )}
-        </tbody>
-      </table>
-    </div>
+        {memberTable(
+          'Adults',
+          adultRows,
+          true
+        )}
 
-    <a
-      className="primary button"
-      href={'mailto:?bcc='+encodeURIComponent(emails.join(','))}
-    >
-      Create BCC mail
-    </a>
+        {memberTable(
+          'Adult Leaders',
+          adultLeaderRows,
+          true
+        )}
+
+        {memberTable(
+          'Opted Out',
+          optedOutRows,
+          false
+        )}
+      </div>
+
+      <a
+        className="primary button"
+        href={createMessageHref()}
+      >
+        Create
+      </a>
+    </section>
+
+    <section className="email-newsletter-section">
+      <h2>Troop Newsletter</h2>
+
+      <div className="email-newsletter-grid">
+        <div className="email-newsletter-table-section">
+          <h3>📢 Announcements</h3>
+
+          <div className="email-message-table-wrap">
+            <table className="email-message-table">
+              <thead>
+                <tr>
+                  <th>Title</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {announcements.map(
+                  (announcement:any)=>
+                    <tr key={announcement.id}>
+                      <td>
+                        {announcement.title}
+                      </td>
+                    </tr>
+                )}
+
+                {!announcements.length&&
+                  <tr>
+                    <td className="email-message-empty">
+                      No current announcements.
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div className="email-newsletter-table-section">
+          <h3>📅 Upcoming Events</h3>
+
+          <div className="email-message-table-wrap">
+            <table className="email-message-table">
+              <thead>
+                <tr>
+                  <th>Date / Time</th>
+                  <th>Title</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {newsletterEvents.map(
+                  (event:any)=>
+                    <tr key={event.id}>
+                      <td>
+                        {formatNewsletterDate(event)}
+                      </td>
+                      <td>
+                        {event.title}
+                      </td>
+                    </tr>
+                )}
+
+                {!newsletterEvents.length&&
+                  <tr>
+                    <td
+                      colSpan={2}
+                      className="email-message-empty"
+                    >
+                      No upcoming events in the next month.
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <button
+        type="button"
+        className="primary"
+        onClick={()=>{
+          if(
+            window.confirm(
+              "Are you sure you want to send this newsletter? You may want to make sure one hasn't been sent already."
+            )
+          ){
+            window.location.href=
+              newsletterHref;
+          }
+        }}
+      >
+        Send
+      </button>
+    </section>
   </Page>
 }
 
