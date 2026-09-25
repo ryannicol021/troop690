@@ -4973,6 +4973,7 @@ const response=
     scriptUrl,
     {
       method:'POST',
+      redirect:'follow',
       headers:{
         'Content-Type':
           'application/x-www-form-urlencoded;charset=UTF-8'
