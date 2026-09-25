@@ -12325,6 +12325,8 @@ function Email(){
   const [announcements,setAnnouncements]=useState<any[]>([]);
   const [events,setEvents]=useState<any[]>([]);
   const [selected,setSelected]=useState<Record<number,boolean>>({});
+  const [selectedAnnouncements,setSelectedAnnouncements]=useState<Record<number,boolean>>({});
+  const [selectedEvents,setSelectedEvents]=useState<Record<number,boolean>>({});
 
   useEffect(()=>{
     Promise.all([
@@ -12364,6 +12366,50 @@ function Email(){
 
         setEvents(
           homeData.events||[]
+        );
+
+        const nextAnnouncements:any={};
+
+        for(const announcement of homeData.announcements||[]){
+          nextAnnouncements[
+            Number(announcement.id)
+          ]=true;
+        }
+        
+        setSelectedAnnouncements(
+          nextAnnouncements
+        );
+        
+        const now=Date.now();
+        
+        const nextMonth=
+          new Date();
+        
+        nextMonth.setMonth(
+          nextMonth.getMonth()+1
+        );
+        
+        const nextEvents:any={};
+        
+        for(const event of homeData.events||[]){
+          const start=
+            new Date(
+              event.start_at
+            ).getTime();
+        
+          if(
+            Number.isFinite(start)&&
+            start>now&&
+            start<nextMonth.getTime()
+          ){
+            nextEvents[
+              Number(event.id)
+            ]=true;
+          }
+        }
+        
+        setSelectedEvents(
+          nextEvents
         );
       })
       .catch(()=>{
@@ -12616,7 +12662,7 @@ function Email(){
 
         return (
           Number.isFinite(start)&&
-          start>=now&&
+          start>now&&
           start<end.getTime()
         );
       })
@@ -12671,33 +12717,49 @@ function Email(){
       `${date} · ${start}`;
   };
 
-  const newsletterBody=[
-    '📢 Announcements',
-    '',
-    ...(
-      announcements.length?
-        announcements.flatMap(
-          (announcement:any,index:number)=>[
-            `${index+1}. ${String(announcement.title||'').trim()}`,
-            String(
-              announcement.body||''
-            ).trim(),
-            ''
-          ]
-        ):
-        ['No current announcements.','']
-    ),
-    '📅 Upcoming Events',
-    '',
-    ...(
-      newsletterEvents.length?
-        newsletterEvents.map(
-          (event:any)=>
-            `• ${String(event.title||'').trim()} — ${formatNewsletterDate(event)}`
-        ):
-        ['No upcoming events in the next month.']
-    )
-  ].join('\n');
+const newsletterAnnouncements=
+  announcements.filter(
+    (announcement:any)=>
+      !!selectedAnnouncements[
+        Number(announcement.id)
+      ]
+  );
+
+const selectedNewsletterEvents=
+  newsletterEvents.filter(
+    (event:any)=>
+      !!selectedEvents[
+        Number(event.id)
+      ]
+  );
+
+const newsletterBody=[
+  '📢 Announcements',
+  '',
+  ...(
+    newsletterAnnouncements.length?
+      newsletterAnnouncements.flatMap(
+        (announcement:any,index:number)=>[
+          `${index+1}. ${String(announcement.title||'').trim()}`,
+          String(
+            announcement.body||''
+          ).trim(),
+          ''
+        ]
+      ):
+      ['No announcements.','']
+  ),
+  '📅 Upcoming Events',
+  '',
+  ...(
+    selectedNewsletterEvents.length?
+      selectedNewsletterEvents.map(
+        (event:any)=>
+          `• ${String(event.title||'').trim()} — ${formatNewsletterDate(event)}`
+      ):
+      ['No upcoming events.']
+  )
+].join('\n');
 
   const newsletterHref=
     'mailto:?'+
@@ -12837,29 +12899,80 @@ function Email(){
 
       <div className="email-newsletter-grid">
         <div className="email-newsletter-table-section">
-          <h3>📢 Announcements</h3>
+          <h3>Announcements</h3>
 
           <div className="email-message-table-wrap">
             <table className="email-message-table">
-              <thead>
-                <tr>
-                  <th>Title</th>
-                </tr>
-              </thead>
+<thead>
+  <tr>
+    <th>
+      <input
+        type="checkbox"
+        checked={
+          announcements.length>0&&
+          announcements.every(
+            (announcement:any)=>
+              !!selectedAnnouncements[
+                Number(announcement.id)
+              ]
+          )
+        }
+        onChange={e=>{
+          const next:any={};
+
+          for(const announcement of announcements){
+            next[
+              Number(announcement.id)
+            ]=e.target.checked;
+          }
+
+          setSelectedAnnouncements(next);
+        }}
+        aria-label="Select all announcements"
+      />
+    </th>
+
+    <th>Title</th>
+  </tr>
+</thead>
 
               <tbody>
                 {announcements.map(
                   (announcement:any)=>
-                    <tr key={announcement.id}>
-                      <td>
-                        {announcement.title}
-                      </td>
-                    </tr>
+<tr key={announcement.id}>
+  <td>
+    <input
+      type="checkbox"
+      checked={
+        !!selectedAnnouncements[
+          Number(announcement.id)
+        ]
+      }
+      onChange={e=>
+        setSelectedAnnouncements({
+          ...selectedAnnouncements,
+          [Number(announcement.id)]:
+            e.target.checked
+        })
+      }
+      aria-label={
+        `Include ${announcement.title}`
+      }
+    />
+  </td>
+
+  <td>
+    {announcement.title}
+  </td>
+</tr>
                 )}
 
                 {!announcements.length&&
                   <tr>
-                    <td className="email-message-empty">
+<td
+  colSpan={2}
+  className="email-message-empty"
+>
                       No current announcements.
                     </td>
                   </tr>
@@ -12870,28 +12983,77 @@ function Email(){
         </div>
 
         <div className="email-newsletter-table-section">
-          <h3>📅 Upcoming Events</h3>
+          <h3>Upcoming Events</h3>
 
           <div className="email-message-table-wrap">
-            <table className="email-message-table">
-              <thead>
-                <tr>
-                  <th>Date / Time</th>
-                  <th>Title</th>
-                </tr>
-              </thead>
+            <table className="email-message-table email-newsletter-events-table">
+<thead>
+  <tr>
+    <th>
+      <input
+        type="checkbox"
+        checked={
+          newsletterEvents.length>0&&
+          newsletterEvents.every(
+            (event:any)=>
+              !!selectedEvents[
+                Number(event.id)
+              ]
+          )
+        }
+        onChange={e=>{
+          const next:any={};
+
+          for(const event of newsletterEvents){
+            next[
+              Number(event.id)
+            ]=e.target.checked;
+          }
+
+          setSelectedEvents(next);
+        }}
+        aria-label="Select all upcoming events"
+      />
+    </th>
+
+    <th>Date / Time</th>
+    <th>Title</th>
+  </tr>
+</thead>
 
               <tbody>
                 {newsletterEvents.map(
                   (event:any)=>
-                    <tr key={event.id}>
-                      <td>
-                        {formatNewsletterDate(event)}
-                      </td>
-                      <td>
-                        {event.title}
-                      </td>
-                    </tr>
+<tr key={event.id}>
+  <td>
+    <input
+      type="checkbox"
+      checked={
+        !!selectedEvents[
+          Number(event.id)
+        ]
+      }
+      onChange={e=>
+        setSelectedEvents({
+          ...selectedEvents,
+          [Number(event.id)]:
+            e.target.checked
+        })
+      }
+      aria-label={
+        `Include ${event.title}`
+      }
+    />
+  </td>
+
+  <td>
+    {formatNewsletterDate(event)}
+  </td>
+
+  <td>
+    {event.title}
+  </td>
+</tr>
                 )}
 
                 {!newsletterEvents.length&&
