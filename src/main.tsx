@@ -510,67 +510,139 @@ function Home({me}:{me:any}){
     </div>
 
     {d.announcements?.length?
-      d.announcements.map((a:any)=>
+      d.announcements.map((a:any,index:number)=>
         <div
-          className="home-announcement"
+          className={
+            editingAnnouncements?
+              'home-announcement is-editing':
+              'home-announcement'
+          }
           key={a.id}
         >
-          <div className="home-announcement-head">
-            <h3>{a.title}</h3>
+<div className="home-announcement-head">
+  {editingAnnouncements&&
+    <div className="home-announcement-actions">
+      <button
+        type="button"
+        className="leadership-change-button home-announcement-change-button"
+        onClick={()=>{
+          setEditingAnnouncement(a);
+          setAnnouncementTitle(a.title);
+          setAnnouncementBody(a.body);
+          setAnnouncementError('');
+          setShowAnnouncementModal(true);
+        }}
+      >
+        Change
+      </button>
 
-            {editingAnnouncements&&
-              <div className="home-announcement-actions">
-                <button
-                  type="button"
-                  className="leadership-change-button home-announcement-change-button"
-                  onClick={()=>{
-                    setEditingAnnouncement(a);
-                    setAnnouncementTitle(a.title);
-                    setAnnouncementBody(a.body);
-                    setAnnouncementError('');
-                    setShowAnnouncementModal(true);
-                  }}
-                >
-                  Change
-                </button>
+      <button
+        type="button"
+        className="home-history-delete-button"
+        aria-label={
+          `Delete announcement: ${a.title}`
+        }
+        onClick={async()=>{
+          if(!window.confirm(
+            `Delete the announcement "${a.title}"?`
+          ))
+            return;
 
-                <button
-                  type="button"
-                  className="home-history-delete-button"
-                  aria-label={
-                    `Delete announcement: ${a.title}`
-                  }
-                  onClick={async()=>{
-                    if(!window.confirm(
-                      `Delete the announcement "${a.title}"?`
-                    ))
-                      return;
+          try{
+            await api(
+              `/admin/announcements/${a.id}`,
+              {method:'DELETE'}
+            );
 
-                    try{
-                      await api(
-                        `/admin/announcements/${a.id}`,
-                        {method:'DELETE'}
-                      );
+            const fresh=
+              await api('/home');
 
-                      const fresh=
-                        await api('/home');
+            setD(fresh);
+          }catch(e:any){
+            setAnnouncementError(
+              e?.message||
+              'Unable to delete the announcement.'
+            );
+          }
+        }}
+      >
+        −
+      </button>
 
-                      setD(fresh);
-                    }catch(e:any){
-                      setAnnouncementError(
-                        e?.message||
-                        'Unable to delete the announcement.'
-                      );
-                    }
-                  }}
-                >
-                  −
-                </button>
-              </div>
+      {d.announcements.length>1&&
+        index>0&&
+        <button
+          type="button"
+          className="home-announcement-move-button"
+          aria-label={`Move "${a.title}" up`}
+          onClick={async()=>{
+            try{
+              await api(
+                `/admin/announcements/${a.id}/move`,
+                {
+                  method:'POST',
+                  body:JSON.stringify({
+                    direction:'up'
+                  })
+                }
+              );
+
+              const fresh=
+                await api('/home');
+
+              setD(fresh);
+            }catch(e:any){
+              setAnnouncementError(
+                e?.message||
+                'Unable to move the announcement.'
+              );
             }
-          </div>
+          }}
+        >
+          ↑
+        </button>
+      }
 
-          <p>{a.body}</p>
+      {d.announcements.length>1&&
+        index<d.announcements.length-1&&
+        <button
+          type="button"
+          className="home-announcement-move-button"
+          aria-label={`Move "${a.title}" down`}
+          onClick={async()=>{
+            try{
+              await api(
+                `/admin/announcements/${a.id}/move`,
+                {
+                  method:'POST',
+                  body:JSON.stringify({
+                    direction:'down'
+                  })
+                }
+              );
+
+              const fresh=
+                await api('/home');
+
+              setD(fresh);
+            }catch(e:any){
+              setAnnouncementError(
+                e?.message||
+                'Unable to move the announcement.'
+              );
+            }
+          }}
+        >
+          ↓
+        </button>
+      }
+    </div>
+  }
+
+  <h3>{a.title}</h3>
+</div>
+
+<p>{a.body}</p>
         </div>
       ):
       <p className="muted">
