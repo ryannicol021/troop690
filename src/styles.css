@@ -362,7 +362,6 @@ section>h2{
 .home-announcement-head{
   display:flex;
   align-items:flex-start;
-  justify-content:space-between;
   gap:12px
 }
 
@@ -375,6 +374,27 @@ section>h2{
   align-items:center;
   gap:6px;
   flex-shrink:0
+}
+
+.home-announcement.is-editing
+.home-announcement-head{
+  display:block
+}
+
+.home-announcement.is-editing
+.home-announcement-actions{
+  float:right;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:6px;
+  margin:0 0 8px 14px
+}
+
+.home-announcement.is-editing::after{
+  content:"";
+  display:block;
+  clear:both
 }
 
 .home-announcement-change-button{
