@@ -5019,7 +5019,7 @@ function CalendarEvent({
     <Page
       title={e.title}
 actions={
-  <div className="event-page-actions mobile-top-right-actions">
+  <div className="event-page-close-actions">
     <button
       type="button"
       className="button secondary page-close-button"
@@ -5027,56 +5027,57 @@ actions={
         nav('/calendar');
       }}
     >
-      ×
+      <span className="page-close-glyph">×</span>
     </button>
-
-    {canEdit&&
-      <>
-        <button
-          type="button"
-          className="button"
-          onClick={()=>{
-            nav(
-              '/calendar/'+id+'/edit'
-            );
-          }}
-        >
-          Edit Event
-        </button>
-
-        <button
-          type="button"
-          className="button secondary"
-          onClick={async()=>{
-            if(!confirm(
-              'Delete this event? Any photos associated with this event will also be permanently deleted from the site and storage. This cannot be undone.'
-            ))
-              return;
-
-            try{
-              await api(
-                '/admin/events/'+id,
-                {
-                  method:'DELETE'
-                }
-              );
-
-              nav('/calendar');
-            }catch(err:any){
-              alert(
-                err?.message||
-                'Unable to delete event.'
-              );
-            }
-          }}
-        >
-          Delete Event
-        </button>
-      </>
-    }
   </div>
 }
     >
+
+{canEdit&&
+  <div className="event-page-edit-actions">
+    <button
+      type="button"
+      className="button"
+      onClick={()=>{
+        nav(
+          '/calendar/'+id+'/edit'
+        );
+      }}
+    >
+      Edit Event
+    </button>
+
+    <button
+      type="button"
+      className="button secondary"
+      onClick={async()=>{
+        if(!confirm(
+          'Delete this event? Any photos associated with this event will also be permanently deleted from the site and storage. This cannot be undone.'
+        ))
+          return;
+
+        try{
+          await api(
+            '/admin/events/'+id,
+            {
+              method:'DELETE'
+            }
+          );
+
+          nav('/calendar');
+        }catch(err:any){
+          alert(
+            err?.message||
+            'Unable to delete event.'
+          );
+        }
+      }}
+    >
+      Delete Event
+    </button>
+  </div>
+}
+      
       <article className="event-details card">
 
         <div className="event-detail-type">
