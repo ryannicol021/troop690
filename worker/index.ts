@@ -1341,6 +1341,7 @@ async function ensureAnnouncementSchema(c:Context<AppEnv>){
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       title TEXT NOT NULL,
       body TEXT NOT NULL,
+      sort_order INTEGER NOT NULL DEFAULT 0,
       created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
       updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
     )
@@ -1857,7 +1858,7 @@ app.get('/api/announcements',async c=>{
         created_at,
         updated_at
       FROM announcements
-      ORDER BY created_at DESC,id DESC
+      ORDER BY sort_order ASC,id ASC
     `)
     .all<any>();
 
@@ -1879,7 +1880,7 @@ app.get('/api/admin/announcements',async c=>{
         created_at,
         updated_at
       FROM announcements
-      ORDER BY created_at DESC,id DESC
+      ORDER BY sort_order ASC,id ASC
     `)
     .all<any>();
 
@@ -1903,21 +1904,43 @@ app.post('/api/admin/announcements',async c=>{
       400
     );
 
+  const nextOrderRow=await c.env.DB
+    .prepare(`
+      SELECT
+        COALESCE(
+          MAX(sort_order),
+          -1
+        )+1 AS next_order
+      FROM announcements
+    `)
+    .first<any>();
+  
+  const nextOrder=
+    Number(
+      nextOrderRow?.next_order??0
+    );
+  
   const row=await c.env.DB
     .prepare(`
       INSERT INTO announcements(
         title,
-        body
+        body,
+        sort_order
       )
-      VALUES(?,?)
+      VALUES(?,?,?)
       RETURNING
         id,
         title,
         body,
+        sort_order,
         created_at,
         updated_at
     `)
-    .bind(title,text)
+    .bind(
+      title,
+      text,
+      nextOrder
+    )
     .first<any>();
 
   return json(c,{
@@ -1971,6 +1994,112 @@ app.put('/api/admin/announcements/:id',async c=>{
   });
 });
 
+app.post('/api/admin/announcements/:id/move',async c=>{
+  const d=admin(c,'HOME');
+  if(d)return d;
+
+  const id=
+    Number(
+      c.req.param('id')
+    );
+
+  const body=
+    await c.req.json<any>();
+
+  const direction=
+    String(
+      body.direction||''
+    ).trim();
+
+  if(
+    direction!=='up'&&
+    direction!=='down'
+  )
+    return json(
+      c,
+      {error:'Invalid announcement direction.'},
+      400
+    );
+
+  const current=
+    await c.env.DB
+      .prepare(`
+        SELECT
+          id,
+          sort_order
+        FROM announcements
+        WHERE id=?
+      `)
+      .bind(id)
+      .first<any>();
+
+  if(!current)
+    return json(
+      c,
+      {error:'Announcement not found.'},
+      404
+    );
+
+  const currentOrder=
+    Number(
+      current.sort_order
+    );
+
+  const targetOrder=
+    direction==='up'?
+      currentOrder-1:
+      currentOrder+1;
+
+  const other=
+    await c.env.DB
+      .prepare(`
+        SELECT
+          id,
+          sort_order
+        FROM announcements
+        WHERE sort_order=?
+        LIMIT 1
+      `)
+      .bind(targetOrder)
+      .first<any>();
+
+  if(!other)
+    return json(
+      c,
+      {ok:true}
+    );
+
+  await c.env.DB.batch([
+    c.env.DB
+      .prepare(`
+        UPDATE announcements
+        SET
+          sort_order=?
+        WHERE id=?
+      `)
+      .bind(
+        targetOrder,
+        id
+      ),
+
+    c.env.DB
+      .prepare(`
+        UPDATE announcements
+        SET
+          sort_order=?
+        WHERE id=?
+      `)
+      .bind(
+        currentOrder,
+        Number(other.id)
+      )
+  ]);
+
+  return json(c,{
+    ok:true
+  });
+});
+
 app.delete('/api/admin/announcements/:id',async c=>{
   const d=admin(c,'HOME');
   if(d)return d;
@@ -2016,7 +2145,7 @@ app.get('/api/home',async c=>{
           created_at,
           updated_at
         FROM announcements
-        ORDER BY created_at DESC,id DESC
+        ORDER BY sort_order ASC,id ASC
       `)
       .all<any>();
 
