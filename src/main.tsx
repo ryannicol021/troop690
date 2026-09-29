@@ -573,7 +573,7 @@ function Home({me}:{me:any}){
         index>0&&
         <button
           type="button"
-          className="home-announcement-move-button"
+          className="home-announcement-move-button home-announcement-move-up"
           aria-label={`Move "${a.title}" up`}
           onClick={async()=>{
             try{
@@ -607,7 +607,7 @@ function Home({me}:{me:any}){
         index<d.announcements.length-1&&
         <button
           type="button"
-          className="home-announcement-move-button"
+          className="home-announcement-move-button home-announcement-move-down"
           aria-label={`Move "${a.title}" down`}
           onClick={async()=>{
             try{
