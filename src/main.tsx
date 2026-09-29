@@ -599,7 +599,7 @@ function Home({me}:{me:any}){
             }
           }}
         >
-          ↑
+          ∧
         </button>
       }
 
@@ -633,7 +633,7 @@ function Home({me}:{me:any}){
             }
           }}
         >
-          ↓
+          ∨
         </button>
       }
     </div>
