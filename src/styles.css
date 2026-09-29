@@ -385,8 +385,8 @@ section>h2{
 .home-announcement-actions{
   float:right;
   display:grid;
-  grid-template-columns:max-content 28px;
-  grid-template-rows:28px 28px 28px;
+  grid-template-columns:max-content 34px;
+  grid-template-rows:34px 34px 34px;
   align-items:center;
   gap:6px;
   margin:0 0 8px 14px
@@ -402,6 +402,27 @@ section>h2{
   min-height:28px;
   height:28px;
   padding:3px 8px
+}
+
+.home-announcement-change-button{
+  grid-column:1;
+  grid-row:1
+}
+
+.home-announcement-actions
+.home-history-delete-button{
+  grid-column:2;
+  grid-row:1
+}
+
+.home-announcement-move-up{
+  grid-column:2;
+  grid-row:2
+}
+
+.home-announcement-move-down{
+  grid-column:2;
+  grid-row:3
 }
 
 .home-announcement-move-button{
