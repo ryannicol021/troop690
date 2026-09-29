@@ -384,8 +384,9 @@ section>h2{
 .home-announcement.is-editing
 .home-announcement-actions{
   float:right;
-  display:flex;
-  flex-direction:column;
+  display:grid;
+  grid-template-columns:max-content 28px;
+  grid-template-rows:28px 28px 28px;
   align-items:center;
   gap:6px;
   margin:0 0 8px 14px
