@@ -434,7 +434,7 @@ section>h2{
   border:1px solid #bdb5a6;
   border-radius:3px;
   background:var(--khaki-light);
-  color:var(--navy);
+  color:var(--text);
   display:grid;
   place-items:center;
   font-size:1rem;
