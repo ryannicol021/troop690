@@ -1397,6 +1397,32 @@ tbody tr:nth-child(even){
   padding-bottom:4px
 }
 
+.page-head:has(.event-page-close-actions){
+  position:relative;
+  align-items:flex-start;
+  padding-right:44px
+}
+
+.event-page-close-actions{
+  position:absolute;
+  top:0;
+  right:0
+}
+
+.event-page-edit-actions{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  margin-bottom:18px
+}
+
+.event-page-edit-actions > .button{
+  min-height:34px;
+  height:34px;
+  padding-top:4px;
+  padding-bottom:4px
+}
+
 .event-attendance-manager-actions > .button{
   min-height:34px;
   height:34px;
@@ -1421,6 +1447,12 @@ tbody tr:nth-child(even){
   place-items:center;
   font-size:2.2rem;
   line-height:1
+}
+
+.page-close-glyph{
+  display:block;
+  line-height:1;
+  transform:translateY(-2px)
 }
 
 @media(max-width:700px){
