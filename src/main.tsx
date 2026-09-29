@@ -7013,7 +7013,7 @@ actions={
         nav('/photos');
       }}
     >
-      ×
+      <span className="page-close-glyph">×</span>
     </button>
   </div>
 }
