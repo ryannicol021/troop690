@@ -404,7 +404,7 @@ function Home({me}:{me:any}){
             </div>
             <a
               className="button"
-              href="mailto:committee@troop690.org?cc=scoutmaster@troop690.org"
+              href="mailto:committee@troop690.org"
             >
               committee@troop690.org
             </a>
@@ -416,7 +416,7 @@ function Home({me}:{me:any}){
             </div>
             <a
               className="button"
-              href="mailto:scoutmaster@troop690.org?cc=committee@troop690.org"
+              href="mailto:scoutmaster@troop690.org"
             >
               scoutmaster@troop690.org
             </a>
@@ -428,7 +428,7 @@ function Home({me}:{me:any}){
             </div>
             <a
               className="button"
-              href="mailto:website@troop690.org?cc=scoutmaster@troop690.org"
+              href="mailto:website@troop690.org"
             >
               website@troop690.org
             </a>
