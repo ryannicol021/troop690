@@ -5175,6 +5175,57 @@ if(
     }
   }
 );
+
+app.get('/api/admin/email-members',async c=>{
+  const d=admin(c,'EML');
+  if(d)return d;
+
+  const rows=await c.env.DB
+    .prepare(`
+      SELECT
+        p.id,
+        p.prefix,
+        p.first_name,
+        p.middle_name,
+        p.last_name,
+        p.suffix,
+        p.email,
+        p.archived,
+        p.adult,
+        p.adult_leader,
+        p.email_default_opt_out,
+        GROUP_CONCAT(
+          DISTINCT CASE
+            WHEN pos.code IS NULL
+              OR pos.code NOT IN(
+                'GUEST',
+                'YOUTH',
+                'ADULT',
+                'ADULTL',
+                'ADMIN'
+              )
+            THEN pos.name
+          END
+        ) position_names
+      FROM people p
+      LEFT JOIN person_positions pp
+        ON pp.person_id=p.id
+      LEFT JOIN positions pos
+        ON pos.id=pp.position_id
+      GROUP BY p.id
+      ORDER BY
+        p.archived,
+        p.adult,
+        p.last_name,
+        p.first_name
+    `)
+    .all<any>();
+
+  return json(c,{
+    members:rows.results??[]
+  });
+});
+
 app.get('/api/admin/members',async c=>{
   const d=admin(c,'MIV');
   if(d)return d;
