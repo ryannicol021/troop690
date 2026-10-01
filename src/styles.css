@@ -728,6 +728,23 @@ tbody tr:nth-child(even){
   padding:2px 9px;
 }
 
+.calendar-top-actions-manage{
+  display:grid;
+  grid-template-columns:
+    repeat(3,124px);
+  grid-template-rows:
+    34px 34px;
+  justify-content:center;
+  align-items:center;
+  gap:9px;
+}
+
+.calendar-top-actions-manage
+.calendar-top-actions-subscribe{
+  grid-column:2;
+  grid-row:2;
+}
+
 .calendar-navigation{
   display:grid;
   grid-template-columns:42px 42px minmax(0,190px) 42px 42px;
@@ -3647,6 +3664,15 @@ footer a:hover{
     grid-template-columns:1fr
   }
 
+  .calendar-top-actions-manage{
+    grid-template-columns:
+      repeat(3,minmax(0,1fr));
+  }
+
+  .calendar-top-actions-manage .button{
+    width:100%;
+  }
+  
   .leadership-history-grid{
     grid-template-columns:
       repeat(2,minmax(0,1fr))
