@@ -3279,6 +3279,14 @@ const [calendarUrlCopied,setCalendarUrlCopied]=useState(false);
   />
 }
 
+    {showManagePlaces&&
+  <ManagePlacesModal
+    onClose={()=>{
+      setShowManagePlaces(false);
+    }}
+  />
+}
+
     {showSubscribe&&
   <div
     className="modal-backdrop"
@@ -3383,6 +3391,378 @@ const [calendarUrlCopied,setCalendarUrlCopied]=useState(false);
   </div>
 }
   </Page>
+}
+
+function ManagePlacesModal({
+  onClose
+}:{
+  onClose:()=>void
+}){
+  const [places,setPlaces]=
+    useState<any[]>([]);
+
+  const [editingPlace,setEditingPlace]=
+    useState<number|null>(null);
+
+  const [newPlace,setNewPlace]=
+    useState({
+      name:'',
+      address:''
+    });
+
+  const [msg,setMsg]=
+    useState('');
+
+  const load=async()=>{
+    try{
+      const p=
+        await api('/admin/places');
+
+      setPlaces(
+        (p.places||[])
+          .sort((x:any,y:any)=>
+            `${x.name} ${x.address}`
+              .localeCompare(
+                `${y.name} ${y.address}`
+              )
+          )
+      );
+    }catch(e:any){
+      setMsg(
+        e?.message||
+        'Unable to load places.'
+      );
+    }
+  };
+
+  useEffect(()=>{
+    load();
+  },[]);
+
+  const showMessage=(text:string)=>{
+    setMsg(text);
+
+    setTimeout(()=>{
+      setMsg('');
+    },1800);
+  };
+
+  const createPlace=async(
+    e:React.FormEvent
+  )=>{
+    e.preventDefault();
+
+    try{
+      const r=await post(
+        '/admin/places',
+        newPlace
+      );
+
+      setNewPlace({
+        name:'',
+        address:''
+      });
+
+      await load();
+
+      showMessage(
+        `Created ${r.place?.name||'place'}`
+      );
+    }catch(e:any){
+      setMsg(
+        e?.message||
+        'Unable to create place.'
+      );
+
+      setTimeout(
+        ()=>setMsg(''),
+        2200
+      );
+    }
+  };
+
+  const savePlace=async(
+    place:any
+  )=>{
+    try{
+      await put(
+        '/admin/places/'+place.id,
+        {
+          name:place.name,
+          address:place.address
+        }
+      );
+
+      setEditingPlace(null);
+
+      await load();
+
+      showMessage('Saved');
+    }catch(e:any){
+      setMsg(
+        e?.message||
+        'Unable to save place.'
+      );
+
+      setTimeout(
+        ()=>setMsg(''),
+        2200
+      );
+    }
+  };
+
+  const deletePlace=async(
+    id:number
+  )=>{
+    if(!confirm(
+      'Are you sure you want to delete this place? This will not change any existing events.'
+    ))
+      return;
+
+    try{
+      const r=await fetch(
+        '/api/admin/places/'+id,
+        {
+          method:'DELETE',
+          credentials:'include'
+        }
+      );
+
+      if(!r.ok){
+        const x=
+          await r.json()
+            .catch(()=>({}));
+
+        setMsg(
+          x.error||
+          'Delete failed'
+        );
+
+        setTimeout(
+          ()=>setMsg(''),
+          2200
+        );
+
+        return;
+      }
+
+      await load();
+
+      showMessage('Deleted');
+    }catch(e:any){
+      setMsg(
+        e?.message||
+        'Unable to delete place.'
+      );
+
+      setTimeout(
+        ()=>setMsg(''),
+        2200
+      );
+    }
+  };
+
+  return (
+    <div
+      className="modal-backdrop"
+      onMouseDown={e=>{
+        if(
+          e.target===
+          e.currentTarget
+        )
+          onClose();
+      }}
+    >
+      <div
+        className="modal-card manage-places-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="manage-places-title"
+      >
+        <div className="modal-header">
+          <h2 id="manage-places-title">
+            Manage Places
+          </h2>
+
+          <button
+            type="button"
+            className="modal-close"
+            onClick={onClose}
+            aria-label="Close"
+          >
+            ×
+          </button>
+        </div>
+
+        <form
+          className="manage-place-form"
+          onSubmit={createPlace}
+        >
+          <label>
+            Place Name
+            <input
+              value={newPlace.name}
+              onChange={e=>
+                setNewPlace({
+                  ...newPlace,
+                  name:e.target.value
+                })
+              }
+              required
+            />
+          </label>
+
+          <label>
+            Address
+            <input
+              value={newPlace.address}
+              onChange={e=>
+                setNewPlace({
+                  ...newPlace,
+                  address:e.target.value
+                })
+              }
+              required
+            />
+          </label>
+
+          <button
+            className="primary admin-action-button"
+            type="submit"
+          >
+            Add Place
+          </button>
+        </form>
+
+        <div className="admin-table-wrap">
+          <table className="admin-table">
+            <thead>
+              <tr>
+                <th>Place Name</th>
+                <th>Address</th>
+                <th>Options</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {places.map((place:any)=>
+                <tr key={place.id}>
+                  <td>
+                    {editingPlace===place.id?
+                      <input
+                        value={place.name}
+                        onChange={e=>
+                          setPlaces(
+                            places.map(x=>
+                              x.id===place.id?
+                                {
+                                  ...x,
+                                  name:
+                                    e.target.value
+                                }:
+                                x
+                            )
+                          )
+                        }
+                      />:
+                      <b>{place.name}</b>
+                    }
+                  </td>
+
+                  <td>
+                    {editingPlace===place.id?
+                      <input
+                        value={place.address}
+                        onChange={e=>
+                          setPlaces(
+                            places.map(x=>
+                              x.id===place.id?
+                                {
+                                  ...x,
+                                  address:
+                                    e.target.value
+                                }:
+                                x
+                            )
+                          )
+                        }
+                      />:
+                      place.address
+                    }
+                  </td>
+
+                  <td>
+                    <div className="admin-action-row">
+                      {editingPlace===place.id?
+                        <>
+                          <button
+                            type="button"
+                            className="primary admin-action-button"
+                            onClick={()=>
+                              savePlace(place)
+                            }
+                          >
+                            Save
+                          </button>
+
+                          <button
+                            type="button"
+                            className="admin-action-button"
+                            onClick={()=>{
+                              setEditingPlace(null);
+
+                              load().catch(e=>
+                                setMsg(
+                                  e.message
+                                )
+                              );
+                            }}
+                          >
+                            Cancel
+                          </button>
+                        </>:
+                        <>
+                          <button
+                            type="button"
+                            className="admin-action-button"
+                            onClick={()=>
+                              setEditingPlace(
+                                place.id
+                              )
+                            }
+                          >
+                            Edit
+                          </button>
+
+                          <button
+                            type="button"
+                            className="admin-action-button"
+                            onClick={()=>
+                              deletePlace(
+                                place.id
+                              )
+                            }
+                          >
+                            Delete
+                          </button>
+                        </>
+                      }
+                    </div>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {msg&&
+          <div className="toast manage-places-modal-toast">
+            {msg}
+          </div>
+        }
+      </div>
+    </div>
+  );
 }
 
 function CopyEventModal({
