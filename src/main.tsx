@@ -302,11 +302,15 @@ const requiredPermission=
   if(p==='/eagles')return <Eagles me={me}/>;
   if(p==='/calendar')return <Calendar me={me}/>;
   if(p.startsWith('/calendar/'))
-    return <CalendarEvent
-      id={p.split('/')[2]}
-      me={me}
-      edit={p.split('/')[3]==='edit'}
-    />;
+return <CalendarEvent
+  id={p.split('/')[2]}
+  me={me}
+  viewAsActive={
+    !!actualMe?.isAdministrator&&
+    viewAs!=='Administrator'
+  }
+  edit={p.split('/')[3]==='edit'}
+/>;
   if(p==='/photos')return <Photos me={me}/>;
   if(p.startsWith('/photos/'))
     return <PhotoAlbum
@@ -3086,16 +3090,39 @@ const [calendarUrlCopied,setCalendarUrlCopied]=useState(false);
       </button>
     </div>
 
-<div
-  className={
-    'calendar-top-actions '+
-    (
-      canEdit?
-        'calendar-top-actions-manage':
-        ''
-    )
-  }
->
+{canEdit&&
+  <div className="calendar-top-actions calendar-top-actions-manage">
+    <button
+      type="button"
+      className="button"
+      onClick={()=>{
+        setShowAddEvent(true);
+      }}
+    >
+      Add Event
+    </button>
+
+    <button
+      type="button"
+      className="button"
+      onClick={()=>{
+        setShowCopyEvent(true);
+      }}
+    >
+      Copy Event
+    </button>
+
+    <button
+      type="button"
+      className="button"
+      onClick={()=>{
+        setShowManagePlaces(true);
+      }}
+    >
+      Manage Places
+    </button>
+  </div>
+}
   {canEdit&&
     <button
       type="button"
@@ -4198,7 +4225,7 @@ function CopyEventModal({
               >
                 {saving?
                   'Copying…':
-                  'Copy Events'}
+                  'Copy Event'}
               </button>
 
               <button
@@ -4945,10 +4972,14 @@ function EventPermissionsManagerModal({
 
 function EventAttendancePanel({
   eventId,
-  event
+  event,
+  me,
+  viewAsActive
 }:{
   eventId:number,
-  event:any
+  event:any,
+  me:any,
+  viewAsActive?:boolean
 }){
   const [data,setData]=
     useState<any>();
@@ -5088,7 +5119,19 @@ const load=async()=>{
 if(!loaded||!data)
   return null;
 
-  const manager=!!data.manager;
+const manager=
+  !!data.manager&&
+  (
+    !viewAsActive||
+    !!me?.permissions?.includes('EVT')||
+    !!me?.permissions?.includes('ATTM')
+  );
+
+const attendanceVisible=
+  !viewAsActive||
+  !!me?.permissions?.includes('ATTV')||
+  !!me?.permissions?.includes('ATTM')||
+  !!me?.permissions?.includes('EVT');
 
   const permissionEnabled=
   ['Summer Camp','Trip'].includes(
@@ -5105,7 +5148,8 @@ if(!loaded||!data)
 
   return (
     <>
-{(manager||familyMembers.length>0)&&
+{attendanceVisible&&
+  (manager||familyMembers.length>0)&&
   <section className="event-attendance card">
           <div className="event-attendance-header">
             <div>
@@ -5321,10 +5365,12 @@ if(!loaded||!data)
 function CalendarEvent({
   id,
   me,
+  viewAsActive,
   edit
 }:{
   id:string,
   me:any,
+  viewAsActive?:boolean,
   edit?:boolean
 }){
   const [d,setD]=useState<any>();
@@ -5625,10 +5671,12 @@ actions={
 }
         </dl>
       </article>
-      <EventAttendancePanel
-        eventId={Number(id)}
-        event={e}
-      />
+<EventAttendancePanel
+  eventId={Number(id)}
+  event={e}
+  me={me}
+  viewAsActive={viewAsActive}
+/>
     </Page>
   );
 }
@@ -5649,14 +5697,20 @@ function PlaceSearch({
   const [query,setQuery]=useState(value||'');
   const [results,setResults]=useState<any[]>([]);
   const [open,setOpen]=useState(false);
-  const [loading,setLoading]=useState(false);
-  const skipSearchRef=useRef(false);
+const [loading,setLoading]=useState(false);
+const skipInitialSearchRef=useRef(true);
+const skipSearchRef=useRef(false);
 
   useEffect(()=>{
     setQuery(value||'');
   },[value]);
 
 useEffect(()=>{
+  if(skipInitialSearchRef.current){
+    skipInitialSearchRef.current=false;
+    return;
+  }
+
   if(skipSearchRef.current){
     skipSearchRef.current=false;
     return;
@@ -6569,19 +6623,19 @@ function EventForm({
         Cancel
       </button>
 
-      <button
-        type="button"
-        className="button"
-        onClick={save}
-        disabled={saving}
-      >
-        {saving?
-          'Saving…':
-          isEdit?
-            'Save Changes':
-            'Add Event'
-        }
-      </button>
+<button
+  type="button"
+  className="button primary"
+  onClick={save}
+  disabled={saving}
+>
+  {saving?
+    'Saving…':
+    isEdit?
+      'Save Changes':
+      'Add Event'
+  }
+</button>
     </div>
   </div>;
 }
@@ -8800,7 +8854,7 @@ function Leadership({me}:{me:any}){
                         <div className="leadership-description-actions">
                           <button
                             type="button"
-                            className="button"
+                            className="button primary"
                             disabled={savingDescription}
                             onClick={()=>
                               saveDescription(x)
@@ -12827,10 +12881,10 @@ function Email(){
   const [newsletterSending,setNewsletterSending]=useState(false);
 
   useEffect(()=>{
-    Promise.all([
-      api('/admin/members'),
-      api('/home')
-    ])
+Promise.all([
+  api('/admin/email-members'),
+  api('/home')
+])
       .then(([memberData,homeData])=>{
         setRows(
           memberData.members||[]
@@ -13406,7 +13460,7 @@ const newsletterText=[
           ''
         ]
       ):
-      ['No announcements selected.','']
+      ['No current announcements.','']
   ),
   'Upcoming Events',
   '',
@@ -13429,7 +13483,7 @@ selectedNewsletterEvents.flatMap(
     ''
   ]
 ):
-      ['No upcoming events selected.']
+      ['No upcoming events in the next month.']
   )
 ].join('\n');
 
@@ -13593,7 +13647,7 @@ const newsletterHtml=`
                           font-size:15px;
                         "
                       >
-                        No announcements selected.
+                        No current announcements.
                       </div>
                     `
                 }
@@ -13744,7 +13798,7 @@ ${
           font-size:15px;
         "
       >
-        No upcoming events selected.
+        No upcoming events in the next month.
       </div>
     `
 }
@@ -15137,7 +15191,7 @@ const deletePlace=async(
           <div className="admin-inline-edit">
             <input
               value={newPosition.name}
-              placeholder="Position name"
+              placeholder="Position Name"
               onChange={e=>
                 setNewPosition({
                   ...newPosition,
@@ -15164,7 +15218,7 @@ const deletePlace=async(
               className="primary admin-action-button"
               type="submit"
             >
-              Add Position
+              Add
             </button>
           </div>
         </form>
