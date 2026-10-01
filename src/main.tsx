@@ -2731,10 +2731,11 @@ function Calendar({me}:{me:any}){
     }
   );
 
-  const [showAddEvent,setShowAddEvent]=useState(false);
-  const [showCopyEvent,setShowCopyEvent]=useState(false);
-  const [showSubscribe,setShowSubscribe]=useState(false);
-  const [calendarUrlCopied,setCalendarUrlCopied]=useState(false);
+const [showAddEvent,setShowAddEvent]=useState(false);
+const [showCopyEvent,setShowCopyEvent]=useState(false);
+const [showSubscribe,setShowSubscribe]=useState(false);
+const [showManagePlaces,setShowManagePlaces]=useState(false);
+const [calendarUrlCopied,setCalendarUrlCopied]=useState(false);
 
   const canEdit=
     !!me?.isAdministrator||
@@ -3077,7 +3078,16 @@ function Calendar({me}:{me:any}){
       </button>
     </div>
 
-<div className="calendar-top-actions">
+<div
+  className={
+    'calendar-top-actions '+
+    (
+      canEdit?
+        'calendar-top-actions-manage':
+        ''
+    )
+  }
+>
   {canEdit&&
     <button
       type="button"
@@ -3102,9 +3112,21 @@ function Calendar({me}:{me:any}){
     </button>
   }
 
+  {canEdit&&
+    <button
+      type="button"
+      className="button"
+      onClick={()=>{
+        setShowManagePlaces(true);
+      }}
+    >
+      Manage Places
+    </button>
+  }
+
   <button
     type="button"
-    className="button"
+    className="button calendar-top-actions-subscribe"
     onClick={()=>{
       setCalendarUrlCopied(false);
       setShowSubscribe(true);
