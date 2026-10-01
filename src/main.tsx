@@ -2862,6 +2862,9 @@ const [calendarUrlCopied,setCalendarUrlCopied]=useState(false);
     );
   };
 
+  const today=
+    dateOnly(new Date());
+
   const formatTime=(value:string)=>{
     const date=new Date(value);
 
@@ -3162,6 +3165,10 @@ const [calendarUrlCopied,setCalendarUrlCopied]=useState(false);
               eventsForDay(cell.date):
               [];
 
+          const isToday=
+            cell.current&&
+            cell.date.getTime()===today.getTime();
+
           return <div
             className={
               'calendar-day '+
@@ -3169,12 +3176,19 @@ const [calendarUrlCopied,setCalendarUrlCopied]=useState(false);
                 cell.current?
                   'calendar-day-current':
                   'calendar-day-adjacent'
+              )+
+              (
+                isToday?
+                  ' calendar-day-today':
+                  ''
               )
             }
             key={i}
           >
             <div className="calendar-day-number">
-              {cell.day}
+              <span className="calendar-day-number-value">
+                {cell.day}
+              </span>
             </div>
 
             {cell.current&&
