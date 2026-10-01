@@ -3169,27 +3169,31 @@ const [calendarUrlCopied,setCalendarUrlCopied]=useState(false);
             cell.current&&
             cell.date.getTime()===today.getTime();
 
-          return <div
-            className={
-              'calendar-day '+
-              (
-                cell.current?
-                  'calendar-day-current':
-                  'calendar-day-adjacent'
-              )+
-              (
-                isToday?
-                  ' calendar-day-today':
-                  ''
-              )
-            }
-            key={i}
-          >
-            <div className="calendar-day-number">
-              <span className="calendar-day-number-value">
-                {cell.day}
-              </span>
-            </div>
+const today=dateOnly(new Date());
+
+const isToday=
+  cell.current&&
+  cell.date.getTime()===today.getTime();
+
+return <div
+  className={
+    'calendar-day '+
+    (
+      cell.current?
+        'calendar-day-current':
+        'calendar-day-adjacent'
+    )
+  }
+  key={i}
+>
+  <div className="calendar-day-number">
+    {isToday?
+      <span className="calendar-day-number-value">
+        {cell.day}
+      </span>:
+      cell.day
+    }
+  </div>
 
             {cell.current&&
               <div className="calendar-day-events">
