@@ -3131,17 +3131,6 @@ const [calendarUrlCopied,setCalendarUrlCopied]=useState(false);
       Manage Places
     </button>
   }
-
-  <button
-    type="button"
-    className="button calendar-top-actions-subscribe"
-    onClick={()=>{
-      setCalendarUrlCopied(false);
-      setShowSubscribe(true);
-    }}
-  >
-    Subscribe
-  </button>
 </div>
 
     <div className="calendar-grid-wrap">
@@ -3236,6 +3225,19 @@ const [calendarUrlCopied,setCalendarUrlCopied]=useState(false);
           </div>;
         })}
       </div>
+    </div>
+
+    <div className="calendar-bottom-subscribe">
+      <button
+        type="button"
+        className="button"
+        onClick={()=>{
+          setCalendarUrlCopied(false);
+          setShowSubscribe(true);
+        }}
+      >
+        Subscribe
+      </button>
     </div>
 
     {showAddEvent&&
