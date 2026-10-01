@@ -745,6 +745,14 @@ tbody tr:nth-child(even){
   grid-row:2;
 }
 
+.manage-places-modal{
+  width:min(900px,100%)
+}
+
+.manage-places-modal-toast{
+  z-index:1100
+}
+
 .calendar-navigation{
   display:grid;
   grid-template-columns:42px 42px minmax(0,190px) 42px 42px;
