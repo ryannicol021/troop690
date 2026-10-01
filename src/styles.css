@@ -746,6 +746,12 @@ tbody tr:nth-child(even){
   grid-row:2;
 }
 
+.calendar-bottom-subscribe{
+  display:flex;
+  justify-content:center;
+  margin-top:14px;
+}
+
 .manage-places-modal{
   width:min(900px,100%)
 }
