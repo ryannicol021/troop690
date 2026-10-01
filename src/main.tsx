@@ -894,16 +894,21 @@ function Home({me}:{me:any}){
                     </div>
                   )}
                 
-                  {days.map(day=>{
+                  {days.map((day,index)=>{
                     const events=
                       eventsForDay(day);
-                
+                  
                     return <div
                       className="calendar-day calendar-day-current"
                       key={dateKey(day)}
                     >
                       <div className="calendar-day-number">
-                        {day.getDate()}
+                        {index===0?
+                          <span className="calendar-day-number-value">
+                            {day.getDate()}
+                          </span>:
+                          day.getDate()
+                        }
                       </div>
                 
                       <div className="calendar-day-events">
