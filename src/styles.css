@@ -954,6 +954,16 @@ tbody tr:nth-child(even){
   font-weight:600
 }
 
+.calendar-day-number-value{
+  display:inline-grid;
+  place-items:center;
+  width:1.8em;
+  height:1.8em;
+  border:1px solid var(--text);
+  border-radius:50%;
+  box-sizing:border-box
+}
+
 .calendar-day-adjacent .calendar-day-number{
   color:#aaa397
 }
