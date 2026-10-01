@@ -922,7 +922,7 @@ tbody tr:nth-child(even){
   border-top:1px solid var(--border);
   border-left:1px solid var(--border);
   background:var(--border);
-  gap:1px
+  gap:1px;
   border:1px solid #bdb5a6;
 }
 
