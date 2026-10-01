@@ -721,7 +721,8 @@ tbody tr:nth-child(even){
   margin-bottom:18px;
 }
 
-.calendar-top-actions .button{
+.calendar-top-actions .button,
+.calendar-bottom-subscribe .button{
   width:124px;
   height:30px;
   min-height:30px;
@@ -733,17 +734,9 @@ tbody tr:nth-child(even){
   display:grid;
   grid-template-columns:
     repeat(3,124px);
-  grid-template-rows:
-    30px 30px;
   justify-content:center;
   align-items:center;
   gap:9px;
-}
-
-.calendar-top-actions-manage
-.calendar-top-actions-subscribe{
-  grid-column:2;
-  grid-row:2;
 }
 
 .calendar-bottom-subscribe{
@@ -767,7 +760,7 @@ tbody tr:nth-child(even){
   justify-content:center;
   gap:8px;
   width:min(390px,100%);
-  margin:-10px auto 8px
+  margin:-10px auto 18px
 }
 
 .calendar-navigation .button{
