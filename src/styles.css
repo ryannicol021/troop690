@@ -723,9 +723,10 @@ tbody tr:nth-child(even){
 
 .calendar-top-actions .button{
   width:124px;
-  height:34px;
-  min-height:34px;
-  padding:2px 9px;
+  height:30px;
+  min-height:30px;
+  padding:1px 7px;
+  font-size:.88rem;
 }
 
 .calendar-top-actions-manage{
@@ -733,7 +734,7 @@ tbody tr:nth-child(even){
   grid-template-columns:
     repeat(3,124px);
   grid-template-rows:
-    34px 34px;
+    30px 30px;
   justify-content:center;
   align-items:center;
   gap:9px;
