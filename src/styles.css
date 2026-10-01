@@ -743,6 +743,13 @@ tbody tr:nth-child(even){
   padding:.5rem .7rem
 }
 
+.calendar-navigation-glyph{
+  display:block;
+  font-size:1.55rem;
+  line-height:1;
+  transform:translateY(-2px)
+}
+
 .calendar-navigation .button:disabled{
   opacity:.4;
   cursor:not-allowed
