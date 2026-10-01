@@ -3035,7 +3035,7 @@ function Calendar({me}:{me:any}){
         }}
         title="Previous year"
       >
-        «
+        <span className="calendar-navigation-glyph">«</span>
       </button>
 
       <button
@@ -3047,7 +3047,7 @@ function Calendar({me}:{me:any}){
         }}
         title="Previous month"
       >
-        ‹
+        <span className="calendar-navigation-glyph">‹</span>
       </button>
 
       <div className="calendar-month-title">
@@ -3062,7 +3062,7 @@ function Calendar({me}:{me:any}){
         }}
         title="Next month"
       >
-        ›
+        <span className="calendar-navigation-glyph">›</span>
       </button>
 
       <button
@@ -3073,7 +3073,7 @@ function Calendar({me}:{me:any}){
         }}
         title="Next year"
       >
-        »
+        <span className="calendar-navigation-glyph">»</span>
       </button>
     </div>
 
