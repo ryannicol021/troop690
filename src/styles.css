@@ -951,7 +951,11 @@ tbody tr:nth-child(even){
 .calendar-day-number{
   margin-bottom:6px;
   font-size:.9rem;
-  font-weight:600
+  font-weight:600;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  min-height:1.8em;
 }
 
 .calendar-day-number-value{
@@ -961,7 +965,7 @@ tbody tr:nth-child(even){
   height:1.8em;
   border:1px solid var(--text);
   border-radius:50%;
-  box-sizing:border-box
+  box-sizing:border-box;
 }
 
 .calendar-day-adjacent .calendar-day-number{
