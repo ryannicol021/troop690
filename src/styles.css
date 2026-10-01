@@ -789,24 +789,20 @@ tbody tr:nth-child(even){
 }
 
 .calendar-subscribe-section{
+  display:grid;
+  gap:10px;
   padding:0 0 18px;
   margin:0 0 18px;
   border-bottom:1px solid var(--border)
 }
 
-.calendar-subscribe-section:last-child{
-  padding-bottom:0;
-  margin-bottom:0;
-  border-bottom:0
-}
-
 .calendar-subscribe-section h3{
-  margin:0 0 10px;
+  margin:0;
   color:var(--navy)
 }
 
 .calendar-subscribe-section ol{
-  margin:0 0 10px;
+  margin:0;
   padding-left:22px
 }
 
@@ -1927,7 +1923,9 @@ tbody tr:nth-child(even){
 .eagle-number{
   color:var(--red);
   font-weight:700;
-  margin-right:5px
+  margin-right:5px;
+  flex:0 0 auto;
+  white-space:nowrap
 }
 
 .eagle-drag-handle{
@@ -3595,14 +3593,10 @@ footer a:hover{
 }
 
 .permission-grid thead th:first-child{
-  left:0;
-  z-index:5
+  text-align:left
 }
 
 .permission-grid tbody th{
-  position:sticky;
-  left:0;
-  z-index:2;
   text-align:left;
   font-weight:600
 }
@@ -3614,7 +3608,7 @@ footer a:hover{
 
 .permission-grid tbody tr:nth-child(even) th,
 .permission-grid tbody tr:nth-child(even) td{
-  background:var(--khaki-light)
+  background:#fcfbf8
 }
 
 .permission-grid tbody tr:last-child th,
@@ -3960,6 +3954,10 @@ footer a:hover{
   display:grid;
   grid-template-columns:repeat(3,minmax(0,1fr));
   gap:12px
+}
+
+.attendance-manager-modal>.button-row{
+  margin-top:12px
 }
 
 .attendance-manager-column{
