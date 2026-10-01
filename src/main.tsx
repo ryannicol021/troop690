@@ -3159,23 +3159,20 @@ const [calendarUrlCopied,setCalendarUrlCopied]=useState(false);
           </div>
         )}
 
-        {cells.map((cell:any,i:number)=>{
-          const events=
-            cell.current?
-              eventsForDay(cell.date):
-              [];
+{cells.map((cell:any,i:number)=>{
+  const events=
+    cell.current?
+      eventsForDay(cell.date):
+      [];
 
-          const isToday=
-            cell.current&&
-            cell.date.getTime()===today.getTime();
+  const today=
+    dateOnly(new Date());
 
-const today=dateOnly(new Date());
+  const isToday=
+    cell.current&&
+    cell.date.getTime()===today.getTime();
 
-const isToday=
-  cell.current&&
-  cell.date.getTime()===today.getTime();
-
-return <div
+  return <div
   className={
     'calendar-day '+
     (
