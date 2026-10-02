@@ -230,7 +230,15 @@ const me=
 }
     
     <main>
-      <RouterPage me={me} setMe={setActualMe} authReady={authReady}/>
+      <RouterPage
+  me={me}
+  setMe={setActualMe}
+  authReady={authReady}
+  viewAsActive={
+    !!actualMe?.isAdministrator&&
+    viewAs!=='Administrator'
+  }
+/>
     </main>
 
     <footer>
@@ -252,11 +260,13 @@ const me=
 function RouterPage({
   me,
   setMe,
-  authReady
+  authReady,
+  viewAsActive
 }:{
   me:any,
   setMe:(x:any)=>void,
-  authReady:boolean
+  authReady:boolean,
+  viewAsActive:boolean
 }){
   const p=useLocation().pathname;
 
