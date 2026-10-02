@@ -3426,8 +3426,10 @@ tbody tr:nth-child(even){
   }
 
   .event-form-row input[type="date"]{
+    width:100%;
     min-width:0;
-    max-width:100%
+    max-width:100%;
+    box-sizing:border-box
   }
 }
 
