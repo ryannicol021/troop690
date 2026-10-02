@@ -13,7 +13,6 @@ type Env = {
   ASSETS:Fetcher;
   SESSION_TTL_DAYS:string;
   BOOTSTRAP_SECRET?:string;
-  GEOAPIFY_API_KEY?:string;
   CLOUDFLARE_ACCOUNT_ID?:string;
   CLOUDFLARE_API_TOKEN?:string;
   APPS_SCRIPT_URL?:string;
