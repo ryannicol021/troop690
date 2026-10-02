@@ -1491,7 +1491,7 @@ useEffect(()=>{
                           )} · ${formatTime(e.start_at)}`
                         }
                       </span>
-                    </a>
+                    </Link>
                   )}
                 </div>
               }
