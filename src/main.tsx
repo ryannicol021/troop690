@@ -12340,88 +12340,114 @@ Troop 690`;
       />
     }
 
-    {accountLink&&
-      <div className="modal">
-        <div className="modal-card">
-          <h2>
-            {accountLink.mode==='reset'?
-              'Reset Password':
-              'Account Link'
-            }
-          </h2>
+{accountLink&&
+  <div
+    className="modal-backdrop"
+    onMouseDown={e=>{
+      if(e.target===e.currentTarget)
+        setAccountLink(null);
+    }}
+  >
+    <div
+      className="modal-card account-link-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="account-link-modal-title"
+    >
+      <div className="modal-header">
+        <h2 id="account-link-modal-title">
+          {accountLink.mode==='reset'?
+            'Reset Password':
+            'Account Link'
+          }
+        </h2>
 
-          <p>
-            {accountLink.mode==='reset'?
-              'Use this link to let the member reset password.':
-              'Use this link to let the member create account.'
-            }
-          </p>
-
-          <label className="form">
-            Username
-            <input
-              value={accountLink.username}
-              readOnly
-            />
-          </label>
-
-          <label className="form">
-            Account Link
-            <input
-              value={accountLink.url}
-              readOnly
-            />
-          </label>
-
-          <div className="button-row">
-            <button
-              className="primary"
-              type="button"
-              onClick={async()=>{
-                try{
-                  await navigator.clipboard.writeText(
-                    accountLink.url
-                  );
-
-                  setMsg('Link copied');
-                  setTimeout(
-                    ()=>setMsg(''),
-                    1800
-                  );
-                }catch{
-                  setMsg(
-                    'Unable to copy the link. You can select it manually.'
-                  );
-
-                  setTimeout(
-                    ()=>setMsg(''),
-                    2200
-                  );
-                }
-              }}
-            >
-              Copy Link
-            </button>
-
-            <button
-              type="button"
-              onClick={sendAccountLinkEmail}
-            >
-              Send
-            </button>
-
-            <button
-              type="button"
-              onClick={()=>
-                setAccountLink(null)
-              }
-            >
-              Close
-            </button>
-          </div>
-        </div>
+        <button
+          type="button"
+          className="modal-close"
+          aria-label="Close"
+          onClick={()=>
+            setAccountLink(null)
+          }
+        >
+          ×
+        </button>
       </div>
-    }
+
+      <p className="account-link-modal-description">
+        {accountLink.mode==='reset'?
+          'Use this link to let the member reset password.':
+          'Use this link to let the member create account.'
+        }
+      </p>
+
+      <div className="account-link-modal-fields">
+        <label>
+          Username
+          <input
+            value={accountLink.username}
+            readOnly
+          />
+        </label>
+
+        <label>
+          Account Link
+          <input
+            value={accountLink.url}
+            readOnly
+          />
+        </label>
+      </div>
+
+      <div className="button-row account-link-modal-actions">
+        <button
+          className="primary"
+          type="button"
+          onClick={async()=>{
+            try{
+              await navigator.clipboard.writeText(
+                accountLink.url
+              );
+
+              setMsg('Link copied');
+              setTimeout(
+                ()=>setMsg(''),
+                1800
+              );
+            }catch{
+              setMsg(
+                'Unable to copy the link. You can select it manually.'
+              );
+
+              setTimeout(
+                ()=>setMsg(''),
+                2200
+              );
+            }
+          }}
+        >
+          Copy Link
+        </button>
+
+        <button
+          type="button"
+          onClick={sendAccountLinkEmail}
+        >
+          Send
+        </button>
+
+        <button
+          type="button"
+          onClick={()=>
+            setAccountLink(null)
+          }
+        >
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+}
 
     {msg&&
       <div className="toast">
