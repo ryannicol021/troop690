@@ -5841,6 +5841,9 @@ app.get('/api/admin/email-members',async c=>{
           END
         ) position_names
       FROM people p
+      JOIN accounts a
+        ON a.person_id=p.id
+        AND a.active=1
       LEFT JOIN person_positions pp
         ON pp.person_id=p.id
       LEFT JOIN positions pos
