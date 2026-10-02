@@ -2003,8 +2003,8 @@ const parseHomeContact=(body:any)=>{
   const linkText=
     String(body?.link_text||'').trim();
 
-  const roles=[
-    ...new Set(
+  const roles:string[]=[
+    ...new Set<string>(
       (
         Array.isArray(body?.roles)?
           body.roles:
