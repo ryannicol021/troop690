@@ -1526,8 +1526,26 @@ tbody tr:nth-child(even){
     padding:16px
   }
 
+  .event-form{
+    min-width:0
+  }
+
   .event-form-row{
-    grid-template-columns:1fr
+    grid-template-columns:minmax(0,1fr);
+    min-width:0
+  }
+
+  .event-form-row > label{
+    min-width:0;
+    width:100%
+  }
+
+  .event-form-row input[type="date"]{
+    display:block;
+    width:100%;
+    min-width:0;
+    max-width:100%;
+    box-sizing:border-box
   }
 
   .event-details dl{
