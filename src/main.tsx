@@ -26,6 +26,8 @@ function App(){
     useState<'view'|'edit'>('view');
   const navg=useNavigate();
   const loc=useLocation();
+  const currentPath=
+    loc.pathname.replace(/\/+$/,'')||'/';
   const editModePermissions=[
     'CONT',
     'HOME',
@@ -185,7 +187,7 @@ const me=
                     setOpen(null);
                     navg(p)
                   }}
-                  className={loc.pathname===p?'active':''}
+                  className={currentPath===p?'active':''}
                 >
                   {n}
                 </button>
@@ -386,7 +388,8 @@ function RouterPage({
   viewAsActive:boolean,
   viewAsRole:string
 }){
-  const p=useLocation().pathname;
+  const rawPath=useLocation().pathname;
+  const p=rawPath.replace(/\/+$/,'')||'/';
 
   const required:Record<string,string>={
     '/update-info':'SET',
