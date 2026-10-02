@@ -5776,11 +5776,6 @@ const load=async()=>{
             '/my-permissions'
           );
       }catch{
-        /*
-         * Permission information is optional here.
-         * Attendance must continue to work even if
-         * the permission-status request fails.
-         */
       }
 
       const permissionMap=
