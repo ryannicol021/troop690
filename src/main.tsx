@@ -2442,19 +2442,6 @@ function UpdateInfo({me}:{me:any}){
     }catch(e:any){
       setError(e.message);
     }
-
-    const footer=await api('/footer-links');
-
-    setFooterLinks({
-      charteredOrganization:
-        footer.charteredOrganization||'',
-      charteredOrganizationUrl:
-        footer.charteredOrganizationUrl||'',
-      localCouncil:
-        footer.localCouncil||'',
-      localCouncilUrl:
-        footer.localCouncilUrl||''
-    });
   };
 
   useEffect(()=>{
@@ -15074,6 +15061,29 @@ function Administration({me}:{me:any}){
   useEffect(()=>{
     load().catch(e=>setMsg(e.message))
   },[]);
+
+  const saveFooterLinks=async()=>{
+    try{
+      await put(
+        '/admin/footer-links',
+        footerLinks
+      );
+
+      setMsg('Saved');
+
+      setTimeout(
+        ()=>setMsg(''),
+        1800
+      );
+    }catch(e:any){
+      setMsg(e.message);
+
+      setTimeout(
+        ()=>setMsg(''),
+        2200
+      );
+    }
+  };
 
   const savePosition=async(position:any)=>{
     await put(
