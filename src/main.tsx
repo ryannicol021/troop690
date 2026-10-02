@@ -6887,6 +6887,43 @@ function EventForm({
       return;
     }
 
+    if(form.all_day){
+  if(
+    form.end_date<
+    form.start_date
+  ){
+    setError(
+      'End date cannot be before Start date.'
+    );
+    return;
+  }
+}else{
+  const start=
+    new Date(
+      convertTime(
+        form.start_date,
+        form.start_time,
+        form.start_ampm
+      )
+    ).getTime();
+
+  const end=
+    new Date(
+      convertTime(
+        form.end_date,
+        form.end_time,
+        form.end_ampm
+      )
+    ).getTime();
+
+  if(end<start){
+    setError(
+      'End cannot be before Start.'
+    );
+    return;
+  }
+}
+
     setSaving(true);
 
     try{
