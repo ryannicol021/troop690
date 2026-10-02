@@ -19,4 +19,3 @@ binding = "FILES"
 bucket_name = "troop690-files"
 
 [vars]
-SESSION_TTL_DAYS = "30"
