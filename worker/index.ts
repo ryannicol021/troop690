@@ -2023,6 +2023,154 @@ const homeContactRoleBinds=(
     roles.includes('Administrator')?1:0
   ];
 
+app.get('/api/footer-links',async c=>{
+  const rows=await c.env.DB
+    .prepare(`
+      SELECT key,value
+      FROM site_content
+      WHERE key IN(
+        'footer_chartered_organization',
+        'footer_chartered_organization_url',
+        'footer_local_council',
+        'footer_local_council_url'
+      )
+    `)
+    .all<any>();
+
+  const values=Object.fromEntries(
+    (rows.results??[]).map(
+      x=>[x.key,x.value]
+    )
+  );
+
+  return json(c,{
+    charteredOrganization:
+      values.footer_chartered_organization||'',
+    charteredOrganizationUrl:
+      values.footer_chartered_organization_url||'',
+    localCouncil:
+      values.footer_local_council||'',
+    localCouncilUrl:
+      values.footer_local_council_url||''
+  });
+});
+
+app.put('/api/admin/footer-links',async c=>{
+  const d=admin(c,'HOME');
+  if(d)return d;
+
+  const body=await c.req.json();
+
+  const charteredOrganization=
+    String(
+      body?.charteredOrganization||''
+    ).trim();
+
+  const charteredOrganizationUrl=
+    String(
+      body?.charteredOrganizationUrl||''
+    ).trim();
+
+  const localCouncil=
+    String(
+      body?.localCouncil||''
+    ).trim();
+
+  const localCouncilUrl=
+    String(
+      body?.localCouncilUrl||''
+    ).trim();
+
+  if(
+    !charteredOrganization||
+    !localCouncil
+  ){
+    return json(
+      c,
+      {
+        error:
+          'Both Footer Links text fields are required.'
+      },
+      400
+    );
+  }
+
+  for(
+    const url of [
+      charteredOrganizationUrl,
+      localCouncilUrl
+    ]
+  ){
+    if(
+      url&&
+      !/^https?:\/\//i.test(url)
+    ){
+      return json(
+        c,
+        {
+          error:
+            'Footer Links URLs must begin with http:// or https://.'
+        },
+        400
+      );
+    }
+  }
+
+  await c.env.DB.batch([
+    c.env.DB
+      .prepare(`
+        INSERT INTO site_content(key,value)
+        VALUES(?,?)
+        ON CONFLICT(key)
+        DO UPDATE SET value=excluded.value
+      `)
+      .bind(
+        'footer_chartered_organization',
+        charteredOrganization
+      ),
+
+    c.env.DB
+      .prepare(`
+        INSERT INTO site_content(key,value)
+        VALUES(?,?)
+        ON CONFLICT(key)
+        DO UPDATE SET value=excluded.value
+      `)
+      .bind(
+        'footer_chartered_organization_url',
+        charteredOrganizationUrl
+      ),
+
+    c.env.DB
+      .prepare(`
+        INSERT INTO site_content(key,value)
+        VALUES(?,?)
+        ON CONFLICT(key)
+        DO UPDATE SET value=excluded.value
+      `)
+      .bind(
+        'footer_local_council',
+        localCouncil
+      ),
+
+    c.env.DB
+      .prepare(`
+        INSERT INTO site_content(key,value)
+        VALUES(?,?)
+        ON CONFLICT(key)
+        DO UPDATE SET value=excluded.value
+      `)
+      .bind(
+        'footer_local_council_url',
+        localCouncilUrl
+      )
+  ]);
+
+  return json(c,{
+    ok:true
+  });
+});
+
 app.get('/api/admin/home-contacts',async c=>{
   const d=admin(c,'CONT');
   if(d)return d;
