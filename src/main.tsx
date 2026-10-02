@@ -55,30 +55,30 @@ function App(){
         'Adult':
       'Youth';
 
-  useEffect(()=>{
-    api('/me')
-      .then(async x=>{
-        setActualMe(x.user);
-  
-        if(x.user?.isAdministrator){
-          try{
-            const options=
-              await api('/admin/view-as-options');
-  
-            setViewAsPermissions(
-              options.roles||{}
-            );
-          }catch{}
-        }
-      })
-      .catch(()=>{})
-      .finally(()=>setAuthReady(true));
+useEffect(()=>{
+  api('/me')
+    .then(async x=>{
+      setActualMe(x.user);
 
-  useEffect(()=>{
-    setEditMode(false);
-    setCurrentModeChoice('view');
-  },[loc.pathname]);
+      if(x.user?.isAdministrator){
+        try{
+          const options=
+            await api('/admin/view-as-options');
+
+          setViewAsPermissions(
+            options.roles||{}
+          );
+        }catch{}
+      }
+    })
+    .catch(()=>{})
+    .finally(()=>setAuthReady(true));
 },[]);
+
+useEffect(()=>{
+  setEditMode(false);
+  setCurrentModeChoice('view');
+},[loc.pathname]);
 
 const me=
   actualMe?.isAdministrator&&
