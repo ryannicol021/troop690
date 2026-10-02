@@ -16268,7 +16268,7 @@ const deletePlace=async(
           Link
           <input
             type="url"
-            placeholder="Optional"
+            placeholder="https://"
             value={
               footerLinks.charteredOrganizationUrl
             }
@@ -16311,7 +16311,7 @@ const deletePlace=async(
           Link
           <input
             type="url"
-            placeholder="Optional"
+            placeholder="https://"
             value={
               footerLinks.localCouncilUrl
             }
