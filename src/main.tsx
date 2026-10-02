@@ -75,11 +75,6 @@ useEffect(()=>{
     .finally(()=>setAuthReady(true));
 },[]);
 
-useEffect(()=>{
-  setEditMode(false);
-  setCurrentModeChoice('view');
-},[loc.pathname]);
-
 const me=
   actualMe?.isAdministrator&&
   viewAs!=='Administrator'?
