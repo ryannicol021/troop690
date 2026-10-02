@@ -11,7 +11,6 @@ type Env = {
   DB:D1Database;
   FILES:R2Bucket;
   ASSETS:Fetcher;
-  PUBLIC_SITE_URL:string;
   INTERIM_SITE_URL:string;
   SESSION_TTL_DAYS:string;
   BOOTSTRAP_SECRET?:string;
