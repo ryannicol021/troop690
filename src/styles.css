@@ -3206,6 +3206,34 @@ tbody tr:nth-child(even){
   flex-wrap:wrap
 }
 
+.footer-link-setting{
+  display:grid;
+  gap:8px;
+  margin-bottom:18px
+}
+
+.footer-link-setting-title{
+  font-weight:600;
+  color:var(--navy)
+}
+
+.footer-link-setting-fields{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+  gap:10px
+}
+
+.footer-link-setting-fields label{
+  display:grid;
+  gap:6px;
+  font-weight:600
+}
+
+.footer-link-setting-fields input{
+  width:100%;
+  box-sizing:border-box;
+}
+
 .admin-action-button{
   min-height:34px!important;
   padding:5px 10px
