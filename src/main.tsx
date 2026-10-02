@@ -312,15 +312,12 @@ const requiredPermission=
   if(p==='/eagles')return <Eagles me={me}/>;
   if(p==='/calendar')return <Calendar me={me}/>;
   if(p.startsWith('/calendar/'))
-return <CalendarEvent
-  id={p.split('/')[2]}
-  me={me}
-  viewAsActive={
-    !!actualMe?.isAdministrator&&
-    viewAs!=='Administrator'
-  }
-  edit={p.split('/')[3]==='edit'}
-/>;
+    return <CalendarEvent
+      id={p.split('/')[2]}
+      me={me}
+      viewAsActive={viewAsActive}
+      edit={p.split('/')[3]==='edit'}
+    />;
   if(p==='/photos')return <Photos me={me}/>;
   if(p.startsWith('/photos/'))
     return <PhotoAlbum
