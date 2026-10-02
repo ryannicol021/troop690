@@ -5104,28 +5104,28 @@ const manager=
     !!me?.permissions?.includes('ATTM')
   );
 
-  const attendanceVisible=
-    !viewAsActive||
-    (
-      (
-        viewAsRole==='Adult'||
-        viewAsRole==='Adult Leader'
-      )&&
-      familyMembers.length>0
-    );
-
-  const permissionEnabled=
+const permissionEnabled=
   ['Summer Camp','Trip'].includes(
     String(event.event_type||'')
   );
 
-  const members=
-    [...(data.members||[])]
-      .sort(attendanceSort);
+const members=
+  [...(data.members||[])]
+    .sort(attendanceSort);
 
-  const familyMembers=
+const familyMembers=
   [...(data.familyMembers||[])]
     .sort(attendanceSort);
+
+const attendanceVisible=
+  !viewAsActive||
+  (
+    (
+      viewAsRole==='Adult'||
+      viewAsRole==='Adult Leader'
+    )&&
+    familyMembers.length>0
+  );
 
   return (
     <>
