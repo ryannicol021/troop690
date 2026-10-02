@@ -33,6 +33,13 @@ function App(){
   const loc=useLocation();
   const currentPath=
     loc.pathname.replace(/\/+$/,'')||'/';
+  const isNavActive=(p:string)=>{
+    if(p==='/')
+      return currentPath==='/';
+  
+    return currentPath===p||
+      currentPath.startsWith(p+'/');
+  };
   const editModePermissions=[
     'CONT',
     'HOME',
@@ -127,19 +134,33 @@ const me=
 {open==='account'&&
   <div className="menu account-menu">
     {!actualMe?
-      <button onClick={()=>{
-        setOpen(null);
-        navg('/login');
-      }}>
+      <button
+        className={
+          currentPath==='/login'?
+            'active':
+            ''
+        }
+        onClick={()=>{
+          setOpen(null);
+          navg('/login');
+        }}
+      >
         Log In
       </button>:
       can('SET')&&
-      <button onClick={()=>{
-        setOpen(null);
-        navg('/update-info');
-      }}>
-        Update Info
-      </button>
+        <button
+          className={
+            currentPath==='/update-info'?
+              'active':
+              ''
+          }
+          onClick={()=>{
+            setOpen(null);
+            navg('/update-info');
+          }}
+        >
+          Update Info
+        </button>
     }
 
 {canUseCurrentView&&
@@ -192,7 +213,7 @@ const me=
                     setOpen(null);
                     navg(p)
                   }}
-                  className={currentPath===p?'active':''}
+                  className={isNavActive(p)?'active':''}
                 >
                   {n}
                 </button>
