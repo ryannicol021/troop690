@@ -4377,3 +4377,46 @@ footer a:hover{
     width:100%
   }
 }
+
+.leadership-youth-card-editing{
+  cursor:grab
+}
+
+.leadership-youth-card-editing:active{
+  cursor:grabbing
+}
+
+.leadership-youth-card-actions{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  flex-shrink:0
+}
+
+.leadership-remove-button{
+  width:34px;
+  height:34px;
+  min-width:34px;
+  min-height:34px;
+  padding:0;
+  border:1px solid var(--border);
+  border-radius:3px;
+  background:var(--offwhite);
+  color:var(--navy);
+  font-size:1.15rem;
+  line-height:1;
+  cursor:pointer
+}
+
+.leadership-remove-button:hover{
+  background:var(--khaki-light)
+}
+
+.leadership-position-modal{
+  width:min(480px,100%)
+}
+
+.leadership-position-form{
+  display:grid;
+  gap:14px
+}
