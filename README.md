@@ -1,528 +1,366 @@
 # Troop 690 Website
 
-The Troop 690 website is a React and Cloudflare Workers application for managing troop information, members, events, attendance, advancement, photos, communications, and administrative content.
+The Troop 690 website is the troop's permanent website and information system.
 
-## Technology
+It is designed to belong to the troop rather than to any individual person. The website, domain, database, file storage, and email system should remain usable through changes in Scoutmasters, Committee Chairs, Chartered Organization Representatives, administrators, and other volunteers.
 
-* React
-* TypeScript
-* Vite
-* React Router
-* Cloudflare Workers
-* Cloudflare D1
-* Cloudflare R2
-* Hono
-* Zod
-* PDF-Lib
+Once the site is established, normal troop administration is done through the website and the troop's Google account. Cloudflare provides the infrastructure behind the site but is not part of normal day-to-day administration.
 
-The frontend is built into `dist/` and served by the Cloudflare Worker. The Worker provides the API and connects the site to D1 and R2.
+## What the Website Provides
 
-## Cloudflare Setup
-
-The Worker requires:
-
-* A Cloudflare Worker
-* A D1 database
-* An R2 bucket
-
-The current Wrangler configuration uses:
-
-```toml
-name = "troop690"
-main = "worker/index.ts"
-
-[assets]
-directory = "./dist"
-binding = "ASSETS"
-not_found_handling = "single-page-application"
-
-[[d1_databases]]
-binding = "DB"
-database_name = "troop690"
-migrations_dir = "db/migrations"
-
-[[r2_buckets]]
-binding = "FILES"
-bucket_name = "troop690-files"
-```
-
-The D1 database must have the migrations in `db/migrations/` applied in order.
-
-The R2 bucket stores uploaded website photos and other site files.
-
-## Worker Environment Variables
-
-The Worker uses the following secrets:
-
-```text
-CLOUDFLARE_ACCOUNT_ID
-CLOUDFLARE_API_TOKEN
-APPS_SCRIPT_URL
-APPS_SCRIPT_SECRET
-```
-
-`CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN` are used for Cloudflare R2 management.
-
-`APPS_SCRIPT_URL` and `APPS_SCRIPT_SECRET` are used by the newsletter sender on the Email page. The Apps Script receives the newsletter HTML and text content from the Worker and sends the message through the troop's email account.
-
-## Website Features
+The website brings the troop's public information, member information, events, attendance, advancement, photos, communications, and administrative tools into one system.
 
 ### Home
 
-The Home page contains:
+The Home page provides:
 
-* Troop 690 branding
-* Contact information
-* Announcements
-* Upcoming events
-* Recent photos
-* Footer links
+- Troop 690 branding
+- Contact information
+- Announcements
+- Upcoming events
+- Recent photos
+- Chartered organization information
+- Local council information
 
-Administrators can manage homepage contacts and announcements and control which roles can see individual contact information.
-
-Footer links can be configured for:
-
-* Chartered Organization
-* Local Council
+Administrators can manage contacts and announcements and control which roles can see individual contact information.
 
 ### Eagle Scouts
 
-The Eagle Scouts page displays the troop's Eagle Scout history.
+The Eagle Scouts page maintains the troop's Eagle Scout history.
 
-Administrators can:
-
-* Add Eagle Scouts
-* Edit Eagle Scout information
-* Reorder Eagle Scouts
-* Maintain archived Eagle Scout records
-
-Archived Eagle Scouts are retained for historical purposes and are handled separately from the active membership roster.
+Administrators can add, edit, reorder, and archive Eagle Scout records.
 
 ### Calendar
 
-The Calendar displays troop events and provides:
+The Calendar provides the troop's event calendar and includes:
 
-* Monthly calendar view
-* Event filtering by event type
-* Event details
-* Calendar subscription
-* iCalendar feed
-* Event creation
-* Event editing
-* Event deletion
-* Event copying
-* Event locations
-* Attendance
-* Event permissions
+- Monthly calendar view
+- Event type filtering
+- Event details
+- Calendar subscription
+- iCalendar subscription
+- Event creation
+- Event editing
+- Event copying
+- Event deletion
+- Event locations
+- Attendance
+- Event permissions
 
-Available event types are:
-
-* Ceremony
-* Court of Honor
-* Fundraiser
-* Mass
-* Meeting
-* Service
-* Summer Camp
-* Trip
-* Other
-
-Administrators and authorized adults can manage events according to their assigned permissions.
-
-Places are managed by administrators through **Administration → Manage Places**. Saved places provide the location suggestions used when creating or editing events, while event records retain their own saved place and address information.
+Events can use the troop's saved places while retaining their own stored location information.
 
 ### Attendance
 
-Attendance is managed from individual event pages.
+Adults can record attendance for youth in their family.
 
-Adults connected to a family can record attendance for members of their family using:
+Attendance choices are:
 
-* Yes
-* Unsure
-* No
+- Yes
+- Unsure
+- No
 
-Attendance choices are available before the event ends. Once the event has ended, attendance choices are finalized according to the recorded response.
+Attendance is available until the event ends. After an event ends, the attendance record is finalized.
 
-Authorized attendance managers can open **Attendance Management** and manage the event roster.
+Authorized attendance managers can use Attendance Management to manage the event roster, including:
 
-The attendance roster supports:
+- Attending
+- Not Attending
+- Unsure
 
-* Youth
-* Adults
-* Adult Leaders
-* Drag-and-drop attendance management
-* Attending
-* Not Attending
-* Unsure
-* Saving attendance records
-
-Archived members are excluded from the active attendance roster.
+The attendance system keeps youth, adults, and adult leaders organized while excluding archived members from the active roster.
 
 ### Event Permissions
 
-Certain event types support permission records in addition to attendance.
+Summer Camp and Trip events can use the event permission system.
 
-Permission management is available for:
+Parents can:
 
-* Summer Camp
-* Trip
+- Give permission
+- Revoke permission
+- Review permission information
 
-Parents can give or revoke permission for their youth to attend.
+Authorized managers can review permission records and export them as PDFs.
 
-Permission records include the required participation and emergency authorization information and can be signed and exported.
-
-Authorized managers can:
-
-* Review permissions
-* Give permission
-* Revoke permission
-* Review individual permission records
-* Export an individual permission form as a PDF
-* Export all permission forms as a ZIP
-
-Individual permission PDFs use the member's last and first name for the filename, with numbered suffixes when duplicate names occur.
+All permission forms for an event can also be exported together as a ZIP file.
 
 ### Photos
 
 The Photos section provides:
 
-* Photo albums
-* Event-linked albums
-* Album covers
-* Photo viewing
-* Photo uploads
-* Photo deletion
-* Bulk photo export
+- Photo albums
+- Event-linked albums
+- Album covers
+- Photo uploads
+- Photo viewing
+- Photo deletion
+- Photo exports
 
 Photos are stored in Cloudflare R2.
 
-Administrators can associate events with photo albums and manage the photos belonging to those albums.
-
 ### Leadership
 
-The Leadership page contains current troop leadership and historical leadership information.
+The Leadership page contains current and historical troop leadership information.
 
-It supports:
+It includes:
 
-* Youth Leaders
-* Adult Leaders
-* Senior Patrol Leader history
-* Scoutmaster history
+- Youth Leaders
+- Adult Leaders
+- Senior Patrol Leader history
+- Scoutmaster history
 
-Authorized users can edit leadership information and maintain historical leadership entries.
+Authorized administrators can maintain current leadership and historical records.
 
 ### Advancement
 
 The Advancement page contains the troop's advancement information, including:
 
-* Rank requirements
-* Advancement requirements
-* Merit Badges
-* Awards
-* Advancement positions
+- Rank requirements
+- Advancement positions
+- Merit Badges
+- Awards
 
-Authorized administrators can maintain requirements, positions, awards, and related advancement information.
+Authorized administrators can maintain advancement requirements, positions, and awards.
 
 ### Scout Uniform
 
 The Scout Uniform page provides the troop's uniform guide.
 
-It contains:
+It includes:
 
-* Class A Uniform
-* Class B Uniform
-* Insignia Guide
+- Class A Uniform
+- Class B Uniform
+- Insignia Guide
 
-The insignia guide supports editable insignia labels and descriptions through the site's administrative editing system.
+The Insignia Guide can be maintained through the website's editing system.
 
 ### Email
 
 The Email page provides troop communication tools.
 
-It contains:
+It includes:
 
-* Select Members
-* Youth
-* Adults
-* Adult Leaders
-* Opted-out members
-* Message List
-* Troop Newsletter
+- Member selection
+- Youth recipients
+- Adult recipients
+- Adult Leader recipients
+- Opted-out members
+- Message List
+- Troop Newsletter
 
-The member selector allows authorized users to select recipients for regular messages.
+The Message List allows authorized users to create messages for selected members.
 
-The Message List provides saved message entries and a Create workflow.
+The Troop Newsletter uses troop announcements and upcoming events to create newsletter content.
 
-The Troop Newsletter section uses troop announcements and upcoming events to create newsletter content. Newsletter sending is connected to Google Apps Script through the Worker environment variables.
+Newsletter sending is connected to the troop's Google account through Google Apps Script.
 
 ### Member Info
 
-Member Info provides the troop's membership management system.
+Member Info is the main membership management area.
 
 It includes:
 
-* Individual Members
-* Families
-* Patrols
+- Members
+- Families
+- Patrols
 
-Member records contain information such as:
+Member records can contain:
 
-* Name
-* Contact information
-* Address
-* Membership information
-* Adult or youth status
-* Adult Leader status
-* Positions
-* Email preferences
-* Order of the Arrow membership
-* Eagle Scout archive status
-* Safety and training information where applicable
+- Name
+- Contact information
+- Address
+- Membership information
+- Adult or youth status
+- Adult Leader status
+- Positions
+- Email preferences
+- Order of the Arrow membership
+- Eagle Scout archive information
+- Applicable training and expiration information
 
-Administrators can add, edit, invite, and manage members according to their permissions.
+Authorized administrators can add, edit, invite, and manage members.
 
 ### Families
 
-Families are managed under **Member Info → Families**.
+Families are managed under:
 
-The family system connects members who belong to the same family and is used by the event attendance system to determine which youth an adult may manage.
+**Member Info → Families**
+
+Family relationships are used by the attendance system to determine which youth an adult can manage.
 
 ### Patrols
 
-Patrol management is available under Member Info.
+Patrols are managed under Member Info.
 
-Authorized users can:
-
-* Create patrols
-* Edit patrols
-* Move members between patrols
-* Manage unassigned members
+Authorized users can create and edit patrols and assign members to patrols.
 
 ### Administration
 
-The Administration section contains the site's administrative tools.
+Administration contains the tools needed to maintain the website.
 
 It includes:
 
-* Site Administrator
-* Position-to-Permission Mapping
-* Account Logins
-* Manage Places
-* Footer Links
-* Other site configuration and management tools
+- Site Administrator
+- Position-to-Permission Mapping
+- Account Logins
+- Manage Places
+- Footer Links
+
+The goal is for normal website administration to happen here rather than through the underlying database or hosting platform.
 
 ### Manage Places
 
 Manage Places maintains the troop's reusable event locations.
 
-Each saved place contains:
+Each place has:
 
-* Place Name
-* Address
+- Place Name
+- Address
 
-These places are used by the event location search when entering event information.
+Saved places appear as suggestions when an event location is entered.
 
-Existing events retain their stored location information even when the saved place list changes.
+Events retain their own saved location information, so changing the saved-place list does not change existing events.
 
 ### Account Management
 
-The site supports:
+The website supports:
 
-* Log In
-* Log Out
-* Account invitation links
-* Account claiming
-* Password reset links
-* Account login management
+- Log In
+- Log Out
+- Account invitation links
+- Account claiming
+- Password reset
+- Account management
 
-Member accounts are connected to the corresponding member record.
+Member accounts are connected to member records.
 
-Administrators can create account links for members and send the generated link through the member's email client.
-
-Youth account links can also include the appropriate emergency contacts.
+Administrators can generate account links for members and send those links through email.
 
 ### Update Info
 
-Members with the appropriate permission can update their own account and member information through **Update Info**.
+Members with the appropriate access can update their own information through Update Info.
 
 ### Current View
 
-Authorized administrators and users with the appropriate editing permissions can use **Current View** to view the website as another role.
+Administrators can view the website as another role to check what different users see.
 
 The available views include:
 
-* Guest
-* Youth
-* Adult
-* Adult Leader
-* Administrator
+- Guest
+- Youth
+- Adult
+- Adult Leader
+- Administrator
 
-Current View is useful for checking role-based navigation, page visibility, and editing access.
+This makes it possible to verify role-based navigation and access without changing the actual account.
 
-## Permissions
+## Roles and Permissions
 
-The website uses a permission system to control access to administrative features.
+The website uses roles and permissions to determine what each person can see and manage.
 
-Permissions are assigned through positions and can be mapped through:
+Permissions are assigned through positions and managed through:
 
 **Administration → Position-to-Permission Mapping**
 
+This allows the troop to change who is responsible for different parts of the website without changing the underlying website or giving those people access to the infrastructure.
+
 The system supports permissions for areas including:
 
-* Homepage content
-* Eagle Scouts
-* Leadership
-* History
-* Advancement
-* Uniform
-* Calendar
-* Photos
-* Email
-* Member Information
-* Invitations
-* Attendance
-* Event management
-* Event permissions
-* Administration
+- Home
+- Eagle Scouts
+- Leadership
+- History
+- Advancement
+- Scout Uniform
+- Calendar
+- Photos
+- Email
+- Member Information
+- Invitations
+- Attendance
+- Event Permissions
+- Administration
 
-The site administrator account has full administrative access.
+The site administrator provides full administrative access.
 
-## Database
+## Ownership and Continuity
 
-D1 contains the site's structured information, including:
+The website is intentionally designed so that it does not depend on any one person's continued involvement.
 
-* Member records
-* Accounts
-* Families
-* Patrols
-* Positions
-* Permissions
-* Events
-* Attendance
-* Event permissions
-* Announcements
-* Leadership history
-* Advancement information
-* Awards
-* Uniform insignia
-* Places
-* Photo albums
-* Footer links
-* Other site configuration
+The production resources should be owned by the troop:
 
-Database changes are maintained as ordered migrations in:
+- Domain
+- Cloudflare account
+- Worker
+- D1 database
+- R2 storage
+- Troop email account
+- Google Apps Script
+
+The Cloudflare account should not belong to an individual volunteer's personal account.
+
+The troop's Google account is the normal human-facing account for services that require an external account, such as newsletter sending.
+
+Website administrators should normally only need the website itself and the troop's Google account. They should not need to know how Cloudflare, D1, R2, or the Worker operate.
+
+This separation is intentional.
+
+If a Scoutmaster, Committee Chair, Chartered Organization Representative, webmaster, or other administrator leaves the troop or is removed from the website, their website account can be removed without affecting the existence of the website or its underlying infrastructure.
+
+A new administrator can be given the appropriate website permissions without transferring ownership of the website itself.
+
+## Cloudflare
+
+Cloudflare provides the infrastructure that runs the website.
+
+The production installation uses:
+
+- Cloudflare Workers
+- Cloudflare D1
+- Cloudflare R2
+
+The Worker serves the website and provides the application's backend API.
+
+D1 stores the structured website information.
+
+R2 stores uploaded files, including photos.
+
+Cloudflare is infrastructure for the website, not the website's normal administrative interface.
+
+Once the production environment is established, routine troop administration should not require anyone to log into Cloudflare.
+
+## Google Account and Email
+
+The troop should maintain a dedicated Google account for the website's email-related services.
+
+That account is used for the troop's communications infrastructure and Google Apps Script.
+
+The newsletter system uses Google Apps Script to send messages generated by the website.
+
+The production domain can also be configured so that email sent to the troop's domain is forwarded to the troop's Google account.
+
+The Google account should be owned and maintained by the troop rather than by a particular volunteer.
+
+## Technical Structure
+
+The website consists of a React frontend and a Cloudflare Worker backend.
+
+The main project components are:
 
 ```text
-db/migrations/
-```
+src/
+    main.tsx
+    styles.css
 
-Current migrations include:
+worker/
+    index.ts
 
-```text
-0001_initial
-0002_permissions
-0003_photo_albums
-0004_remove_photo_captions
-0005_case_insensitive_usernames
-0006_remove_documents
-0007_history
-0008_leadership_history_entries
-0009_normalize_advancement_positions
-0010_attendance_permissions
-0011_uniform_insignia
-0012_places
-0013_announcement_order
-0014_remove_unused_camp_permission
-0015_footer_links
-```
+db/
+    migrations/
 
-## File Storage
+public/
+    images/
 
-Cloudflare R2 is used for uploaded photos and site files.
-
-The Worker exposes stored files through the site's `/files/` path while keeping the underlying R2 bucket behind the application.
-
-## Project Structure
-
-```text
-troop690/
-├── db/
-│   └── migrations/
-├── public/
-│   └── images/
-├── src/
-│   ├── main.tsx
-│   └── styles.css
-├── worker/
-│   └── index.ts
-├── index.html
-├── package.json
-├── tsconfig.json
-├── vite.config.ts
-└── wrangler.toml
-```
-
-### `src/main.tsx`
-
-Contains the React application, pages, components, forms, modals, role-based navigation, and client-side site functionality.
-
-### `src/styles.css`
-
-Contains the website's layout, responsive design, forms, tables, modals, buttons, navigation, and page styling.
-
-### `worker/index.ts`
-
-Contains the Cloudflare Worker, API routes, authentication, authorization, D1 operations, R2 operations, file serving, PDF generation, calendar feed, and newsletter integration.
-
-### `db/migrations/`
-
-Contains the database schema history and all database changes.
-
-### `public/images/`
-
-Contains the site's static images and uniform guide images.
-
-## Deployment
-
-The production site is designed to run on Cloudflare Workers with:
-
-* Workers
-* D1
-* R2
-* Static assets
-
-The repository is connected to the Cloudflare deployment environment so that the site can be built and deployed from the repository.
-
-For the production troop deployment, the Cloudflare resources, secrets, domain, and email integration should be configured under the troop's own accounts.
-
-## Domain and Email
-
-The production website uses the troop's domain.
-
-The troop email account is also used for website communications and the newsletter system.
-
-The production email setup consists of:
-
-1. A troop-owned email account.
-2. The troop domain configured through Cloudflare.
-3. Domain email forwarding to the troop email account.
-4. Google Apps Script connected to the troop email account.
-5. The website's `APPS_SCRIPT_URL` and `APPS_SCRIPT_SECRET` configured in Cloudflare.
-
-## Initial Production Setup
-
-A new production installation requires:
-
-1. A troop-owned Cloudflare account.
-2. A Cloudflare Worker.
-3. A D1 database.
-4. An R2 bucket.
-5. The database migrations from `db/migrations/`.
-6. The application repository connected to the Worker.
-7. The required Worker secrets configured.
-8. The troop domain connected to the Worker.
-9. The troop email account configured.
-10. Google Apps Script configured for newsletter sending.
-11. The website's member accounts populated and invitation links distributed.
-
-Once configured, the website is managed through its normal administrative pages rather than by directly editing the database for routine site content.
+index.html
+package.json
+vite.config.ts
+wrangler.toml
