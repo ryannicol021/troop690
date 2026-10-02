@@ -21,27 +21,63 @@ function App(){
   const [open,setOpen]=useState<'account'|'nav'|null>(null);
   const [viewAsOpen,setViewAsOpen]=useState(false);
   const [viewAsChoice,setViewAsChoice]=useState('Administrator');
+  const [editMode,setEditMode]=useState(false);
+  const [currentModeChoice,setCurrentModeChoice]=
+    useState<'view'|'edit'>('view');
   const navg=useNavigate();
   const loc=useLocation();
+  const editModePermissions=[
+    'CONT',
+    'HOME',
+    'EAGLE',
+    'LEAD',
+    'HIST',
+    'ADV',
+    'UNIF'
+  ];
 
-useEffect(()=>{
-  api('/me')
-    .then(async x=>{
-      setActualMe(x.user);
+  const canUseCurrentView=
+    !!actualMe&&
+    (
+      !!actualMe.isAdministrator||
+      editModePermissions.some(
+        code=>actualMe.permissions?.includes(code)
+      )
+    );
+  
+  const currentRole=!actualMe?
+    'Guest':
+    actualMe.isAdministrator?
+      viewAs:
+      actualMe.person?.adult_leader?
+        'Adult Leader':
+      actualMe.person?.adult?
+        'Adult':
+      'Youth';
 
-      if(x.user?.isAdministrator){
-        try{
-          const options=
-            await api('/admin/view-as-options');
+  useEffect(()=>{
+    api('/me')
+      .then(async x=>{
+        setActualMe(x.user);
+  
+        if(x.user?.isAdministrator){
+          try{
+            const options=
+              await api('/admin/view-as-options');
+  
+            setViewAsPermissions(
+              options.roles||{}
+            );
+          }catch{}
+        }
+      })
+      .catch(()=>{})
+      .finally(()=>setAuthReady(true));
 
-          setViewAsPermissions(
-            options.roles||{}
-          );
-        }catch{}
-      }
-    })
-    .catch(()=>{})
-    .finally(()=>setAuthReady(true));
+  useEffect(()=>{
+    setEditMode(false);
+    setCurrentModeChoice('view');
+  },[loc.pathname]);
 },[]);
 
 const me=
@@ -104,15 +140,20 @@ const me=
       </button>
     }
 
-{actualMe?.isAdministrator&&
+{canUseCurrentView&&
   <button
     onClick={()=>{
       setOpen(null);
       setViewAsChoice(viewAs);
+      setCurrentModeChoice(
+        editMode?
+          'edit':
+          'view'
+      );
       setViewAsOpen(true);
     }}
   >
-    View As
+    Current View
   </button>
 }
 
@@ -168,9 +209,9 @@ const me=
         setViewAsOpen(false);
     }}
   >
-    <div className="modal-card">
+    <div className="modal-card current-view-modal">
       <div className="modal-header">
-        <h2>View As</h2>
+        <h2>Current View</h2>
 
         <button
           type="button"
@@ -178,6 +219,11 @@ const me=
           aria-label="Close"
           onClick={()=>{
             setViewAsChoice(viewAs);
+            setCurrentModeChoice(
+              editMode?
+                'edit':
+                'view'
+            );
             setViewAsOpen(false);
           }}
         >
@@ -189,25 +235,88 @@ const me=
         className="form"
         onSubmit={e=>{
           e.preventDefault();
-          setViewAs(viewAsChoice);
+
+          setEditMode(
+            currentModeChoice==='edit'
+          );
+
+          if(actualMe?.isAdministrator)
+            setViewAs(viewAsChoice);
+
           setViewAsOpen(false);
         }}
       >
-        <label>
-          View as
-          <select
-            value={viewAsChoice}
-            onChange={e=>
-              setViewAsChoice(e.target.value)
-            }
-          >
-            <option value="Guest">Guest</option>
-            <option value="Youth">Youth</option>
-            <option value="Adult">Adult</option>
-            <option value="Adult Leader">Adult Leader</option>
-            <option value="Administrator">Administrator</option>
-          </select>
-        </label>
+        {(actualMe?.isAdministrator||canUseCurrentView)&&
+          <section className="current-view-section">
+            <h3>Current Mode</h3>
+
+            <div className="current-view-choice-list">
+              <label className="current-view-choice">
+                <input
+                  type="radio"
+                  name="current-mode"
+                  value="view"
+                  checked={
+                    currentModeChoice==='view'
+                  }
+                  onChange={()=>
+                    setCurrentModeChoice('view')
+                  }
+                />
+                <span>View Mode</span>
+              </label>
+
+              <label className="current-view-choice">
+                <input
+                  type="radio"
+                  name="current-mode"
+                  value="edit"
+                  checked={
+                    currentModeChoice==='edit'
+                  }
+                  onChange={()=>
+                    setCurrentModeChoice('edit')
+                  }
+                />
+                <span>Edit Mode</span>
+              </label>
+            </div>
+          </section>
+        }
+
+        {actualMe?.isAdministrator&&
+          <section className="current-view-section">
+            <h3>Current Role</h3>
+
+            <div className="current-view-choice-list">
+              {[
+                'Guest',
+                'Youth',
+                'Adult',
+                'Adult Leader',
+                'Administrator'
+              ].map(role=>
+                <label
+                  className="current-view-choice"
+                  key={role}
+                >
+                  <input
+                    type="radio"
+                    name="current-role"
+                    value={role}
+                    checked={
+                      viewAsChoice===role
+                    }
+                    onChange={()=>
+                      setViewAsChoice(role)
+                    }
+                  />
+                  <span>{role}</span>
+                </label>
+              )}
+            </div>
+          </section>
+        }
 
         <div className="button-row">
           <button className="primary">
@@ -218,6 +327,11 @@ const me=
             type="button"
             onClick={()=>{
               setViewAsChoice(viewAs);
+              setCurrentModeChoice(
+                editMode?
+                  'edit':
+                  'view'
+              );
               setViewAsOpen(false);
             }}
           >
@@ -234,6 +348,8 @@ const me=
         me={me}
         setMe={setActualMe}
         authReady={authReady}
+        editMode={editMode}
+        currentRole={currentRole}
         viewAsActive={
           !!actualMe?.isAdministrator&&
           viewAs!=='Administrator'
@@ -262,12 +378,16 @@ function RouterPage({
   me,
   setMe,
   authReady,
+  editMode,
+  currentRole,
   viewAsActive,
   viewAsRole
 }:{
   me:any,
   setMe:(x:any)=>void,
   authReady:boolean,
+  editMode:boolean,
+  currentRole:string,
   viewAsActive:boolean,
   viewAsRole:string
 }){
@@ -308,11 +428,20 @@ const requiredPermission=
   )
     return <NotFound/>;
 
-  if(p==='/')return <Home me={me}/>;
+  if(p==='/')
+    return <Home
+      me={me}
+      editMode={editMode}
+      currentRole={currentRole}
+    />;
   if(p==='/login')return <Login setMe={setMe}/>;
   if(p.startsWith('/claim/'))return <Claim/>;
   if(p==='/update-info')return <UpdateInfo me={me}/>;
-  if(p==='/eagles')return <Eagles me={me}/>;
+  if(p==='/eagles')
+    return <Eagles
+      me={me}
+      editMode={editMode}
+    />;
   if(p==='/calendar')return <Calendar me={me}/>;
   if(p.startsWith('/calendar/'))
     return <CalendarEvent
@@ -328,9 +457,21 @@ const requiredPermission=
       id={p.split('/')[2]}
       me={me}
     />;
-  if(p==='/leadership')return <Leadership me={me}/>;
-  if(p==='/advancement')return <Advancement me={me}/>;
-  if(p==='/uniform')return <Uniform me={me}/>;
+  if(p==='/leadership')
+    return <Leadership
+      me={me}
+      editMode={editMode}
+    />;
+  if(p==='/advancement')
+    return <Advancement
+      me={me}
+      editMode={editMode}
+    />;
+  if(p==='/uniform')
+    return <Uniform
+      me={me}
+      editMode={editMode}
+    />;
   if(p==='/member-info')
   return <MemberInfo me={me}/>;
   if(p==='/email')return <Email/>;
@@ -363,7 +504,15 @@ function Loading(){
   return <div className="muted"></div>
 }
 
-function Home({me}:{me:any}){
+function Home({
+  me,
+  editMode,
+  currentRole
+}:{
+  me:any,
+  editMode:boolean,
+  currentRole:string
+}){
   const eventTypeClass=(type:string)=>{
     return (
       'calendar-event calendar-event-' +
@@ -387,11 +536,211 @@ function Home({me}:{me:any}){
   const [historyStatement,setHistoryStatement]=useState('');
   const [historyPriority,setHistoryPriority]=useState('');
   const [historyError,setHistoryError]=useState('');
+  const [editingContact,setEditingContact]=useState(false);
+const [editingContactItem,setEditingContactItem]=
+  useState<any>(null);
+const [showContactModal,setShowContactModal]=
+  useState(false);
+const [contactTitle,setContactTitle]=useState('');
+const [contactType,setContactType]=
+  useState<'Email'|'Phone'|'Link'>('Email');
+const [contactValue,setContactValue]=useState('');
+const [contactLinkText,setContactLinkText]=
+  useState('');
+const [contactRoles,setContactRoles]=
+  useState<Record<string,boolean>>({
+    Guest:false,
+    Youth:false,
+    Adult:false,
+    'Adult Leader':false,
+    Administrator:false
+  });
+const [contactError,setContactError]=useState('');
+
+const canEditContact=
+  !!me?.isAdministrator||
+  !!me?.permissions?.includes('CONT');
+
+const contactRoleColumn:Record<string,string>={
+  Guest:'show_guest',
+  Youth:'show_youth',
+  Adult:'show_adult',
+  'Adult Leader':'show_adult_leader',
+  Administrator:'show_administrator'
+};
+
+const formatPhone=(value:string)=>{
+  const digits=
+    value
+      .replace(/\D/g,'')
+      .slice(0,10);
+
+  if(!digits)
+    return '';
+
+  if(digits.length<=3)
+    return `(${digits}`;
+
+  if(digits.length<=6)
+    return `(${digits.slice(0,3)}) ${digits.slice(3)}`;
+
+  return `(${digits.slice(0,3)}) ${digits.slice(3,6)}-${digits.slice(6)}`;
+};
+
+const contactButtonText=(x:any)=>
+  String(
+    x.contact_type==='Link'?
+      x.link_text||'Link':
+    x.contact_value||''
+  );
+
+const contactHref=(x:any)=>{
+  if(x.contact_type==='Email')
+    return `mailto:${x.contact_value}`;
+
+  if(x.contact_type==='Phone')
+    return `sms:${String(x.contact_value||'').replace(/\D/g,'')}`;
+
+  return x.contact_value||'#';
+};
+
+const openAddContact=()=>{
+  setEditingContactItem(null);
+  setContactTitle('');
+  setContactType('Email');
+  setContactValue('');
+  setContactLinkText('');
+  setContactRoles({
+    Guest:false,
+    Youth:false,
+    Adult:false,
+    'Adult Leader':false,
+    Administrator:false
+  });
+  setContactError('');
+  setShowContactModal(true);
+};
+
+const openEditContact=(x:any)=>{
+  setEditingContactItem(x);
+  setContactTitle(String(x.title||''));
+  setContactType(
+    String(x.contact_type||'Email') as
+      'Email'|'Phone'|'Link'
+  );
+  setContactValue(String(x.contact_value||''));
+  setContactLinkText(String(x.link_text||''));
+  setContactRoles({
+    Guest:Number(x.show_guest)===1,
+    Youth:Number(x.show_youth)===1,
+    Adult:Number(x.show_adult)===1,
+    'Adult Leader':
+      Number(x.show_adult_leader)===1,
+    Administrator:
+      Number(x.show_administrator)===1
+  });
+  setContactError('');
+  setShowContactModal(true);
+};
+
+const closeContactModal=()=>{
+  setShowContactModal(false);
+  setEditingContactItem(null);
+  setContactTitle('');
+  setContactType('Email');
+  setContactValue('');
+  setContactLinkText('');
+  setContactError('');
+};
+
+const saveContact=async(
+  e:React.FormEvent
+)=>{
+  e.preventDefault();
+
+  const selectedRoles=
+    Object.entries(contactRoles)
+      .filter(([,selected])=>selected)
+      .map(([role])=>role);
+
+  if(!contactTitle.trim()){
+    setContactError('Title is required.');
+    return;
+  }
+
+  if(!contactValue.trim()){
+    setContactError('Contact is required.');
+    return;
+  }
+
+  if(
+    contactType==='Link'&&
+    !contactLinkText.trim()
+  ){
+    setContactError('Link Text is required.');
+    return;
+  }
+
+  if(!selectedRoles.length){
+    setContactError(
+      'Select at least one role.'
+    );
+    return;
+  }
+
+  try{
+    setContactError('');
+
+    const payload={
+      title:contactTitle.trim(),
+      contact_type:contactType,
+      contact_value:
+        contactType==='Phone'?
+          formatPhone(contactValue):
+          contactValue.trim(),
+      link_text:
+        contactType==='Link'?
+          contactLinkText.trim():
+          '',
+      roles:selectedRoles
+    };
+
+    if(editingContactItem){
+      await put(
+        `/admin/home-contacts/${editingContactItem.id}`,
+        payload
+      );
+    }else{
+      await post(
+        '/admin/home-contacts',
+        payload
+      );
+    }
+
+    setD(await api('/home'));
+    closeContactModal();
+  }catch(e:any){
+    setContactError(
+      e?.message||
+      'Unable to save the contact.'
+    );
+  }
+};
 
   useEffect(()=>{
     api('/home')
       .then(setD)
       .catch((e:any)=>setError(e?.message||'Unable to load the homepage.'));
+
+  useEffect(()=>{
+    if(!editMode){
+      setEditingContact(false);
+      setEditingHistory(false);
+      setShowHistoryModal(false);
+      setShowContactModal(false);
+      setEditingContactItem(null);
+    }
+  },[editMode]);
   },[]);
 
   if(error)
@@ -408,74 +757,215 @@ function Home({me}:{me:any}){
       />
     </div>
 
-        <section className="card home-contact-card">
-      <h2>Contact</h2>
+<section className="card home-contact-card">
+  <div className="home-section-head">
+    <h2>Contact</h2>
 
-      {!me?
-        <>
-          <div className="home-contact-option">
-            <div>
-              <h3>Interested in Joining?</h3>
-            </div>
-            <a
-              className="button"
-              href="mailto:committee@troop690.org"
-            >
-              committee@troop690.org
-            </a>
+    {editMode&&canEditContact&&
+      <div className="home-section-controls">
+        {editingContact&&
+          <button
+            type="button"
+            className="home-add-button"
+            aria-label="Add contact"
+            onClick={openAddContact}
+          >
+            +
+          </button>
+        }
+
+        <button
+          type="button"
+          className="button home-section-edit-button"
+          aria-label={
+            editingContact?
+              'Done editing contact':
+              'Edit contact'
+          }
+          onClick={()=>{
+            setEditingContact(
+              value=>!value
+            );
+
+            if(editingContact)
+              closeContactModal();
+          }}
+        >
+          {editingContact?'Done':'Edit'}
+        </button>
+      </div>
+    }
+  </div>
+
+  {(()=>{
+    const roleColumn=
+      contactRoleColumn[currentRole]||
+      'show_guest';
+
+    const contacts=(d.contacts||[])
+      .filter((x:any)=>
+        editingContact&&canEditContact?
+          true:
+          Number(x[roleColumn])===1
+      );
+
+    return contacts.map(
+      (x:any,index:number)=>
+        <div
+          className={
+            editingContact?
+              'home-contact-option is-editing':
+              'home-contact-option'
+          }
+          key={x.id}
+        >
+          <div className="home-contact-head">
+            {editingContact&&
+              <div className="home-contact-actions">
+                <button
+                  type="button"
+                  className={
+                    'leadership-change-button '+
+                    'home-announcement-change-button'
+                  }
+                  onClick={()=>
+                    openEditContact(x)
+                  }
+                >
+                  Change
+                </button>
+
+                <button
+                  type="button"
+                  className="home-history-delete-button"
+                  aria-label={
+                    `Delete contact: ${x.title}`
+                  }
+                  onClick={async()=>{
+                    if(!window.confirm(
+                      `Delete the contact "${x.title}"?`
+                    ))
+                      return;
+
+                    try{
+                      await api(
+                        `/admin/home-contacts/${x.id}`,
+                        {method:'DELETE'}
+                      );
+
+                      setD(await api('/home'));
+                    }catch(e:any){
+                      setContactError(
+                        e?.message||
+                        'Unable to delete the contact.'
+                      );
+                    }
+                  }}
+                >
+                  −
+                </button>
+
+                {contacts.length>1&&
+                  index>0&&
+                  <button
+                    type="button"
+                    className={
+                      'home-announcement-move-button '+
+                      'home-contact-move-up'
+                    }
+                    aria-label={
+                      `Move "${x.title}" up`
+                    }
+                    onClick={async()=>{
+                      try{
+                        await api(
+                          `/admin/home-contacts/${x.id}/move`,
+                          {
+                            method:'POST',
+                            body:JSON.stringify({
+                              direction:'up'
+                            })
+                          }
+                        );
+
+                        setD(await api('/home'));
+                      }catch(e:any){
+                        setContactError(
+                          e?.message||
+                          'Unable to move the contact.'
+                        );
+                      }
+                    }}
+                  >
+                    ∧
+                  </button>
+                }
+
+                {contacts.length>1&&
+                  index<contacts.length-1&&
+                  <button
+                    type="button"
+                    className={
+                      'home-announcement-move-button '+
+                      'home-contact-move-down'
+                    }
+                    aria-label={
+                      `Move "${x.title}" down`
+                    }
+                    onClick={async()=>{
+                      try{
+                        await api(
+                          `/admin/home-contacts/${x.id}/move`,
+                          {
+                            method:'POST',
+                            body:JSON.stringify({
+                              direction:'down'
+                            })
+                          }
+                        );
+
+                        setD(await api('/home'));
+                      }catch(e:any){
+                        setContactError(
+                          e?.message||
+                          'Unable to move the contact.'
+                        );
+                      }
+                    }}
+                  >
+                    ∨
+                  </button>
+                }
+              </div>
+            }
+
+            <h3>{x.title}</h3>
           </div>
 
-          <div className="home-contact-option">
-            <div>
-              <h3>Any Questions?</h3>
-            </div>
-            <a
-              className="button"
-              href="mailto:scoutmaster@troop690.org"
-            >
-              scoutmaster@troop690.org
-            </a>
-          </div>
+          <a
+            className="button"
+            href={contactHref(x)}
+            {...(
+              x.contact_type==='Link'?
+                {
+                  target:'_blank',
+                  rel:'noreferrer'
+                }:
+                {}
+            )}
+          >
+            {contactButtonText(x)}
+          </a>
+        </div>
+    );
+  })()}
 
-          <div className="home-contact-option">
-            <div>
-              <h3>Website Help</h3>
-            </div>
-            <a
-              className="button"
-              href="mailto:website@troop690.org"
-            >
-              website@troop690.org
-            </a>
-          </div>
-        </>:
-        <>
-          <div className="home-contact-option">
-            <div>
-              <h3>Any Questions?</h3>
-            </div>
-            <a
-              className="button"
-              href="mailto:scoutmaster@troop690.org?cc=committee@troop690.org"
-            >
-              scoutmaster@troop690.org
-            </a>
-          </div>
-
-          <div className="home-contact-option">
-            <div>
-              <h3>Website Feedback</h3>
-            </div>
-            <a
-              className="button"
-              href="mailto:website@troop690.org?cc=scoutmaster@troop690.org"
-            >
-              website@troop690.org
-            </a>
-          </div>
-        </>
-      }
-    </section>
+  {contactError&&
+    <p className="error">
+      {contactError}
+    </p>
+  }
+</section>
     
 {me&&
   <section className="card home-announcements-card">
@@ -1056,9 +1546,9 @@ function Home({me}:{me:any}){
 <div className="home-section-head">
   <h2>History</h2>
 
-  {me?.permissions?.includes('HOME')&&
+  {editMode&&me?.permissions?.includes('HOME')&&
     <div className="home-section-controls">
-      {editingHistory&&
+      {editMode&&editingHistory&&
         <button
           type="button"
           className="home-add-button"
@@ -1185,6 +1675,204 @@ function Home({me}:{me:any}){
       </p>
     }
   </section>
+}
+
+{editMode&&canEditContact&&showContactModal&&
+  <div
+    className="modal-backdrop"
+    onMouseDown={e=>{
+      if(e.target===e.currentTarget)
+        closeContactModal();
+    }}
+  >
+    <div
+      className="modal-card contact-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="contact-modal-title"
+    >
+      <div className="modal-header">
+        <h2 id="contact-modal-title">
+          {editingContactItem?
+            'Edit Contact':
+            'Add Contact'}
+        </h2>
+
+        <button
+          type="button"
+          className="modal-close"
+          aria-label="Close"
+          onClick={closeContactModal}
+        >
+          ×
+        </button>
+      </div>
+
+      <form
+        className="form"
+        onSubmit={saveContact}
+      >
+        <label>
+          Title
+          <input
+            value={contactTitle}
+            onChange={e=>
+              setContactTitle(e.target.value)
+            }
+            required
+            autoFocus
+          />
+        </label>
+
+        <label>
+          Contact
+          <select
+            value={contactType}
+            onChange={e=>{
+              const next=
+                e.target.value as
+                  'Email'|'Phone'|'Link';
+
+              setContactType(next);
+
+              if(next!=='Link')
+                setContactLinkText('');
+            }}
+          >
+            <option value="Email">Email</option>
+            <option value="Phone">Phone</option>
+            <option value="Link">Link</option>
+          </select>
+        </label>
+
+        {contactType==='Email'&&
+          <label>
+            Email
+            <input
+              type="email"
+              value={contactValue}
+              onChange={e=>
+                setContactValue(
+                  e.target.value
+                )
+              }
+              required
+            />
+          </label>
+        }
+
+        {contactType==='Phone'&&
+          <label>
+            Phone
+            <input
+              type="tel"
+              inputMode="numeric"
+              maxLength={14}
+              value={formatPhone(contactValue)}
+              onChange={e=>
+                setContactValue(
+                  formatPhone(
+                    e.target.value
+                  )
+                )
+              }
+              required
+            />
+          </label>
+        }
+
+        {contactType==='Link'&&
+          <>
+            <label>
+              Link
+              <input
+                type="url"
+                value={contactValue}
+                onChange={e=>
+                  setContactValue(
+                    e.target.value
+                  )
+                }
+                placeholder="https://"
+                required
+              />
+            </label>
+
+            <label>
+              Link Text
+              <input
+                value={contactLinkText}
+                onChange={e=>
+                  setContactLinkText(
+                    e.target.value
+                  )
+                }
+                required
+              />
+            </label>
+          </>
+        }
+
+        <fieldset className="contact-role-fieldset">
+          <legend>Visible To</legend>
+
+          <div className="contact-role-list">
+            {[
+              'Guest',
+              'Youth',
+              'Adult',
+              'Adult Leader',
+              'Administrator'
+            ].map(role=>
+              <label
+                className="contact-role-option"
+                key={role}
+              >
+                <input
+                  type="checkbox"
+                  checked={
+                    !!contactRoles[role]
+                  }
+                  onChange={e=>
+                    setContactRoles(current=>({
+                      ...current,
+                      [role]:
+                        e.target.checked
+                    }))
+                  }
+                />
+                <span>{role}</span>
+              </label>
+            )}
+          </div>
+        </fieldset>
+
+        {contactError&&
+          <p className="error">
+            {contactError}
+          </p>
+        }
+
+        <div className="button-row">
+          <button
+            type="submit"
+            className="primary"
+          >
+            {editingContactItem?
+              'Save Changes':
+              'Add Contact'}
+          </button>
+
+          <button
+            type="button"
+            onClick={closeContactModal}
+          >
+            Cancel
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
 }
       
         {showAnnouncementModal&&
@@ -1933,7 +2621,13 @@ function UpdateInfo({me}:{me:any}){
   </Page>
 }
 
-function Eagles({me}:{me:any}){
+function Eagles({
+  me,
+  editMode
+}:{
+  me:any,
+  editMode:boolean
+}){
   const [q,setQ]=useState('');
   const [rows,setRows]=useState<any[]>([]);
   const [error,setError]=useState('');
@@ -1968,6 +2662,13 @@ const [
   const canEdit=
     !!me?.isAdministrator||
     !!me?.permissions?.includes('EAGLE');
+
+  useEffect(()=>{
+    if(!editMode){
+      setEditing(false);
+      setShowAdd(false);
+    }
+  },[editMode]);
 
   useEffect(()=>{
     const grid=
@@ -2299,7 +3000,7 @@ if(
   return <Page
     title="Eagle Scouts"
     actions={
-      canEdit&&
+      editMode&&canEdit&&
         <div className="eagle-page-actions">
           <button
             type="button"
@@ -8340,7 +9041,13 @@ const formatStoragePercent=(
   </Page>;
 }
 
-function Leadership({me}:{me:any}){
+function Leadership({
+  me,
+  editMode
+}:{
+  me:any,
+  editMode:boolean
+}){
   const [d,setD]=useState<any>();
   const [editing,setEditing]=useState(false);
   const [editingDescription,setEditingDescription]=
@@ -8385,6 +9092,14 @@ function Leadership({me}:{me:any}){
   const canEdit=
     canEditLeadership||
     canEditHistory;
+
+  useEffect(()=>{
+    if(!editMode){
+      setEditing(false);
+      cancelDescriptionEdit();
+      resetHistoryModal();
+    }
+  },[editMode]);
 
   const formatHistoryYears=(x:any)=>{
     const start=Number(x.start_year);
@@ -8739,7 +9454,7 @@ function Leadership({me}:{me:any}){
   return <Page
     title="Leadership"
     actions={
-      canEdit&&
+      editMode&&canEdit&&
       <div className="leadership-page-actions">
         <button
           type="button"
@@ -9237,7 +9952,13 @@ function Leadership({me}:{me:any}){
   </Page>
 }
 
-function Advancement({me}:{me:any}){
+function Advancement({
+  me,
+  editMode
+}:{
+  me:any,
+  editMode:boolean
+}){
   const [d,setD]=useState<any>();
   const [error,setError]=useState('');
   const [editing,setEditing]=useState(false);
@@ -9273,6 +9994,16 @@ function Advancement({me}:{me:any}){
   const canEdit=
     !!me?.isAdministrator||
     !!me?.permissions?.includes('ADV');
+
+  useEffect(()=>{
+    if(!editMode){
+      setEditing(false);
+      setSelectedRequirements({});
+      setSelectedAwards({});
+      setShowAddRequirementModal(false);
+      setShowAddAwardModal(false);
+    }
+  },[editMode]);
 
   const ranks=[
     'Scout',
@@ -9667,7 +10398,7 @@ const usedColumns: number[]=[
   return <Page
     title="Advancement"
     actions={
-      canEdit&&
+      editMode&&canEdit&&
       <button
         type="button"
         className="button leadership-edit-button"
@@ -10243,7 +10974,13 @@ const usedColumns: number[]=[
   </Page>
 }
 
-function Uniform({me}:{me:any}){
+function Uniform({
+  me,
+  editMode
+}:{
+  me:any,
+  editMode:boolean
+}){
   const [d,setD]=useState<any>();
   const [editing,setEditing]=useState(false);
   const [labelModal,setLabelModal]=
@@ -10259,6 +10996,13 @@ function Uniform({me}:{me:any}){
 
   const canEdit=
     !!me?.permissions?.includes('UNIF');
+
+  useEffect(()=>{
+    if(!editMode){
+      setEditing(false);
+      closeLabelModal();
+    }
+  },[editMode]);
 
   const load=async()=>{
     try{
@@ -10495,7 +11239,7 @@ function Uniform({me}:{me:any}){
         <div className="uniform-card-header">
           <h2>Insignia Guide</h2>
 
-          {canEdit&&
+          {editMode&&canEdit&&
             <button
               type="button"
               className="button uniform-edit-button"
