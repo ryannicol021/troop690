@@ -231,14 +231,15 @@ const me=
     
     <main>
       <RouterPage
-  me={me}
-  setMe={setActualMe}
-  authReady={authReady}
-  viewAsActive={
-    !!actualMe?.isAdministrator&&
-    viewAs!=='Administrator'
-  }
-/>
+        me={me}
+        setMe={setActualMe}
+        authReady={authReady}
+        viewAsActive={
+          !!actualMe?.isAdministrator&&
+          viewAs!=='Administrator'
+        }
+        viewAsRole={viewAs}
+      />
     </main>
 
     <footer>
@@ -261,12 +262,14 @@ function RouterPage({
   me,
   setMe,
   authReady,
-  viewAsActive
+  viewAsActive,
+  viewAsRole
 }:{
   me:any,
   setMe:(x:any)=>void,
   authReady:boolean,
-  viewAsActive:boolean
+  viewAsActive:boolean,
+  viewAsRole:string
 }){
   const p=useLocation().pathname;
 
@@ -316,6 +319,7 @@ const requiredPermission=
       id={p.split('/')[2]}
       me={me}
       viewAsActive={viewAsActive}
+      viewAsRole={viewAsRole}
       edit={p.split('/')[3]==='edit'}
     />;
   if(p==='/photos')return <Photos me={me}/>;
@@ -4945,12 +4949,14 @@ function EventAttendancePanel({
   eventId,
   event,
   me,
-  viewAsActive
+  viewAsActive,
+  viewAsRole
 }:{
   eventId:number,
   event:any,
   me:any,
-  viewAsActive?:boolean
+  viewAsActive?:boolean,
+  viewAsRole?:string
 }){
   const [data,setData]=
     useState<any>();
@@ -5098,11 +5104,15 @@ const manager=
     !!me?.permissions?.includes('ATTM')
   );
 
-const attendanceVisible=
-  !viewAsActive||
-  !!me?.permissions?.includes('ATTV')||
-  !!me?.permissions?.includes('ATTM')||
-  !!me?.permissions?.includes('EVT');
+  const attendanceVisible=
+    !viewAsActive||
+    (
+      (
+        viewAsRole==='Adult'||
+        viewAsRole==='Adult Leader'
+      )&&
+      familyMembers.length>0
+    );
 
   const permissionEnabled=
   ['Summer Camp','Trip'].includes(
@@ -5337,11 +5347,13 @@ function CalendarEvent({
   id,
   me,
   viewAsActive,
+  viewAsRole,
   edit
 }:{
   id:string,
   me:any,
   viewAsActive?:boolean,
+  viewAsRole?:string,
   edit?:boolean
 }){
   const [d,setD]=useState<any>();
@@ -5642,12 +5654,13 @@ actions={
 }
         </dl>
       </article>
-<EventAttendancePanel
-  eventId={Number(id)}
-  event={e}
-  me={me}
-  viewAsActive={viewAsActive}
-/>
+      <EventAttendancePanel
+        eventId={Number(id)}
+        event={e}
+        me={me}
+        viewAsActive={viewAsActive}
+        viewAsRole={viewAsRole}
+      />
     </Page>
   );
 }
