@@ -3411,10 +3411,7 @@ app.post('/api/events/:id/attendance',async c=>{
       {error:'You cannot manage attendance.'},
       403
     );
-
-  /*
-   * Youth cannot access attendance at all.
-   */
+  
   if(Number(caller.adult)!==1)
     return json(
       c,
@@ -3422,10 +3419,6 @@ app.post('/api/events/:id/attendance',async c=>{
       403
     );
 
-  /*
-   * An adult may manage their own attendance
-   * and the attendance of every member of their family.
-   */
   const family=await c.env.DB
     .prepare(`
       SELECT family_id
@@ -3609,10 +3602,6 @@ app.get('/api/events/:id/attendance',async c=>{
     .bind(id)
     .all<any>();
 
-  /*
-   * Every active member appears in manager mode.
-   * Everyone defaults to Unsure.
-   */
 if(manager){
     const members=(rows.results??[]).map((x:any)=>({
       ...x,
@@ -3691,11 +3680,6 @@ if(manager){
     });
   }
 
-  /*
-   * Non-managers may only retrieve their own
-   * attendance state. Youth are intentionally
-   * not given an attendance interface.
-   */
   const person=await c.env.DB
     .prepare(`
       SELECT adult
@@ -3847,10 +3831,6 @@ app.post('/api/events/:id/attendance/manage',async c=>{
     if(!person||Number(person.archived)===1)
       continue;
 
-    /*
-     * Once the event has ended, Unsure is never retained
-     * as an effective attendance response.
-     */
     if(
       event.end_at &&
       new Date(event.end_at).getTime()<=now &&
@@ -4398,28 +4378,25 @@ app.get('/api/leadership',async c=>{
 
   const canHolder=
     !!u&&u.permissions.includes('LDV');
-
+  
   const canHistory=
     !!u&&u.permissions.includes('HSTV');
+  
+  const canEditLeadership=
+    !!u&&u.permissions.includes('LEAD');
 
-  /*
-   * Keep a saved leadership-description row for
-   * every currently established youth position.
-   *
-   * The system "Youth" position itself is excluded.
-   */
   await c.env.DB.prepare(`
-    INSERT OR IGNORE INTO leadership_positions(
-      name,
-      description,
-      public_visible,
-      visible_order
-    )
-    SELECT
-      name,
-      'Description',
-      1,
-      id
+  INSERT OR IGNORE INTO leadership_positions(
+    name,
+    description,
+    public_visible,
+    visible_order
+  )
+  SELECT
+    name,
+    'Description',
+    0,
+    0
     FROM positions
     WHERE
       category='youth'
@@ -4429,30 +4406,42 @@ app.get('/api/leadership',async c=>{
       )
   `).run();
 
-  const youthPositions=await c.env.DB
-    .prepare(`
-      SELECT
-        p.id position_id,
-        p.name,
-        lp.id leadership_id,
-        CASE
-          WHEN lp.description IS NULL
-            OR lp.description=''
-          THEN 'Description'
-          ELSE lp.description
-        END description
-      FROM positions p
-      JOIN leadership_positions lp
-        ON lp.name=p.name
-      WHERE
-        p.category='youth'
-        AND (
-          p.code IS NULL
-          OR p.code<>'YOUTH'
-        )
-      ORDER BY p.id
-    `)
-    .all<any>();
+const youthPositions=await c.env.DB
+  .prepare(`
+    SELECT
+      p.id position_id,
+      p.name,
+      lp.id leadership_id,
+      lp.public_visible,
+      lp.visible_order,
+      CASE
+        WHEN lp.description IS NULL
+          OR lp.description=''
+        THEN 'Description'
+        ELSE lp.description
+      END description
+    FROM positions p
+    JOIN leadership_positions lp
+      ON lp.name=p.name
+    WHERE
+      p.category='youth'
+      AND (
+        p.code IS NULL
+        OR p.code<>'YOUTH'
+      )
+    ORDER BY
+      CASE
+        WHEN lp.public_visible=1 THEN 0
+        ELSE 1
+      END,
+      CASE
+        WHEN lp.public_visible=1
+        THEN lp.visible_order
+        ELSE p.id
+      END,
+      p.id
+  `)
+  .all<any>();
 
   const youthHolderRows=await c.env.DB
     .prepare(`
@@ -4515,35 +4504,50 @@ app.get('/api/leadership',async c=>{
     });
   }
 
-  /*
-   * Only youth positions with a current holder
-   * appear. Holder names are hidden unless the
-   * viewer has View Member Leadership.
-   */
-  const positions=
-    (youthPositions.results??[])
-      .map((x:any)=>{
-        const holders=
-          youthHolders.get(
-            Number(x.position_id)
-          )||[];
+const allYouthPositions=
+  (youthPositions.results??[])
+    .map((x:any)=>{
+      const holders=
+        youthHolders.get(
+          Number(x.position_id)
+        )||[];
 
-        if(!holders.length)
-          return null;
+      return {
+        id:Number(x.leadership_id),
+        position_id:Number(x.position_id),
+        name:String(x.name||''),
+        description:String(
+          x.description||'Description'
+        ),
+        public_visible:
+          Number(x.public_visible)?1:0,
+        visible_order:
+          Number(x.visible_order)||0,
+        holders:canHolder?
+          holders:
+          []
+      };
+    });
 
-        return {
-          id:Number(x.leadership_id),
-          position_id:Number(x.position_id),
-          name:String(x.name||''),
-          description:String(
-            x.description||'Description'
-          ),
-          holders:canHolder?
-            holders:
-            []
-        };
+const positions=
+  allYouthPositions.filter(
+    (x:any)=>
+      Number(x.public_visible)===1
+  );
+
+const availablePositions=
+  canEditLeadership?
+    allYouthPositions.map(
+      (x:any)=>({
+        id:x.id,
+        position_id:x.position_id,
+        name:x.name,
+        description:x.description,
+        public_visible:x.public_visible,
+        visible_order:x.visible_order
       })
-      .filter(Boolean);
+    ):
+    [];
 
   const adultRows=await c.env.DB
     .prepare(`
@@ -4717,6 +4721,7 @@ app.get('/api/leadership',async c=>{
 
   return json(c,{
     positions,
+    availablePositions,
     adult:{
       executive,
       assistantScoutmasters,
@@ -4950,6 +4955,113 @@ app.put('/api/admin/leadership/:id',async c=>{
   return json(c,{
     ok:true
   });
+});
+
+app.put('/api/admin/leadership-order',async c=>{
+  const d=admin(c,'LEAD');
+  if(d)return d;
+
+  const body=await c.req.json<any>();
+
+  const ids=
+    Array.isArray(body.ids)?
+      body.ids.map(
+        (x:any)=>Number(x)
+      ):
+      [];
+
+  if(
+    ids.some(
+      (id:any)=>
+        !Number.isInteger(id)||
+        id<1
+    )||
+    new Set(ids).size!==ids.length
+  ){
+    return json(
+      c,
+      {error:'Invalid leadership position list.'},
+      400
+    );
+  }
+
+  const validRows=await c.env.DB
+    .prepare(`
+      SELECT
+        lp.id
+      FROM leadership_positions lp
+      JOIN positions p
+        ON p.name=lp.name
+      WHERE
+        p.category='youth'
+        AND (
+          p.code IS NULL
+          OR p.code<>'YOUTH'
+        )
+    `)
+    .all<any>();
+
+  const validIds=new Set<number>(
+    (validRows.results??[]).map(
+      (x:any)=>Number(x.id)
+    )
+  );
+
+  if(
+    ids.some(
+      (id:number)=>
+        !validIds.has(id)
+    )
+  ){
+    return json(
+      c,
+      {error:'Invalid youth leadership position.'},
+      400
+    );
+  }
+
+  await c.env.DB
+    .prepare(`
+      UPDATE leadership_positions
+      SET
+        public_visible=0,
+        visible_order=0
+      WHERE id IN(
+        SELECT lp.id
+        FROM leadership_positions lp
+        JOIN positions p
+          ON p.name=lp.name
+        WHERE
+          p.category='youth'
+          AND (
+            p.code IS NULL
+            OR p.code<>'YOUTH'
+          )
+      )
+    `)
+    .run();
+
+  if(ids.length){
+    await c.env.DB.batch(
+      ids.map(
+        (id:number,index:number)=>
+          c.env.DB
+            .prepare(`
+              UPDATE leadership_positions
+              SET
+                public_visible=1,
+                visible_order=?
+              WHERE id=?
+            `)
+            .bind(
+              index,
+              id
+            )
+      )
+    );
+  }
+
+  return json(c,{ok:true});
 });
 
 const advancementRanks=[
