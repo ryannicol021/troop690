@@ -14685,7 +14685,7 @@ ${
 
   return <Page title="Email">
     <section>
-      <h2>Create Message List</h2>
+      <h2>Select Members</h2>
 
       <div className="email-message-list-grid">
         {memberTable(
@@ -14712,6 +14712,10 @@ ${
           false
         )}
       </div>
+    </section>
+
+    <section>
+      <h2>Message List</h2>
 
       <a
         className="primary button email-create-button"
