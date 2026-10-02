@@ -1000,6 +1000,13 @@ tbody tr:nth-child(even){
   margin-bottom:0
 }
 
+.calendar-subscribe-section > .button{
+  width:fit-content;
+  max-width:100%;
+  justify-self:start;
+  text-align:left
+}
+
 .calendar-navigation .button{
   font-size:1.35rem;
   line-height:1
@@ -3412,6 +3419,15 @@ tbody tr:nth-child(even){
 
   .event-form-row{
     grid-template-columns:1fr
+  }
+
+  .event-form-row > label{
+    min-width:0
+  }
+
+  .event-form-row input[type="date"]{
+    min-width:0;
+    max-width:100%
   }
 }
 
