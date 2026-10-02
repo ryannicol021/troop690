@@ -4322,3 +4322,58 @@ footer a:hover{
     order:2
   }
 }
+
+.account-link-modal{
+  width:min(560px,100%);
+  max-width:100%
+}
+
+.account-link-modal-description{
+  margin:0 0 18px;
+  color:var(--muted)
+}
+
+.account-link-modal-fields{
+  display:grid;
+  gap:15px
+}
+
+.account-link-modal-fields label{
+  display:grid;
+  gap:6px;
+  font-weight:600
+}
+
+.account-link-modal-fields input{
+  width:100%;
+  min-height:44px;
+  box-sizing:border-box;
+  border:1px solid #bdbdbd;
+  border-radius:3px;
+  padding:.62rem;
+  background:#fff
+}
+
+.account-link-modal-fields input:focus{
+  outline:2px solid var(--khaki);
+  outline-offset:1px
+}
+
+.account-link-modal-actions{
+  margin-top:20px
+}
+
+@media(max-width:600px){
+  .account-link-modal{
+    width:100%
+  }
+
+  .account-link-modal-actions{
+    display:grid;
+    grid-template-columns:1fr;
+  }
+
+  .account-link-modal-actions button{
+    width:100%
+  }
+}
