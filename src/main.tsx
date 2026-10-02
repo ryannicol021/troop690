@@ -118,13 +118,12 @@ const me=
             ]||[]),
 
             ...(
-              [
-                'Youth',
-                'Adult',
-                'Adult Leader'
-              ].includes(viewAs)?
+              viewAs==='Youth'?
                 ['CAL','PHV']:
-                []
+              viewAs==='Adult'||
+              viewAs==='Adult Leader'?
+                ['CAL','PHV','SET']:
+              []
             )
           ])
         ],
