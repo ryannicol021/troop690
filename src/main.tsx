@@ -15374,29 +15374,6 @@ const deletePlace=async(
     );
   }
 };
-
-const saveFooterLinks=async()=>{
-  try{
-    await put(
-      '/admin/footer-links',
-      footerLinks
-    );
-
-    setMsg('Saved');
-
-    setTimeout(
-      ()=>setMsg(''),
-      1800
-    );
-  }catch(e:any){
-    setMsg(e.message);
-
-    setTimeout(
-      ()=>setMsg(''),
-      2200
-    );
-  }
-};
   
   return <Page title="Administration">
 
