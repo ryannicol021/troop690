@@ -9161,6 +9161,25 @@ function Leadership({
 }){
   const [d,setD]=useState<any>();
   const [editing,setEditing]=useState(false);
+  const [
+    leadershipPositionModal,
+    setLeadershipPositionModal
+  ]=useState(false);
+  
+  const [
+    leadershipPositionToAdd,
+    setLeadershipPositionToAdd
+  ]=useState('');
+  
+  const [
+    draggedYouthPosition,
+    setDraggedYouthPosition
+  ]=useState<number|null>(null);
+  
+  const [
+    savingLeadershipLayout,
+    setSavingLeadershipLayout
+  ]=useState(false);
   const [editingDescription,setEditingDescription]=
     useState<number|null>(null);
   const [descriptionDraft,setDescriptionDraft]=
@@ -9209,6 +9228,9 @@ function Leadership({
       setEditing(false);
       cancelDescriptionEdit();
       resetHistoryModal();
+      setLeadershipPositionModal(false);
+      setLeadershipPositionToAdd('');
+      setDraggedYouthPosition(null);
     }
   },[editMode]);
 
@@ -9350,6 +9372,125 @@ function Leadership({
     load();
   },[]);
 
+const updateYouthLeadershipLayout=async(
+  ids:number[]
+)=>{
+  try{
+    setSavingLeadershipLayout(true);
+    setError('');
+
+    await put(
+      '/admin/leadership-order',
+      {ids}
+    );
+
+    await load();
+
+    return true;
+  }catch(e:any){
+    setError(
+      e?.message||
+      'Unable to save Youth Leaders.'
+    );
+
+    return false;
+  }finally{
+    setSavingLeadershipLayout(false);
+    setDraggedYouthPosition(null);
+  }
+};
+
+const addYouthLeadershipPosition=async(
+  event:React.FormEvent
+)=>{
+  event.preventDefault();
+
+  const id=
+    Number(
+      leadershipPositionToAdd
+    );
+
+  if(!Number.isInteger(id))
+    return;
+
+  const ids=[
+    ...d.positions.map(
+      (x:any)=>Number(x.id)
+    ),
+    id
+  ];
+
+  const saved=
+    await updateYouthLeadershipLayout(
+      ids
+    );
+
+  if(saved){
+    setLeadershipPositionToAdd('');
+    setLeadershipPositionModal(false);
+  }
+};
+
+const removeYouthLeadershipPosition=async(
+  id:number
+)=>{
+  const ids=
+    d.positions
+      .map(
+        (x:any)=>Number(x.id)
+      )
+      .filter(
+        (positionId:number)=>
+          positionId!==id
+      );
+
+  await updateYouthLeadershipLayout(
+    ids
+  );
+};
+
+const moveYouthLeadershipPosition=async(
+  sourceId:number,
+  targetId:number
+)=>{
+  if(sourceId===targetId)
+    return;
+
+  const ids=
+    d.positions.map(
+      (x:any)=>Number(x.id)
+    );
+
+  const sourceIndex=
+    ids.indexOf(sourceId);
+
+  const targetIndex=
+    ids.indexOf(targetId);
+
+  if(
+    sourceIndex<0||
+    targetIndex<0
+  )
+    return;
+
+  const [
+    moved
+  ]=ids.splice(
+    sourceIndex,
+    1
+  );
+
+  ids.splice(
+    targetIndex,
+    0,
+    moved
+  );
+
+  await updateYouthLeadershipLayout(
+    ids
+  );
+};
+  
   const startDescriptionEdit=(x:any)=>{
     setEditingDescription(
       Number(x.id)
@@ -9590,10 +9731,28 @@ function Leadership({
       </p>
     }
 
-    <section>
-      {me&&<h2>Youth Leaders</h2>}
-
-      <div className="leadership-section-content">
+<section>
+        {me&&
+          <div className="leadership-section-header">
+            <h2>Youth Leaders</h2>
+      
+            {editing&&canEditLeadership&&
+              <button
+                type="button"
+                className="home-add-button leadership-section-add-button"
+                aria-label="Add Youth Leader position"
+                onClick={()=>{
+                  setLeadershipPositionToAdd('');
+                  setLeadershipPositionModal(true);
+                }}
+              >
+                +
+              </button>
+            }
+          </div>
+        }
+      
+        <div className="leadership-section-content">
           <div
             className="leadership-youth-grid"
             ref={youthGridRef}
@@ -9601,8 +9760,50 @@ function Leadership({
             {d.positions.map((x:any)=>{
               return (
                 <article
-                  className="card leadership-youth-card"
+                  className={
+                    'card leadership-youth-card'+
+                    (
+                      editing&&canEditLeadership?
+                        ' leadership-youth-card-editing':
+                        ''
+                    )
+                  }
                   key={x.id}
+                  draggable={
+                    editing&&canEditLeadership
+                  }
+                  onDragStart={()=>{
+                    if(editing&&canEditLeadership)
+                      setDraggedYouthPosition(
+                        Number(x.id)
+                      );
+                  }}
+                  onDragOver={e=>{
+                    if(
+                      editing&&
+                      canEditLeadership&&
+                      draggedYouthPosition!==null&&
+                      draggedYouthPosition!==Number(x.id)
+                    ){
+                      e.preventDefault();
+                    }
+                  }}
+                  onDrop={async e=>{
+                    e.preventDefault();
+                
+                    if(
+                      draggedYouthPosition!==null&&
+                      draggedYouthPosition!==Number(x.id)
+                    ){
+                      await moveYouthLeadershipPosition(
+                        draggedYouthPosition,
+                        Number(x.id)
+                      );
+                    }
+                  }}
+                  onDragEnd={()=>
+                    setDraggedYouthPosition(null)
+                  }
                 >
                   <div className="leadership-youth-card-header">
                     <h3 className="leadership-card-title">
@@ -9610,15 +9811,30 @@ function Leadership({
                     </h3>
                 
                     {editing&&canEditLeadership&&
-                      <button
-                        type="button"
-                        className="leadership-change-button"
-                        onClick={()=>
-                          startDescriptionEdit(x)
-                        }
-                      >
-                        Change
-                      </button>
+                      <div className="leadership-youth-card-actions">
+                        <button
+                          type="button"
+                          className="leadership-remove-button"
+                          aria-label={`Remove ${x.name} from Youth Leaders`}
+                          onClick={()=>
+                            removeYouthLeadershipPosition(
+                              Number(x.id)
+                            )
+                          }
+                        >
+                          −
+                        </button>
+                    
+                        <button
+                          type="button"
+                          className="leadership-change-button"
+                          onClick={()=>
+                            startDescriptionEdit(x)
+                          }
+                        >
+                          Change
+                        </button>
+                      </div>
                     }
                   </div>
 
@@ -10060,6 +10276,107 @@ function Leadership({
         </div>
       </div>
     }
+
+    {leadershipPositionModal&&
+  <div
+    className="modal-backdrop"
+    onMouseDown={e=>{
+      if(e.target===e.currentTarget)
+        setLeadershipPositionModal(false);
+    }}
+  >
+    <div
+      className="modal-card leadership-position-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="leadership-position-modal-title"
+    >
+      <div className="modal-header">
+        <h2 id="leadership-position-modal-title">
+          Add Youth Leader Position
+        </h2>
+
+        <button
+          type="button"
+          className="modal-close"
+          aria-label="Close"
+          onClick={()=>
+            setLeadershipPositionModal(false)
+          }
+        >
+          ×
+        </button>
+      </div>
+
+      <form
+        className="form leadership-position-form"
+        onSubmit={addYouthLeadershipPosition}
+      >
+        <label>
+          Position
+          <select
+            value={leadershipPositionToAdd}
+            onChange={e=>
+              setLeadershipPositionToAdd(
+                e.target.value
+              )
+            }
+            disabled={savingLeadershipLayout}
+          >
+            <option value="">
+              Select a position
+            </option>
+
+            {(d.availablePositions??[])
+              .filter(
+                (x:any)=>
+                  !Number(x.public_visible)
+              )
+              .sort(
+                (a:any,b:any)=>
+                  String(a.name).localeCompare(
+                    String(b.name)
+                  )
+              )
+              .map(
+                (x:any)=>
+                  <option
+                    key={x.id}
+                    value={x.id}
+                  >
+                    {x.name}
+                  </option>
+              )
+            }
+          </select>
+        </label>
+
+        <div className="button-row">
+          <button
+            type="submit"
+            className="primary"
+            disabled={
+              savingLeadershipLayout||
+              !leadershipPositionToAdd
+            }
+          >
+            Add Position
+          </button>
+
+          <button
+            type="button"
+            disabled={savingLeadershipLayout}
+            onClick={()=>
+              setLeadershipPositionModal(false)
+            }
+          >
+            Cancel
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}
   </Page>
 }
 
