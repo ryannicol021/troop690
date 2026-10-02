@@ -4109,7 +4109,7 @@ const [calendarUrlCopied,setCalendarUrlCopied]=useState(false);
     >
       <div className="modal-header">
         <h2 id="subscribe-calendar-title">
-          Subscribe to Troop 690 Calendar
+          Subscribe to Calendar
         </h2>
 
         <button
