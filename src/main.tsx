@@ -6457,6 +6457,7 @@ function PlaceSearch({
   onChange:(name:string,address:string)=>void,
   optional?:boolean
 }){
+const [query,setQuery]=useState(value||'');
 const [results,setResults]=useState<any[]>([]);
 const [open,setOpen]=useState(false);
 const [loading,setLoading]=useState(false);
