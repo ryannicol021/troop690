@@ -1348,6 +1348,120 @@ async function ensureAnnouncementSchema(c:Context<AppEnv>){
   `).run();
 }
 
+async function ensureContactSchema(
+  c:Context<AppEnv>
+){
+  await c.env.DB.prepare(`
+    CREATE TABLE IF NOT EXISTS home_contacts(
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      title TEXT NOT NULL,
+      contact_type TEXT NOT NULL
+        CHECK(contact_type IN('Email','Phone','Link')),
+      contact_value TEXT NOT NULL,
+      link_text TEXT NOT NULL DEFAULT '',
+      show_guest INTEGER NOT NULL DEFAULT 0,
+      show_youth INTEGER NOT NULL DEFAULT 0,
+      show_adult INTEGER NOT NULL DEFAULT 0,
+      show_adult_leader INTEGER NOT NULL DEFAULT 0,
+      show_administrator INTEGER NOT NULL DEFAULT 0,
+      sort_order INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )
+  `).run();
+
+  const count=await c.env.DB
+    .prepare(
+      'SELECT COUNT(*) count FROM home_contacts'
+    )
+    .first<any>();
+
+  if(Number(count?.count||0)!==0)
+    return;
+
+  await c.env.DB.batch([
+    c.env.DB.prepare(`
+      INSERT INTO home_contacts(
+        title,
+        contact_type,
+        contact_value,
+        show_guest,
+        show_youth,
+        show_adult,
+        show_adult_leader,
+        show_administrator,
+        sort_order
+      )
+      VALUES(?,?,?,?,?,?,?,?,?)
+    `).bind(
+      'Interested in Joining?',
+      'Email',
+      'committee@troop690.org',
+      1,0,0,0,0,0
+    ),
+
+    c.env.DB.prepare(`
+      INSERT INTO home_contacts(
+        title,
+        contact_type,
+        contact_value,
+        show_guest,
+        show_youth,
+        show_adult,
+        show_adult_leader,
+        show_administrator,
+        sort_order
+      )
+      VALUES(?,?,?,?,?,?,?,?,?)
+    `).bind(
+      'Any Questions?',
+      'Email',
+      'scoutmaster@troop690.org',
+      1,1,1,1,1,1
+    ),
+
+    c.env.DB.prepare(`
+      INSERT INTO home_contacts(
+        title,
+        contact_type,
+        contact_value,
+        show_guest,
+        show_youth,
+        show_adult,
+        show_adult_leader,
+        show_administrator,
+        sort_order
+      )
+      VALUES(?,?,?,?,?,?,?,?,?)
+    `).bind(
+      'Website Help',
+      'Email',
+      'website@troop690.org',
+      1,0,0,0,0,2
+    ),
+
+    c.env.DB.prepare(`
+      INSERT INTO home_contacts(
+        title,
+        contact_type,
+        contact_value,
+        show_guest,
+        show_youth,
+        show_adult,
+        show_adult_leader,
+        show_administrator,
+        sort_order
+      )
+      VALUES(?,?,?,?,?,?,?,?,?)
+    `).bind(
+      'Website Feedback',
+      'Email',
+      'website@troop690.org',
+      0,1,1,1,1,3
+    )
+  ]);
+}
+
 async function ensureSiteAdministratorSchema(c: Context<AppEnv>){
   await c.env.DB.prepare(`
     CREATE TABLE IF NOT EXISTS site_administrator(
@@ -1528,6 +1642,7 @@ app.use('/api/*',async(c,next)=>{
           await ensurePatrolSchema(c);
           await ensureSiteAdministratorSchema(c);
           await ensureAnnouncementSchema(c);
+          await ensureContactSchema(c);
           await ensureEventSchema(c);
           await ensureAccountLinkSchema(c);
         })();
@@ -1867,6 +1982,430 @@ app.get('/api/announcements',async c=>{
   });
 });
 
+const HOME_CONTACT_ROLES={
+  Guest:'show_guest',
+  Youth:'show_youth',
+  Adult:'show_adult',
+  'Adult Leader':'show_adult_leader',
+  Administrator:'show_administrator'
+} as const;
+
+const parseHomeContact=(body:any)=>{
+  const title=
+    String(body?.title||'').trim();
+
+  const type=
+    String(body?.contact_type||'').trim();
+
+  const rawValue=
+    String(body?.contact_value||'').trim();
+
+  const linkText=
+    String(body?.link_text||'').trim();
+
+  const roles=[
+    ...new Set(
+      (
+        Array.isArray(body?.roles)?
+          body.roles:
+          []
+      )
+      .map(
+        (x:any)=>
+          String(x).trim()
+      )
+      .filter(
+        (x:string)=>
+          Object.prototype.hasOwnProperty.call(
+            HOME_CONTACT_ROLES,
+            x
+          )
+      )
+    )
+  ];
+
+  if(!title)
+    return {
+      error:'Title is required.'
+    };
+
+  if(
+    !['Email','Phone','Link']
+      .includes(type)
+  )
+    return {
+      error:'Contact type is invalid.'
+    };
+
+  if(!rawValue)
+    return {
+      error:'Contact is required.'
+    };
+
+  if(!roles.length)
+    return {
+      error:'Select at least one role.'
+    };
+
+  let value=rawValue;
+
+  if(type==='Email'){
+    if(
+      !/^\S+@\S+\.\S+$/
+        .test(rawValue)
+    )
+      return {
+        error:
+          'Enter a valid email address.'
+      };
+  }else if(type==='Phone'){
+    const digits=
+      rawValue.replace(
+        /\D/g,
+        ''
+      );
+
+    if(digits.length!==10)
+      return {
+        error:
+          'Phone must be in (XXX) XXX-XXXX format.'
+      };
+
+    value=
+      `(${digits.slice(0,3)}) `+
+      `${digits.slice(3,6)}-`+
+      `${digits.slice(6)}`;
+  }else{
+    if(
+      !/^https?:\/\/\S+$/i
+        .test(rawValue)
+    )
+      return {
+        error:
+          'Link must begin with http:// or https://.'
+      };
+
+    if(!linkText)
+      return {
+        error:'Link Text is required.'
+      };
+  }
+
+  return {
+    title,
+    contactType:type,
+    value,
+    linkText:
+      type==='Link'?
+        linkText:
+        '',
+    roles
+  };
+};
+
+const homeContactRoleBinds=(
+  roles:string[]
+)=>
+  [
+    roles.includes('Guest')?1:0,
+    roles.includes('Youth')?1:0,
+    roles.includes('Adult')?1:0,
+    roles.includes('Adult Leader')?1:0,
+    roles.includes('Administrator')?1:0
+  ];
+
+app.get('/api/admin/home-contacts',async c=>{
+  const d=admin(c,'CONT');
+  if(d)return d;
+
+  const rows=await c.env.DB
+    .prepare(`
+      SELECT *
+      FROM home_contacts
+      ORDER BY sort_order ASC,id ASC
+    `)
+    .all<any>();
+
+  return json(c,{
+    contacts:rows.results??[]
+  });
+});
+
+app.post('/api/admin/home-contacts',async c=>{
+  const d=admin(c,'CONT');
+  if(d)return d;
+
+  const body=await c.req.json();
+  const parsed=
+    parseHomeContact(body);
+
+  if('error' in parsed)
+    return json(
+      c,
+      {error:parsed.error},
+      400
+    );
+
+  const next=await c.env.DB
+    .prepare(`
+      SELECT
+        COALESCE(
+          MAX(sort_order),
+          -1
+        )+1 next_order
+      FROM home_contacts
+    `)
+    .first<any>();
+
+  const [
+    guest,
+    youth,
+    adult,
+    adultLeader,
+    administrator
+  ]=
+    homeContactRoleBinds(
+      parsed.roles
+    );
+
+  const row=await c.env.DB
+    .prepare(`
+      INSERT INTO home_contacts(
+        title,
+        contact_type,
+        contact_value,
+        link_text,
+        show_guest,
+        show_youth,
+        show_adult,
+        show_adult_leader,
+        show_administrator,
+        sort_order
+      )
+      VALUES(?,?,?,?,?,?,?,?,?,?)
+      RETURNING *
+    `)
+    .bind(
+      parsed.title,
+      parsed.contactType,
+      parsed.value,
+      parsed.linkText,
+      guest,
+      youth,
+      adult,
+      adultLeader,
+      administrator,
+      Number(
+        next?.next_order??0
+      )
+    )
+    .first<any>();
+
+  return json(c,{
+    contact:row
+  },201);
+});
+
+app.put('/api/admin/home-contacts/:id',async c=>{
+  const d=admin(c,'CONT');
+  if(d)return d;
+
+  const id=
+    Number(
+      c.req.param('id')
+    );
+
+  const body=
+    await c.req.json();
+
+  const parsed=
+    parseHomeContact(body);
+
+  if('error' in parsed)
+    return json(
+      c,
+      {error:parsed.error},
+      400
+    );
+
+  const [
+    guest,
+    youth,
+    adult,
+    adultLeader,
+    administrator
+  ]=
+    homeContactRoleBinds(
+      parsed.roles
+    );
+
+  const row=await c.env.DB
+    .prepare(`
+      UPDATE home_contacts
+      SET
+        title=?,
+        contact_type=?,
+        contact_value=?,
+        link_text=?,
+        show_guest=?,
+        show_youth=?,
+        show_adult=?,
+        show_adult_leader=?,
+        show_administrator=?,
+        updated_at=CURRENT_TIMESTAMP
+      WHERE id=?
+      RETURNING *
+    `)
+    .bind(
+      parsed.title,
+      parsed.contactType,
+      parsed.value,
+      parsed.linkText,
+      guest,
+      youth,
+      adult,
+      adultLeader,
+      administrator,
+      id
+    )
+    .first<any>();
+
+  if(!row)
+    return json(
+      c,
+      {error:'Contact not found.'},
+      404
+    );
+
+  return json(c,{
+    contact:row
+  });
+});
+
+app.post('/api/admin/home-contacts/:id/move',async c=>{
+  const d=admin(c,'CONT');
+  if(d)return d;
+
+  const id=
+    Number(
+      c.req.param('id')
+    );
+
+  const body=
+    await c.req.json();
+
+  const direction=
+    String(
+      body?.direction||''
+    ).trim();
+
+  if(
+    direction!=='up'&&
+    direction!=='down'
+  )
+    return json(
+      c,
+      {error:'Invalid contact direction.'},
+      400
+    );
+
+  const current=
+    await c.env.DB
+      .prepare(`
+        SELECT id,sort_order
+        FROM home_contacts
+        WHERE id=?
+      `)
+      .bind(id)
+      .first<any>();
+
+  if(!current)
+    return json(
+      c,
+      {error:'Contact not found.'},
+      404
+    );
+
+  const currentOrder=
+    Number(
+      current.sort_order
+    );
+
+  const targetOrder=
+    direction==='up'?
+      currentOrder-1:
+      currentOrder+1;
+
+  const other=
+    await c.env.DB
+      .prepare(`
+        SELECT id,sort_order
+        FROM home_contacts
+        WHERE sort_order=?
+        LIMIT 1
+      `)
+      .bind(targetOrder)
+      .first<any>();
+
+  if(!other)
+    return json(c,{
+      ok:true
+    });
+
+  await c.env.DB.batch([
+    c.env.DB.prepare(`
+      UPDATE home_contacts
+      SET sort_order=?
+      WHERE id=?
+    `).bind(
+      targetOrder,
+      id
+    ),
+
+    c.env.DB.prepare(`
+      UPDATE home_contacts
+      SET sort_order=?
+      WHERE id=?
+    `).bind(
+      currentOrder,
+      Number(other.id)
+    )
+  ]);
+
+  return json(c,{
+    ok:true
+  });
+});
+
+app.delete('/api/admin/home-contacts/:id',async c=>{
+  const d=admin(c,'CONT');
+  if(d)return d;
+
+  const id=
+    Number(
+      c.req.param('id')
+    );
+
+  const result=
+    await c.env.DB
+      .prepare(
+        'DELETE FROM home_contacts WHERE id=?'
+      )
+      .bind(id)
+      .run();
+
+  if(!result.meta.changes)
+    return json(
+      c,
+      {error:'Contact not found.'},
+      404
+    );
+
+  return json(c,{
+    ok:true
+  });
+});
+
 app.get('/api/admin/announcements',async c=>{
   const d=admin(c,'HOME');
   if(d)return d;
@@ -2124,11 +2663,47 @@ app.delete('/api/admin/announcements/:id',async c=>{
 });
 
 app.get('/api/home',async c=>{
+  await ensureContactSchema(c);
+  
   const user=c.get('user');
 
   const content=await c.env.DB
     .prepare('SELECT key,value FROM site_content')
     .all<any>();
+
+  const contactRows=await c.env.DB
+  .prepare(`
+    SELECT *
+    FROM home_contacts
+    ORDER BY sort_order ASC,id ASC
+  `)
+  .all<any>();
+
+const canEditAllContacts=
+  !!user&&
+  (
+    !!user.isAdministrator||
+    user.permissions.includes('CONT')
+  );
+
+const contactRoleColumn=
+  !user?
+    'show_guest':
+  user.isAdministrator?
+    'show_administrator':
+  Number(user.person?.adult_leader)?
+    'show_adult_leader':
+  Number(user.person?.adult)?
+    'show_adult':
+    'show_youth';
+
+const contacts=
+  (contactRows.results??[])
+    .filter((x:any)=>
+      canEditAllContacts?
+        true:
+        Number(x[contactRoleColumn])===1
+    );
 
   let events:any[]=[];
   let recent:any[]=[];
@@ -2222,6 +2797,7 @@ app.get('/api/home',async c=>{
         x=>[x.key,x.value]
       )
     ),
+    contacts,
     announcements,
     history,
     events,
