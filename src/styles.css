@@ -193,24 +193,48 @@ header{
 }
 
 .current-view-choice-list{
-  display:grid;
-  gap:6px
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  gap:8px
 }
 
 .current-view-choice{
   display:flex;
   align-items:center;
   gap:9px;
-  padding:7px 9px;
-  border:1px solid var(--border);
-  border-radius:3px;
-  background:var(--white);
+  width:max-content;
+  padding:0;
+  border:0;
+  background:none;
   cursor:pointer
 }
 
 .current-view-choice input{
+  appearance:none;
+  width:17px;
+  height:17px;
+  min-width:17px;
   margin:0;
-  accent-color:var(--navy)
+  border:1px solid #a8a193;
+  border-radius:50%;
+  background:var(--white);
+  display:grid;
+  place-items:center;
+  cursor:pointer
+}
+
+.current-view-choice input:checked::after{
+  content:"";
+  width:9px;
+  height:9px;
+  border-radius:50%;
+  background:var(--navy)
+}
+
+.current-view-choice input:focus-visible{
+  outline:2px solid var(--navy);
+  outline-offset:1px
 }
 
 .person-icon{
