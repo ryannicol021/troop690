@@ -357,8 +357,7 @@ worker/
 db/
     migrations/
 
-public/
-    images/
+images/
 
 index.html
 package.json
