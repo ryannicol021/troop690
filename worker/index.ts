@@ -11,7 +11,6 @@ type Env = {
   DB:D1Database;
   FILES:R2Bucket;
   ASSETS:Fetcher;
-  BOOTSTRAP_SECRET?:string;
   CLOUDFLARE_ACCOUNT_ID?:string;
   CLOUDFLARE_API_TOKEN?:string;
   APPS_SCRIPT_URL?:string;
