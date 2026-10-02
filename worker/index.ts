@@ -1382,19 +1382,22 @@ async function ensureSiteAdministratorSchema(c: Context<AppEnv>){
     `)
     .first<any>();
 
-  const admins=await c.env.DB
-    .prepare(`
-      SELECT DISTINCT pp.person_id
-      FROM person_positions pp
-      JOIN positions pos
-        ON pos.id=pp.position_id
-      JOIN people p
-        ON p.id=pp.person_id
-      WHERE pos.code='ADMIN'
-        AND p.archived=0
-      ORDER BY p.last_name,p.first_name
-    `)
-    .all<any>();
+const admins=await c.env.DB
+  .prepare(`
+    SELECT DISTINCT pp.person_id
+    FROM person_positions pp
+    JOIN positions pos
+      ON pos.id=pp.position_id
+    JOIN people p
+      ON p.id=pp.person_id
+    JOIN accounts a
+      ON a.person_id=p.id
+     AND a.active=1
+    WHERE pos.code='ADMIN'
+      AND p.archived=0
+    ORDER BY p.last_name,p.first_name
+  `)
+  .all<any>();
 
   const adminIds=(admins.results??[])
     .map((x:any)=>Number(x.person_id));
@@ -11140,24 +11143,27 @@ app.get('/api/admin/site-administrator',async c=>{
   const d=admin(c,'ACCT');
   if(d)return d;
 
-  const rows=await c.env.DB
-    .prepare(`
-      SELECT
-        p.id,
-        p.first_name,
-        p.last_name
-      FROM people p
-      JOIN person_positions pp
-        ON pp.person_id=p.id
-      JOIN positions pos
-        ON pos.id=pp.position_id
-      WHERE pos.code='ADMIN'
-        AND p.archived=0
-      ORDER BY
-        p.last_name,
-        p.first_name
-    `)
-    .all<any>();
+const rows=await c.env.DB
+  .prepare(`
+    SELECT
+      p.id,
+      p.first_name,
+      p.last_name
+    FROM people p
+    JOIN person_positions pp
+      ON pp.person_id=p.id
+    JOIN positions pos
+      ON pos.id=pp.position_id
+    JOIN accounts a
+      ON a.person_id=p.id
+     AND a.active=1
+    WHERE pos.code='ADMIN'
+      AND p.archived=0
+    ORDER BY
+      p.last_name,
+      p.first_name
+  `)
+  .all<any>();
 
   const selected=await c.env.DB
     .prepare(`
@@ -11191,28 +11197,31 @@ app.put('/api/admin/site-administrator',async c=>{
     );
   }
 
-  const administrator=await c.env.DB
-    .prepare(`
-      SELECT p.id
-      FROM people p
-      JOIN person_positions pp
-        ON pp.person_id=p.id
-      JOIN positions pos
-        ON pos.id=pp.position_id
-      WHERE p.id=?
-        AND p.archived=0
-        AND pos.code='ADMIN'
-      LIMIT 1
-    `)
-    .bind(personId)
-    .first<any>();
+const administrator=await c.env.DB
+  .prepare(`
+    SELECT p.id
+    FROM people p
+    JOIN person_positions pp
+      ON pp.person_id=p.id
+    JOIN positions pos
+      ON pos.id=pp.position_id
+    JOIN accounts a
+      ON a.person_id=p.id
+     AND a.active=1
+    WHERE p.id=?
+      AND p.archived=0
+      AND pos.code='ADMIN'
+    LIMIT 1
+  `)
+  .bind(personId)
+  .first<any>();
 
   if(!administrator){
     return json(
       c,
       {
         error:
-          'The Site Administrator must already have Administrator checked.'
+          'The Site Administrator must have Administrator checked and an active account login.'
       },
       400
     );
