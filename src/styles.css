@@ -468,33 +468,6 @@ section>h2{
   cursor:pointer
 }
 
-.contact-role-option input{
-  appearance:none;
-  width:17px;
-  height:17px;
-  min-width:17px;
-  margin:0;
-  border:1px solid #a8a193;
-  border-radius:50%;
-  background:var(--white);
-  display:grid;
-  place-items:center;
-  cursor:pointer
-}
-
-.contact-role-option input:checked::after{
-  content:"";
-  width:9px;
-  height:9px;
-  border-radius:50%;
-  background:var(--navy)
-}
-
-.contact-role-option input:focus-visible{
-  outline:2px solid var(--navy);
-  outline-offset:1px
-}
-
 .contact-modal{
   width:min(620px,100%)
 }
@@ -834,6 +807,40 @@ section>h2{
   padding:.62rem;
   background:#fff;
   min-height:44px
+}
+
+.current-view-choice input,
+.contact-role-option input{
+  appearance:none!important;
+  width:17px!important;
+  height:17px!important;
+  min-width:17px!important;
+  min-height:17px!important;
+  flex:0 0 17px;
+  margin:0!important;
+  padding:0!important;
+  border:1px solid #a8a193!important;
+  border-radius:50%!important;
+  background:var(--white)!important;
+  box-sizing:border-box;
+  display:grid;
+  place-items:center;
+  cursor:pointer
+}
+
+.current-view-choice input:checked::after,
+.contact-role-option input:checked::after{
+  content:"";
+  width:9px;
+  height:9px;
+  border-radius:50%;
+  background:var(--navy)
+}
+
+.current-view-choice input:focus-visible,
+.contact-role-option input:focus-visible{
+  outline:2px solid var(--navy);
+  outline-offset:1px
 }
 
 .table-wrap{
