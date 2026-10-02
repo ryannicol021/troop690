@@ -904,7 +904,7 @@ tbody tr:nth-child(even){
   align-items:center;
   flex-wrap:wrap;
   gap:9px;
-  margin-bottom:18px;
+  margin-bottom:9px;
 }
 
 .calendar-top-actions .button,
@@ -946,7 +946,7 @@ tbody tr:nth-child(even){
   justify-content:center;
   gap:8px;
   width:min(390px,100%);
-  margin:-10px auto 18px
+  margin:-10px auto 9px
 }
 
 .calendar-navigation .button{
