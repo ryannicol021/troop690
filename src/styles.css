@@ -176,6 +176,43 @@ header{
   overflow:auto
 }
 
+.current-view-modal{
+  width:min(430px,100%)
+}
+
+.current-view-section{
+  padding:0 0 16px;
+  margin:0 0 16px;
+  border-bottom:1px solid var(--border)
+}
+
+.current-view-section h3{
+  margin:0 0 9px;
+  color:var(--navy);
+  font-size:1rem
+}
+
+.current-view-choice-list{
+  display:grid;
+  gap:6px
+}
+
+.current-view-choice{
+  display:flex;
+  align-items:center;
+  gap:9px;
+  padding:7px 9px;
+  border:1px solid var(--border);
+  border-radius:3px;
+  background:var(--white);
+  cursor:pointer
+}
+
+.current-view-choice input{
+  margin:0;
+  accent-color:var(--navy)
+}
+
 .person-icon{
   position:relative;
   width:22px;
@@ -353,6 +390,117 @@ section>h2{
 .home-contact-option{
   padding:12px 0;
   border-bottom:1px solid var(--border)
+}
+
+.home-contact-option.is-editing .home-contact-head{
+  display:block
+}
+
+.home-contact-option.is-editing .home-contact-actions{
+  float:right;
+  display:grid;
+  grid-template-columns:max-content 34px;
+  grid-template-rows:34px 34px 34px;
+  align-items:center;
+  gap:6px;
+  margin:0 0 8px 14px
+}
+
+.home-contact-option.is-editing::after{
+  content:"";
+  display:block;
+  clear:both
+}
+
+.home-contact-head{
+  min-width:0
+}
+
+.contact-role-fieldset{
+  margin:0;
+  padding:11px 12px 12px;
+  border:1px solid var(--border);
+  border-radius:3px
+}
+
+.contact-role-fieldset legend{
+  padding:0 5px;
+  color:var(--navy);
+  font-weight:600
+}
+
+.contact-role-list{
+  display:grid;
+  grid-template-columns:
+    repeat(2,minmax(0,1fr));
+  gap:7px 12px
+}
+
+.contact-role-option{
+  display:flex;
+  align-items:center;
+  gap:9px;
+  min-width:0;
+  cursor:pointer
+}
+
+.contact-role-option input{
+  appearance:none;
+  width:17px;
+  height:17px;
+  min-width:17px;
+  margin:0;
+  border:1px solid #a8a193;
+  border-radius:50%;
+  background:var(--white);
+  display:grid;
+  place-items:center;
+  cursor:pointer
+}
+
+.contact-role-option input:checked::after{
+  content:"";
+  width:9px;
+  height:9px;
+  border-radius:50%;
+  background:var(--navy)
+}
+
+.contact-role-option input:focus-visible{
+  outline:2px solid var(--navy);
+  outline-offset:1px
+}
+
+.contact-modal{
+  width:min(620px,100%)
+}
+
+.home-contact-move-up{
+  grid-column:2;
+  grid-row:2
+}
+
+.home-contact-move-down{
+  grid-column:2;
+  grid-row:3
+}
+
+.home-contact-actions
+.home-history-delete-button{
+  grid-column:2;
+  grid-row:1
+}
+
+.home-contact-actions
+.home-announcement-change-button{
+  grid-column:1;
+  grid-row:1
+}
+
+@media(max-width:520px){
+  .contact-role-list{
+    grid-template-columns:1fr
+  }
 }
 
 .announcement-modal{
