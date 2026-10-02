@@ -3123,42 +3123,6 @@ const [calendarUrlCopied,setCalendarUrlCopied]=useState(false);
     </button>
   </div>
 }
-  {canEdit&&
-    <button
-      type="button"
-      className="button"
-      onClick={()=>{
-        setShowAddEvent(true);
-      }}
-    >
-      Add Event
-    </button>
-  }
-
-  {canEdit&&
-    <button
-      type="button"
-      className="button"
-      onClick={()=>{
-        setShowCopyEvent(true);
-      }}
-    >
-      Copy Event
-    </button>
-  }
-
-  {canEdit&&
-    <button
-      type="button"
-      className="button"
-      onClick={()=>{
-        setShowManagePlaces(true);
-      }}
-    >
-      Manage Places
-    </button>
-  }
-</div>
 
     <div className="calendar-grid-wrap">
       <div className="calendar-grid">
