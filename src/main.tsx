@@ -20,11 +20,9 @@ const adminNav=[['/email','Email','EML'],['/member-info','Member Info','MIV'],['
 function App(){
   const [actualMe,setActualMe]=useState<any>(null);
   const [footerLinks,setFooterLinks]=useState({
-    charteredOrganization:
-      'St. William the Abbot RC Church',
+    charteredOrganization:'',
     charteredOrganizationUrl:'',
-    localCouncil:
-      'Scouting America Long Island',
+    localCouncil:'',
     localCouncilUrl:''
   });
   const [viewAs,setViewAs]=useState('Administrator');
@@ -14979,11 +14977,9 @@ function Administration({me}:{me:any}){
   const [places,setPlaces]=useState<any[]>([]);
   const [editingPlace,setEditingPlace]=useState<number|null>(null);
   const [footerLinks,setFooterLinks]=useState({
-    charteredOrganization:
-      'St. William the Abbot RC Church',
+    charteredOrganization:'',
     charteredOrganizationUrl:'',
-    localCouncil:
-      'Scouting America Long Island',
+    localCouncil:'',
     localCouncilUrl:''
   });
   const [newPlace,setNewPlace]=useState({
@@ -15056,8 +15052,21 @@ function Administration({me}:{me:any}){
         )
       );
     }
-  };
 
+    const footer=await api('/footer-links');
+
+    setFooterLinks({
+      charteredOrganization:
+        footer.charteredOrganization||'',
+      charteredOrganizationUrl:
+        footer.charteredOrganizationUrl||'',
+      localCouncil:
+        footer.localCouncil||'',
+      localCouncilUrl:
+        footer.localCouncilUrl||''
+    });
+  };
+  
   useEffect(()=>{
     load().catch(e=>setMsg(e.message))
   },[]);
@@ -16182,86 +16191,100 @@ const deletePlace=async(
   <section>
     <h2>Footer Links</h2>
 
-    <div className="form">
-      <label>
+    <div className="footer-link-setting">
+      <div className="footer-link-setting-title">
         Chartered Organization
-        <input
-          value={
-            footerLinks.charteredOrganization
-          }
-          onChange={e=>
-            setFooterLinks({
-              ...footerLinks,
-              charteredOrganization:
-                e.target.value
-            })
-          }
-          required
-        />
-      </label>
-
-      <label>
-        Link
-        <input
-          type="url"
-          placeholder="Optional"
-          value={
-            footerLinks.charteredOrganizationUrl
-          }
-          onChange={e=>
-            setFooterLinks({
-              ...footerLinks,
-              charteredOrganizationUrl:
-                e.target.value
-            })
-          }
-        />
-      </label>
-
-      <label>
-        Local Council
-        <input
-          value={
-            footerLinks.localCouncil
-          }
-          onChange={e=>
-            setFooterLinks({
-              ...footerLinks,
-              localCouncil:
-                e.target.value
-            })
-          }
-          required
-        />
-      </label>
-
-      <label>
-        Link
-        <input
-          type="url"
-          placeholder="Optional"
-          value={
-            footerLinks.localCouncilUrl
-          }
-          onChange={e=>
-            setFooterLinks({
-              ...footerLinks,
-              localCouncilUrl:
-                e.target.value
-            })
-          }
-        />
-      </label>
-
-      <div className="admin-action-row">
-        <button
-          type="button"
-          className="primary admin-action-button"
-          onClick={saveFooterLinks}
-        >
-          Save
-        </button>
       </div>
+
+      <div className="footer-link-setting-fields">
+        <label>
+          Text
+          <input
+            value={
+              footerLinks.charteredOrganization
+            }
+            onChange={e=>
+              setFooterLinks({
+                ...footerLinks,
+                charteredOrganization:
+                  e.target.value
+              })
+            }
+            required
+          />
+        </label>
+
+        <label>
+          Link
+          <input
+            type="url"
+            placeholder="Optional"
+            value={
+              footerLinks.charteredOrganizationUrl
+            }
+            onChange={e=>
+              setFooterLinks({
+                ...footerLinks,
+                charteredOrganizationUrl:
+                  e.target.value
+              })
+            }
+          />
+        </label>
+      </div>
+    </div>
+
+    <div className="footer-link-setting">
+      <div className="footer-link-setting-title">
+        Local Council
+      </div>
+
+      <div className="footer-link-setting-fields">
+        <label>
+          Text
+          <input
+            value={
+              footerLinks.localCouncil
+            }
+            onChange={e=>
+              setFooterLinks({
+                ...footerLinks,
+                localCouncil:
+                  e.target.value
+              })
+            }
+            required
+          />
+        </label>
+
+        <label>
+          Link
+          <input
+            type="url"
+            placeholder="Optional"
+            value={
+              footerLinks.localCouncilUrl
+            }
+            onChange={e=>
+              setFooterLinks({
+                ...footerLinks,
+                localCouncilUrl:
+                  e.target.value
+              })
+            }
+          />
+        </label>
+      </div>
+    </div>
+
+    <div className="admin-action-row">
+      <button
+        type="button"
+        className="primary admin-action-button"
+        onClick={saveFooterLinks}
+      >
+        Save
+      </button>
     </div>
   </section>
 }
