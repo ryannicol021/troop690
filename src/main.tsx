@@ -19,6 +19,14 @@ const adminNav=[['/email','Email','EML'],['/member-info','Member Info','MIV'],['
 
 function App(){
   const [actualMe,setActualMe]=useState<any>(null);
+  const [footerLinks,setFooterLinks]=useState({
+    charteredOrganization:
+      'St. William the Abbot RC Church',
+    charteredOrganizationUrl:'',
+    localCouncil:
+      'Scouting America Long Island',
+    localCouncilUrl:''
+  });
   const [viewAs,setViewAs]=useState('Administrator');
   const [viewAsPermissions,setViewAsPermissions]=
     useState<Record<string,string[]>>({});
@@ -87,6 +95,12 @@ useEffect(()=>{
     })
     .catch(()=>{})
     .finally(()=>setAuthReady(true));
+},[]);
+
+useEffect(()=>{
+  api('/footer-links')
+    .then(setFooterLinks)
+    .catch(()=>{});
 },[]);
 
 const me=
@@ -381,19 +395,43 @@ const me=
       />
     </main>
 
-    <footer>
-      <div>© {new Date().getFullYear()} Troop 690. All rights reserved.</div>
-      <div>
-        <a href="https://stwilliam.org" target="_blank" rel="noreferrer">
-          St. William the Abbot RC Church
-        </a>
-      </div>
-      <div>
-        <a href="https://scoutingli.org" target="_blank" rel="noreferrer">
-          Scouting America Long Island
-        </a>
-      </div>
-    </footer>
+<footer>
+  <div>
+    © {new Date().getFullYear()} Troop 690. All rights reserved.
+  </div>
+
+  <div>
+    {footerLinks.charteredOrganizationUrl?
+      <a
+        href={footerLinks.charteredOrganizationUrl}
+        target="_blank"
+        rel="noreferrer"
+      >
+        {footerLinks.charteredOrganization}
+      </a>
+      :
+      <span>
+        {footerLinks.charteredOrganization}
+      </span>
+    }
+  </div>
+
+  <div>
+    {footerLinks.localCouncilUrl?
+      <a
+        href={footerLinks.localCouncilUrl}
+        target="_blank"
+        rel="noreferrer"
+      >
+        {footerLinks.localCouncil}
+      </a>
+      :
+      <span>
+        {footerLinks.localCouncil}
+      </span>
+    }
+  </div>
+</footer>
   </div>
 }
 
@@ -2404,6 +2442,19 @@ function UpdateInfo({me}:{me:any}){
     }catch(e:any){
       setError(e.message);
     }
+
+    const footer=await api('/footer-links');
+
+    setFooterLinks({
+      charteredOrganization:
+        footer.charteredOrganization||'',
+      charteredOrganizationUrl:
+        footer.charteredOrganizationUrl||'',
+      localCouncil:
+        footer.localCouncil||'',
+      localCouncilUrl:
+        footer.localCouncilUrl||''
+    });
   };
 
   useEffect(()=>{
@@ -14940,7 +14991,14 @@ function Administration({me}:{me:any}){
   }|null>(null);
   const [places,setPlaces]=useState<any[]>([]);
   const [editingPlace,setEditingPlace]=useState<number|null>(null);
-  
+  const [footerLinks,setFooterLinks]=useState({
+    charteredOrganization:
+      'St. William the Abbot RC Church',
+    charteredOrganizationUrl:'',
+    localCouncil:
+      'Scouting America Long Island',
+    localCouncilUrl:''
+  });
   const [newPlace,setNewPlace]=useState({
     name:'',
     address:''
@@ -15292,6 +15350,29 @@ const deletePlace=async(
     await load();
 
     setMsg('Deleted');
+
+    setTimeout(
+      ()=>setMsg(''),
+      1800
+    );
+  }catch(e:any){
+    setMsg(e.message);
+
+    setTimeout(
+      ()=>setMsg(''),
+      2200
+    );
+  }
+};
+
+const saveFooterLinks=async()=>{
+  try{
+    await put(
+      '/admin/footer-links',
+      footerLinks
+    );
+
+    setMsg('Saved');
 
     setTimeout(
       ()=>setMsg(''),
@@ -16109,6 +16190,94 @@ const deletePlace=async(
         </div>
       </section>
     }
+
+{can('HOME')&&
+  <section>
+    <h2>Footer Links</h2>
+
+    <div className="form">
+      <label>
+        Chartered Organization
+        <input
+          value={
+            footerLinks.charteredOrganization
+          }
+          onChange={e=>
+            setFooterLinks({
+              ...footerLinks,
+              charteredOrganization:
+                e.target.value
+            })
+          }
+          required
+        />
+      </label>
+
+      <label>
+        Link
+        <input
+          type="url"
+          placeholder="Optional"
+          value={
+            footerLinks.charteredOrganizationUrl
+          }
+          onChange={e=>
+            setFooterLinks({
+              ...footerLinks,
+              charteredOrganizationUrl:
+                e.target.value
+            })
+          }
+        />
+      </label>
+
+      <label>
+        Local Council
+        <input
+          value={
+            footerLinks.localCouncil
+          }
+          onChange={e=>
+            setFooterLinks({
+              ...footerLinks,
+              localCouncil:
+                e.target.value
+            })
+          }
+          required
+        />
+      </label>
+
+      <label>
+        Link
+        <input
+          type="url"
+          placeholder="Optional"
+          value={
+            footerLinks.localCouncilUrl
+          }
+          onChange={e=>
+            setFooterLinks({
+              ...footerLinks,
+              localCouncilUrl:
+                e.target.value
+            })
+          }
+        />
+      </label>
+
+      <div className="admin-action-row">
+        <button
+          type="button"
+          className="primary admin-action-button"
+          onClick={saveFooterLinks}
+        >
+          Save
+        </button>
+      </div>
+    </div>
+  </section>
+}
     
     {msg&&<div className="toast">{msg}</div>}
 
