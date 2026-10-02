@@ -109,12 +109,25 @@ const me=
       {
         ...actualMe,
         isAdministrator:false,
-        permissions:
-          viewAsPermissions[
-            viewAs==='Adult Leader'?
-              'ADULTL':
-            viewAs.toUpperCase()
-          ]||[],
+        permissions:[
+          ...new Set([
+            ...(viewAsPermissions[
+              viewAs==='Adult Leader'?
+                'ADULTL':
+              viewAs.toUpperCase()
+            ]||[]),
+
+            ...(
+              [
+                'Youth',
+                'Adult',
+                'Adult Leader'
+              ].includes(viewAs)?
+                ['CAL','PHV']:
+                []
+            )
+          ])
+        ],
         person:actualMe.person
       }:
     actualMe;
@@ -6444,22 +6457,19 @@ function PlaceSearch({
   onChange:(name:string,address:string)=>void,
   optional?:boolean
 }){
-  const [query,setQuery]=useState(value||'');
-  const [results,setResults]=useState<any[]>([]);
-  const [open,setOpen]=useState(false);
+const [results,setResults]=useState<any[]>([]);
+const [open,setOpen]=useState(false);
 const [loading,setLoading]=useState(false);
-const skipInitialSearchRef=useRef(true);
+const [focused,setFocused]=useState(false);
 const skipSearchRef=useRef(false);
 
-  useEffect(()=>{
-    setQuery(value||'');
-  },[value]);
+useEffect(()=>{
+  setQuery(value||'');
+},[value]);
 
 useEffect(()=>{
-  if(skipInitialSearchRef.current){
-    skipInitialSearchRef.current=false;
+  if(!focused)
     return;
-  }
 
   if(skipSearchRef.current){
     skipSearchRef.current=false;
@@ -6500,7 +6510,7 @@ useEffect(()=>{
   return()=>{
     clearTimeout(timer);
   };
-},[query]);
+},[query,focused]);
 
   const manual=()=>{
     setOpen(false);
@@ -6525,10 +6535,14 @@ useEffect(()=>{
             'Search for a place or address'
         }
         onFocus={()=>{
+          setFocused(true);
+        
           if(results.length)
             setOpen(true);
         }}
         onBlur={()=>{
+          setFocused(false);
+        
           setTimeout(()=>{
             setOpen(false);
           },150);
