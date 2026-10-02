@@ -5,7 +5,12 @@ import React,{
   useState
 } from 'react';
 import {createRoot} from 'react-dom/client';
-import {BrowserRouter,useNavigate,useLocation} from 'react-router-dom';
+import {
+  BrowserRouter,
+  useNavigate,
+  useLocation,
+  Link
+} from 'react-router-dom';
 import './styles.css';
 import {api,post,put} from './lib/api';
 
@@ -1462,8 +1467,8 @@ useEffect(()=>{
               {laterEvents.length>0&&
                 <div className="home-later-events">
                   {laterEvents.map((e:any)=>
-                    <a
-                      href={'/calendar/'+e.id}
+                    <Link
+                      to={'/calendar/'+e.id}
                       className={
                         eventTypeClass(
                           e.event_type
@@ -1499,10 +1504,10 @@ useEffect(()=>{
           {d.recent.length?
             <div className="home-photo-grid">
               {d.recent.map((e:any)=>
-                <a
+                <Link
                   className="home-photo-card"
                   key={e.id}
-                  href={'/photos/'+e.id}
+                  to={'/photos/'+e.id}
                 >
                   {e.photo&&
                     <img
@@ -1535,7 +1540,7 @@ useEffect(()=>{
                   >
                     {e.title}
                   </div>
-                </a>
+                </Link>
               )}
             </div>:
             <p className="muted">No photos.</p>
@@ -3901,8 +3906,8 @@ const [calendarUrlCopied,setCalendarUrlCopied]=useState(false);
                       cell.date
                     );
 
-                  return <a
-                    href={
+                  return <Link
+                    to={
                       '/calendar/'+e.id
                     }
                     className={
@@ -3924,7 +3929,7 @@ const [calendarUrlCopied,setCalendarUrlCopied]=useState(false);
                     <div className="calendar-event-time">
                       {info.text}
                     </div>
-                  </a>;
+                  </Link>;
                 })}
               </div>
             }
@@ -8972,12 +8977,12 @@ const formatStoragePercent=(
         <div className="photo-album-grid">
           {a.map(
           (x:any)=>
-            <a
+            <Link
               className={
                 'photo-album-card card'
               }
               key={x.id}
-              href={
+              to={
                 '/photos/'+x.event_id
               }
             >
@@ -9021,7 +9026,7 @@ const formatStoragePercent=(
               >
                 {x.title}
               </div>
-            </a>
+            </Link>
           )}
         </div>:
         <p className="muted">
