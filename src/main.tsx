@@ -727,21 +727,26 @@ const saveContact=async(
   }
 };
 
-  useEffect(()=>{
-    api('/home')
-      .then(setD)
-      .catch((e:any)=>setError(e?.message||'Unable to load the homepage.'));
+useEffect(()=>{
+  api('/home')
+    .then(setD)
+    .catch((e:any)=>
+      setError(
+        e?.message||
+        'Unable to load the homepage.'
+      )
+    );
+},[]);
 
-  useEffect(()=>{
-    if(!editMode){
-      setEditingContact(false);
-      setEditingHistory(false);
-      setShowHistoryModal(false);
-      setShowContactModal(false);
-      setEditingContactItem(null);
-    }
-  },[editMode]);
-  },[]);
+useEffect(()=>{
+  if(!editMode){
+    setEditingContact(false);
+    setEditingHistory(false);
+    setShowHistoryModal(false);
+    setShowContactModal(false);
+    setEditingContactItem(null);
+  }
+},[editMode]);
 
   if(error)
     return <Page><p className="error">{error}</p></Page>;
