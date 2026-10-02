@@ -11,7 +11,6 @@ type Env = {
   DB:D1Database;
   FILES:R2Bucket;
   ASSETS:Fetcher;
-  SESSION_TTL_DAYS:string;
   BOOTSTRAP_SECRET?:string;
   CLOUDFLARE_ACCOUNT_ID?:string;
   CLOUDFLARE_API_TOKEN?:string;
@@ -1713,7 +1712,7 @@ app.post('/api/login',async c=>{
     }
 
     const token=b64(random(36));
-    const days=Number(c.env.SESSION_TTL_DAYS||30);
+    const days=30;
 
     const exp=new Date(
       Date.now()+days*86400000
