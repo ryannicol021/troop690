@@ -11206,13 +11206,44 @@ app.delete('/api/admin/account-logins/:id',async c=>{
   const d=admin(c,'ACCT');
   if(d)return d;
 
+  const id=Number(c.req.param('id'));
+
+  const account=await c.env.DB
+    .prepare(`
+      SELECT person_id
+      FROM accounts
+      WHERE id=?
+    `)
+    .bind(id)
+    .first<any>();
+
+  const siteAdministrator=await c.env.DB
+    .prepare(`
+      SELECT person_id
+      FROM site_administrator
+      WHERE id=1
+    `)
+    .first<any>();
+
+  if(
+    Number(account?.person_id)===
+    Number(siteAdministrator?.person_id)
+  ){
+    return json(
+      c,
+      {
+        error:
+          'The Site Administrator cannot be deleted. Select another Site Administrator first.'
+      },
+      400
+    );
+  }
+
   await c.env.DB
     .prepare(
       'DELETE FROM accounts WHERE id=?'
     )
-    .bind(
-      Number(c.req.param('id'))
-    )
+    .bind(id)
     .run();
 
   return json(c,{ok:true});
