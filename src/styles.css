@@ -4452,7 +4452,6 @@ footer a:hover{
 }
 
 .password-input-toggle:hover{
-  background:var(--khaki-light);
   color:var(--navy)
 }
 
