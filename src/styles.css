@@ -4422,3 +4422,42 @@ footer a:hover{
   display:grid;
   gap:14px
 }
+
+.password-input-wrap{
+  position:relative;
+  width:100%
+}
+
+.password-input-wrap input{
+  width:100%;
+  padding-right:3.2rem
+}
+
+.password-input-toggle{
+  position:absolute;
+  top:0;
+  right:0;
+  width:44px;
+  height:44px;
+  min-width:44px;
+  min-height:44px;
+  padding:0;
+  border:0;
+  border-radius:3px;
+  background:transparent;
+  color:var(--muted);
+  display:grid;
+  place-items:center;
+  cursor:pointer
+}
+
+.password-input-toggle:hover{
+  background:var(--khaki-light);
+  color:var(--navy)
+}
+
+.password-input-toggle svg{
+  width:20px;
+  height:20px;
+  display:block
+}
