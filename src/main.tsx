@@ -2229,6 +2229,105 @@ if(editingAnnouncement){
   </Page>
 }
 
+function PasswordField({
+  label,
+  value,
+  onChange,
+  autoComplete
+}:{
+  label:string;
+  value:string;
+  onChange:(value:string)=>void;
+  autoComplete:string;
+}){
+  const [visible,setVisible]=useState(false);
+
+  return (
+    <label>
+      {label}
+
+      <div className="password-input-wrap">
+        <input
+          type={visible?'text':'password'}
+          value={value}
+          onChange={e=>
+            onChange(e.target.value)
+          }
+          autoComplete={autoComplete}
+        />
+
+        <button
+          type="button"
+          className="password-input-toggle"
+          aria-label={
+            visible?
+              'Hide password':
+              'Show password'
+          }
+          aria-pressed={visible}
+          onClick={()=>
+            setVisible(
+              current=>!current
+            )
+          }
+        >
+          {visible?
+            <svg
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <path
+                d="M3 3l18 18"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+              />
+              <path
+                d="M10.6 5.1C11.05 5.03 11.52 5 12 5c6 0 10 7 10 7a17.9 17.9 0 0 1-3.12 3.55M6.24 6.24C3.5 7.76 2 12 2 12s3.5 7 10 7c1.08 0 2.08-.18 3-.5"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              <path
+                d="M9.88 9.88a3 3 0 1 0 4.24 4.24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>:
+            <svg
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <path
+                d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              <circle
+                cx="12"
+                cy="12"
+                r="3"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              />
+            </svg>
+          }
+        </button>
+      </div>
+    </label>
+  );
+}
+
 function Login({setMe}:{setMe:(x:any)=>void}){
   const [u,setU]=useState('');
   const [p,setP]=useState('');
@@ -2267,15 +2366,12 @@ function Login({setMe}:{setMe:(x:any)=>void}){
         />
       </label>
 
-      <label>
-        Password
-        <input
-          type="password"
-          value={p}
-          onChange={e=>setP(e.target.value)}
-          autoComplete="current-password"
-        />
-      </label>
+      <PasswordField
+        label="Password"
+        value={p}
+        onChange={setP}
+        autoComplete="current-password"
+      />
 
       <label className="checkbox-label">
         <input
@@ -2385,24 +2481,16 @@ function Claim(){
             </label>
           }
 
-          <label>
-            {mode==='reset'?
-              'New Password':
-              'Password'
+          <PasswordField
+            label={
+              mode==='reset'?
+                'New Password':
+                'Password'
             }
-            <input
-              type="password"
-              value={pw}
-              onChange={e=>
-                setPw(e.target.value)
-              }
-              autoComplete={
-                mode==='reset'?
-                  'new-password':
-                  'new-password'
-              }
-            />
-          </label>
+            value={pw}
+            onChange={setPw}
+            autoComplete="new-password"
+          />
 
           {err&&
             <p className="error">
