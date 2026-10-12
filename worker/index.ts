@@ -5685,6 +5685,504 @@ const admin = (
   permission='PMAP'
 ) => requirePerm(permission)(c);
 
+
+const EAGLE_RESOURCE_INSTRUCTION_KEYS = new Set([
+  'project_instructions',
+  'workbook',
+  'application',
+  'court_of_honor_instructions'
+]);
+
+const eagleResourcePermission = (
+  c:any,
+  permission:string
+) => {
+  const denied=admin(c,permission);
+
+  if(denied)
+    return denied;
+
+  const user=c.get('user') as User|null;
+
+  // Edit permission does not silently grant view permission.
+  if(
+    permission==='EGRE' &&
+    !user?.isAdministrator &&
+    !user?.permissions.includes('EGRV')
+  ){
+    return json(
+      c,
+      {error:'View Eagle Resources permission is also required.'},
+      403
+    );
+  }
+
+  return null;
+};
+
+const eagleResourceSafeFilename = (
+  value:string
+) => {
+  const name=String(value||'document')
+    .replace(/[\r\n]/g,'')
+    .replace(/[\\/:"*?<>|]/g,'-')
+    .replace(/[\u0000-\u001f]/g,'')
+    .trim()
+    .slice(0,180);
+
+  return name||'document';
+};
+
+const eagleResourceContentDisposition = (
+  filename:string
+) => {
+  const name=eagleResourceSafeFilename(filename);
+
+  const fallback=name
+    .replace(/[^\x20-\x7E]/g,'_')
+    .replace(/"/g,'');
+
+  return (
+    `attachment; filename="${fallback}"; `+
+    `filename*=UTF-8''${encodeURIComponent(name)}`
+  );
+};
+
+const eagleResourceRetryCleanup = async (
+  c:any
+) => {
+  const queued=await c.env.DB.prepare(`
+    SELECT storage_key
+    FROM eagle_resource_cleanup_queue
+    ORDER BY created_at
+    LIMIT 20
+  `).all<any>();
+
+  for(const row of (queued.results??[])){
+    const key=String(row.storage_key||'');
+
+    if(!key)
+      continue;
+
+    try{
+      await c.env.FILES.delete(key);
+
+      await c.env.DB.prepare(`
+        DELETE FROM eagle_resource_cleanup_queue
+        WHERE storage_key=?
+      `).bind(key).run();
+    }catch(error:any){
+      await c.env.DB.prepare(`
+        UPDATE eagle_resource_cleanup_queue
+        SET
+          attempts=attempts+1,
+          last_error=?,
+          last_attempt_at=CURRENT_TIMESTAMP
+        WHERE storage_key=?
+      `).bind(
+        String(
+          error?.message||
+          'Unable to delete obsolete R2 object.'
+        ).slice(0,500),
+        key
+      ).run();
+    }
+  }
+};
+
+const eagleResourceDeleteOrQueue = async (
+  c:any,
+  key:string|null|undefined
+) => {
+  if(!key)
+    return;
+
+  try{
+    await c.env.FILES.delete(key);
+
+    await c.env.DB.prepare(`
+      DELETE FROM eagle_resource_cleanup_queue
+      WHERE storage_key=?
+    `).bind(key).run();
+  }catch(error:any){
+    await c.env.DB.prepare(`
+      INSERT INTO eagle_resource_cleanup_queue(
+        storage_key,
+        last_error
+      )
+      VALUES(?,?)
+      ON CONFLICT(storage_key) DO UPDATE SET
+        attempts=attempts+1,
+        last_error=excluded.last_error,
+        last_attempt_at=CURRENT_TIMESTAMP
+    `).bind(
+      key,
+      String(
+        error?.message||
+        'Unable to delete obsolete R2 object.'
+      ).slice(0,500)
+    ).run();
+  }
+};
+
+
+app.get(
+  '/api/eagle-resources/instructions',
+  async c=>{
+    const denied=eagleResourcePermission(
+      c,
+      'EGRV'
+    );
+
+    if(denied)
+      return denied;
+
+    await eagleResourceRetryCleanup(c);
+
+    const result=await c.env.DB.prepare(`
+      SELECT
+        resource_key,
+        source_type,
+        external_url,
+        original_filename,
+        content_type,
+        updated_at
+      FROM eagle_resource_documents
+      ORDER BY resource_key
+    `).all<any>();
+
+    return json(c,{
+      documents:result.results??[]
+    });
+  }
+);
+
+app.get(
+  '/api/eagle-resources/instructions/:key/download',
+  async c=>{
+    const denied=eagleResourcePermission(
+      c,
+      'EGRV'
+    );
+
+    if(denied)
+      return denied;
+
+    const key=c.req.param('key');
+
+    if(!EAGLE_RESOURCE_INSTRUCTION_KEYS.has(key)){
+      return json(
+        c,
+        {error:'Unknown Instructions resource.'},
+        404
+      );
+    }
+
+    const record=await c.env.DB.prepare(`
+      SELECT
+        source_type,
+        storage_key,
+        external_url,
+        original_filename,
+        content_type
+      FROM eagle_resource_documents
+      WHERE resource_key=?
+    `).bind(key).first<any>();
+
+    if(!record||record.source_type==='none'){
+      return json(
+        c,
+        {error:'No document is configured for this resource.'},
+        404
+      );
+    }
+
+    // For links, let the browser open the original destination.
+    if(record.source_type==='url'){
+      return c.redirect(
+        String(record.external_url),
+        302
+      );
+    }
+
+    if(
+      record.source_type!=='upload'||
+      !record.storage_key
+    ){
+      return json(
+        c,
+        {error:'The saved resource configuration is invalid.'},
+        500
+      );
+    }
+
+    const object=await c.env.FILES.get(
+      String(record.storage_key)
+    );
+
+    if(!object){
+      return json(
+        c,
+        {error:'The uploaded document could not be found in storage.'},
+        404
+      );
+    }
+
+    return new Response(
+      object.body,
+      {
+        headers:{
+          'Content-Type':
+            String(
+              record.content_type||
+              'application/octet-stream'
+            ),
+          'Content-Disposition':
+            eagleResourceContentDisposition(
+              String(record.original_filename||'document')
+            ),
+          'Cache-Control':'private, no-store',
+          'X-Content-Type-Options':'nosniff'
+        }
+      }
+    );
+  }
+);
+
+app.put(
+  '/api/admin/eagle-resources/instructions/:key',
+  async c=>{
+    const denied=eagleResourcePermission(
+      c,
+      'EGRE'
+    );
+
+    if(denied)
+      return denied;
+
+    const resourceKey=c.req.param('key');
+
+    if(
+      !EAGLE_RESOURCE_INSTRUCTION_KEYS.has(
+        resourceKey
+      )
+    ){
+      return json(
+        c,
+        {error:'Unknown Instructions resource.'},
+        404
+      );
+    }
+
+    const existing=await c.env.DB.prepare(`
+      SELECT
+        source_type,
+        storage_key
+      FROM eagle_resource_documents
+      WHERE resource_key=?
+    `).bind(resourceKey).first<any>();
+
+    if(!existing){
+      return json(
+        c,
+        {error:'Instructions resource was not initialized. Apply migration 0017.'},
+        500
+      );
+    }
+
+    const oldStorageKey=
+      existing.storage_key?
+        String(existing.storage_key):
+        null;
+
+    const user=c.get('user') as User;
+
+    const requestType=String(
+      c.req.header('content-type')||''
+    ).toLowerCase();
+
+    let newStorageKey:string|null=null;
+    let sourceType:'upload'|'url'|'none';
+    let externalUrl:string|null=null;
+    let filename='';
+    let contentType='application/octet-stream';
+
+    try{
+      if(requestType.includes('multipart/form-data')){
+        const form=await c.req.formData();
+        const file=form.get('file');
+
+        if(!(file instanceof File)){
+          return json(
+            c,
+            {error:'Choose a document to upload.'},
+            400
+          );
+        }
+
+        sourceType='upload';
+        filename=eagleResourceSafeFilename(
+          file.name||'document'
+        );
+        contentType=
+          String(file.type||'').trim()||
+          'application/octet-stream';
+
+        newStorageKey=
+          `eagle-resources/${resourceKey}/`+
+          `${crypto.randomUUID()}-${filename}`;
+
+        // Store the replacement before changing the D1 pointer.
+        // If the upload fails, the old source remains active.
+        try{
+          await c.env.FILES.put(
+            newStorageKey,
+            file.stream(),
+            {
+              httpMetadata:{
+                contentType
+              }
+            }
+          );
+        }catch{
+          return json(
+            c,
+            {error:'The document could not be uploaded to storage.'},
+            500
+          );
+        }
+      }else{
+        const body=await c.req.json<any>();
+        const requested=String(
+          body?.sourceType||''
+        );
+
+        if(requested==='url'){
+          sourceType='url';
+
+          const raw=String(body?.url||'').trim();
+
+          if(!raw){
+            return json(
+              c,
+              {error:'Enter a URL.'},
+              400
+            );
+          }
+
+          let parsed:URL;
+
+          try{
+            parsed=new URL(raw);
+          }catch{
+            return json(
+              c,
+              {error:'Enter a valid full URL, including https:// or http://.'},
+              400
+            );
+          }
+
+          // Allow web destinations, but never javascript: or data: URLs.
+          if(
+            parsed.protocol!=='https:'&&
+            parsed.protocol!=='http:'
+          ){
+            return json(
+              c,
+              {error:'The URL must begin with http:// or https://.'},
+              400
+            );
+          }
+
+          externalUrl=parsed.toString();
+        }else if(requested==='none'){
+          sourceType='none';
+        }else{
+          return json(
+            c,
+            {error:'Choose Upload Document, Web Link, or remove the source.'},
+            400
+          );
+        }
+      }
+
+      try{
+        await c.env.DB.prepare(`
+          UPDATE eagle_resource_documents
+          SET
+            source_type=?,
+            storage_key=?,
+            external_url=?,
+            original_filename=?,
+            content_type=?,
+            updated_by_account_id=?,
+            updated_at=CURRENT_TIMESTAMP
+          WHERE resource_key=?
+        `).bind(
+          sourceType,
+          newStorageKey,
+          externalUrl,
+          filename,
+          contentType,
+          user.accountId,
+          resourceKey
+        ).run();
+      }catch(error){
+        // Roll back the new upload if D1 rejects the change.
+        if(newStorageKey){
+          await eagleResourceDeleteOrQueue(
+            c,
+            newStorageKey
+          );
+        }
+
+        return json(
+          c,
+          {error:'The resource could not be saved. Its previous source has been preserved.'},
+          500
+        );
+      }
+
+      // The new source is now active in D1.
+      // Only now do we remove the old uploaded file.
+      if(
+        oldStorageKey&&
+        oldStorageKey!==newStorageKey
+      ){
+        await eagleResourceDeleteOrQueue(
+          c,
+          oldStorageKey
+        );
+      }
+
+      await eagleResourceRetryCleanup(c);
+
+      return json(c,{
+        ok:true,
+        resourceKey,
+        sourceType
+      });
+    }catch(error:any){
+      if(newStorageKey){
+        await eagleResourceDeleteOrQueue(
+          c,
+          newStorageKey
+        );
+      }
+
+      return json(
+        c,
+        {
+          error:
+            error?.message||
+            'Unable to update this resource.'
+        },
+        500
+      );
+    }
+  }
+);
+
 app.post(
   '/api/admin/email/test-newsletter',
   async c=>{
@@ -10755,7 +11253,40 @@ app.get('/api/admin/permissions',async c=>{
         system
       FROM permission_titles
       WHERE code<>'ADMIN'
-      ORDER BY id
+      ORDER BY
+        CASE code
+          WHEN 'CAL' THEN 1
+          WHEN 'PHV' THEN 2
+          WHEN 'LDV' THEN 3
+          WHEN 'HSTV' THEN 4
+          WHEN 'SET' THEN 5
+          WHEN 'MIV' THEN 6
+          WHEN 'MIE' THEN 7
+          WHEN 'MDEL' THEN 8
+          WHEN 'INV' THEN 9
+          WHEN 'ACCT' THEN 10
+          WHEN 'EML' THEN 11
+          WHEN 'EMS' THEN 12
+          WHEN 'EVT' THEN 13
+          WHEN 'ATTV' THEN 14
+          WHEN 'ATTM' THEN 15
+          WHEN 'SIGN' THEN 16
+          WHEN 'PHOTO' THEN 17
+          WHEN 'EAGLE' THEN 18
+          WHEN 'EGRV' THEN 19
+          WHEN 'EGRE' THEN 20
+          WHEN 'LEAD' THEN 21
+          WHEN 'HIST' THEN 22
+          WHEN 'ADV' THEN 23
+          WHEN 'UNIF' THEN 24
+          WHEN 'HOME' THEN 25
+          WHEN 'CONT' THEN 26
+          WHEN 'POS' THEN 27
+          WHEN 'PMAP' THEN 28
+          WHEN 'PERM' THEN 29
+          ELSE 30
+        END,
+        id
     `)
     .all<any>();
 
