@@ -718,6 +718,8 @@ const permissions=[
   ['SIGN','Sign Digital Permissions','Sign Digital Permissions'],
   ['PHOTO','Manage Photos','Manage Photos'],
   ['EAGLE','Manage Eagle Scouts','Manage Eagle Scouts'],
+  ['EGRV','View Eagle Resources','View Eagle Resources'],
+  ['EGRE','Edit Eagle Resources','Edit Eagle Resources'],
   ['LEAD','Manage Leadership','Manage Leadership'],
   ['HIST','Manage Leadership History','Manage Leadership History'],
   ['ADV','Manage Advancement','Manage Advancement'],
