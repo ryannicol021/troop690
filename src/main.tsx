@@ -471,8 +471,8 @@ function RouterPage({
     '/photos':'PHV',
     '/member-info':'MIV',
     '/email':'EML',
-    '/administration':'__ADMIN_ROLE__'
-    '/eagles/resources':'EGRV',
+    '/administration':'__ADMIN_ROLE__',
+    '/eagles/resources':'EGRV'
   };
 
 const requiredPermission=
