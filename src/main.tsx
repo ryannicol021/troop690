@@ -472,6 +472,7 @@ function RouterPage({
     '/member-info':'MIV',
     '/email':'EML',
     '/administration':'__ADMIN_ROLE__'
+    '/eagles/resources':'EGRV',
   };
 
 const requiredPermission=
@@ -509,6 +510,8 @@ const requiredPermission=
   if(p==='/login')return <Login setMe={setMe}/>;
   if(p.startsWith('/claim/'))return <Claim/>;
   if(p==='/update-info')return <UpdateInfo me={me}/>;
+  if(p==='/eagles/resources')
+    return <EagleResources me={me}/>;
   if(p==='/eagles')
     return <Eagles
       me={me}
@@ -2793,6 +2796,7 @@ function Eagles({
   me:any,
   editMode:boolean
 }){
+  const navigateResources=useNavigate();
   const [q,setQ]=useState('');
   const [rows,setRows]=useState<any[]>([]);
   const [error,setError]=useState('');
@@ -3165,32 +3169,43 @@ if(
   return <Page
     title="Eagle Scouts"
     actions={
-      editMode&&canEdit&&
-        <div className="eagle-page-actions">
-          <button
-            type="button"
-            className="button eagle-edit-button"
-            onClick={()=>{
-              setDraggedId(null);
-              setEditing(
-                value=>!value
-              );
-            }}
-          >
-            {editing?'Done':'Edit'}
-          </button>
-
-          {editing&&
+      <div className="eagle-page-actions">
+        <button
+          type="button"
+          className="button eagle-edit-button"
+          onClick={()=>{
+            navigateResources('/eagles/resources');
+          }}
+        >
+          Resources
+        </button>
+    
+        {editMode&&canEdit&&
+          <>
             <button
               type="button"
-              className="home-add-button"
-              aria-label="Add Eagle Scout"
-              onClick={openAdd}
+              className="button eagle-edit-button"
+              onClick={()=>{
+                setDraggedId(null);
+                setEditing(value=>!value);
+              }}
             >
-              +
+              {editing?'Done':'Edit'}
             </button>
-          }
-        </div>
+    
+            {editing&&
+              <button
+                type="button"
+                className="home-add-button"
+                aria-label="Add Eagle Scout"
+                onClick={openAdd}
+              >
+                +
+              </button>
+            }
+          </>
+        }
+      </div>
     }
   >
     <div className="eagle-search-row">
@@ -3601,6 +3616,608 @@ if(
       </div>
     }
   </Page>
+}
+
+const eagleInstructionResources=[
+  {
+    key:'project_instructions',
+    label:'Project Instructions'
+  },
+  {
+    key:'workbook',
+    label:'Workbook'
+  },
+  {
+    key:'application',
+    label:'Application'
+  },
+  {
+    key:'court_of_honor_instructions',
+    label:'Court of Honor Instructions'
+  }
+] as const;
+
+type EagleResourceSource=
+  'upload'|'url'|'none';
+
+type EagleResourceDraft={
+  sourceType:EagleResourceSource;
+  url:string;
+  file:File|null;
+};
+
+function EagleResources({me}:{me:any}){
+  const navigate=useNavigate();
+
+  const [documents,setDocuments]=
+    useState<any[]>([]);
+
+  const [drafts,setDrafts]=
+    useState<Record<string,EagleResourceDraft>>({});
+
+  const [activeTab,setActiveTab]=
+    useState<'instructions'|'dignitaries'|'script'>(
+      'instructions'
+    );
+
+  const [mode,setMode]=
+    useState<'form'|'update'>('form');
+
+  const [loading,setLoading]=useState(true);
+  const [savingKey,setSavingKey]=
+    useState<string|null>(null);
+
+  const [error,setError]=useState('');
+  const [message,setMessage]=useState('');
+
+  const canEdit=
+    !!me?.isAdministrator&&
+    !!me?.permissions?.includes('EGRV')||
+    (
+      !!me?.permissions?.includes('EGRE')&&
+      !!me?.permissions?.includes('EGRV')
+    );
+
+  const load=async()=>{
+    try{
+      const result=
+        await api('/eagle-resources/instructions');
+
+      const rows=eagleInstructionResources.map(
+        item=>
+          (result.documents||[]).find(
+            (doc:any)=>
+              doc.resource_key===item.key
+          )||{
+            resource_key:item.key,
+            source_type:'none',
+            external_url:null,
+            original_filename:null
+          }
+      );
+
+      const nextDrafts:Record<
+        string,
+        EagleResourceDraft
+      >={};
+
+      for(const doc of rows){
+        nextDrafts[doc.resource_key]={
+          sourceType:
+            doc.source_type||'none',
+          url:doc.external_url||'',
+          file:null
+        };
+      }
+
+      setDocuments(rows);
+      setDrafts(nextDrafts);
+      setError('');
+    }catch(e:any){
+      setError(
+        e?.message||
+        'Unable to load Eagle Resources.'
+      );
+    }finally{
+      setLoading(false);
+    }
+  };
+
+  useEffect(()=>{
+    load();
+  },[]);
+
+  const getDocument=(key:string)=>
+    documents.find(
+      doc=>doc.resource_key===key
+    );
+
+  const getDraft=(key:string):EagleResourceDraft=>
+    drafts[key]||{
+      sourceType:'none',
+      url:'',
+      file:null
+    };
+
+  const hasChanges=(key:string)=>{
+    const doc=getDocument(key);
+    const draft=getDraft(key);
+
+    return (
+      draft.sourceType!==
+        (doc?.source_type||'none')||
+      draft.url!==
+        (doc?.external_url||'')||
+      draft.file!==null
+    );
+  };
+
+  const hasUnsavedChanges=
+    eagleInstructionResources.some(
+      item=>hasChanges(item.key)
+    );
+
+  const resetDrafts=()=>{
+    const next:Record<
+      string,
+      EagleResourceDraft
+    >={};
+
+    for(const item of eagleInstructionResources){
+      const doc=getDocument(item.key);
+
+      next[item.key]={
+        sourceType:doc?.source_type||'none',
+        url:doc?.external_url||'',
+        file:null
+      };
+    }
+
+    setDrafts(next);
+  };
+
+  useEffect(()=>{
+    if(!hasUnsavedChanges)
+      return;
+
+    const warn=(event:BeforeUnloadEvent)=>{
+      event.preventDefault();
+      event.returnValue='';
+    };
+
+    window.addEventListener(
+      'beforeunload',
+      warn
+    );
+
+    return ()=>{
+      window.removeEventListener(
+        'beforeunload',
+        warn
+      );
+    };
+  },[hasUnsavedChanges]);
+
+  const confirmDiscard=()=>{
+    if(!hasUnsavedChanges)
+      return true;
+
+    return window.confirm(
+      'You have unsaved changes. Discard them?'
+    );
+  };
+
+  const changeTab=(
+    next:'instructions'|'dignitaries'|'script'
+  )=>{
+    if(next===activeTab)
+      return;
+
+    if(!confirmDiscard())
+      return;
+
+    if(hasUnsavedChanges)
+      resetDrafts();
+
+    setError('');
+    setMessage('');
+    setActiveTab(next);
+  };
+
+  const changeMode=(
+    next:'form'|'update'
+  )=>{
+    if(next===mode)
+      return;
+
+    if(!confirmDiscard())
+      return;
+
+    if(hasUnsavedChanges)
+      resetDrafts();
+
+    setError('');
+    setMessage('');
+    setMode(next);
+  };
+
+  const updateDraft=(
+    key:string,
+    changes:Partial<EagleResourceDraft>
+  )=>{
+    setDrafts(previous=>({
+      ...previous,
+      [key]:{
+        ...getDraft(key),
+        ...changes
+      }
+    }));
+
+    setError('');
+    setMessage('');
+  };
+
+  const saveResource=async(
+    item:typeof eagleInstructionResources[number]
+  )=>{
+    const draft=getDraft(item.key);
+
+    setError('');
+    setMessage('');
+
+    if(
+      draft.sourceType==='upload'&&
+      !draft.file
+    ){
+      setError(
+        `Choose a file for ${item.label}.`
+      );
+      return;
+    }
+
+    setSavingKey(item.key);
+
+    try{
+      if(draft.sourceType==='upload'){
+        const form=new FormData();
+
+        form.append('file',draft.file!);
+
+        const response=await fetch(
+          `/api/admin/eagle-resources/instructions/${item.key}`,
+          {
+            method:'PUT',
+            body:form,
+            credentials:'include'
+          }
+        );
+
+        const data=
+          await response.json().catch(()=>({}));
+
+        if(!response.ok){
+          throw new Error(
+            data?.error||
+            `Unable to save ${item.label}.`
+          );
+        }
+      }else{
+        await put(
+          `/admin/eagle-resources/instructions/${item.key}`,
+          {
+            sourceType:draft.sourceType,
+            ...(draft.sourceType==='url'?
+              {url:draft.url}:
+              {})
+          }
+        );
+      }
+
+      await load();
+
+      setMessage(
+        `${item.label} saved.`
+      );
+    }catch(e:any){
+      setError(
+        e?.message||
+        `Unable to save ${item.label}.`
+      );
+    }finally{
+      setSavingKey(null);
+    }
+  };
+
+  const openResource=(doc:any)=>{
+    let url='';
+
+    if(doc.source_type==='url'){
+      url=String(doc.external_url||'');
+    }else if(doc.source_type==='upload'){
+      url=
+        `/api/eagle-resources/instructions/`+
+        `${doc.resource_key}/download`;
+    }
+
+    if(url)
+      window.open(
+        url,
+        '_blank',
+        'noopener,noreferrer'
+      );
+  };
+
+  return <section className="page eagle-resources-page">
+    <div className="page-head eagle-resources-page-head">
+      <h1>Resources</h1>
+
+      <div className="eagle-resources-head-actions">
+        {canEdit&&
+          <div className="eagle-resources-mode-toggle">
+            <button
+              type="button"
+              className={mode==='form'?'active':''}
+              onClick={()=>changeMode('form')}
+            >
+              Form View
+            </button>
+            <button
+              type="button"
+              className={mode==='update'?'active':''}
+              onClick={()=>changeMode('update')}
+            >
+              Update
+            </button>
+          </div>
+        }
+
+        <button
+          type="button"
+          className="button page-close-button eagle-resources-close-button"
+          aria-label="Return to Eagle Scouts"
+          title="Return to Eagle Scouts"
+          onClick={()=>{
+            if(!confirmDiscard())
+              return;
+
+            navigate('/eagles');
+          }}
+        >
+          <span className="page-close-glyph">×</span>
+        </button>
+      </div>
+    </div>
+
+    <div className="eagle-resource-tabs" role="tablist">
+      <button
+        type="button"
+        role="tab"
+        aria-selected={activeTab==='instructions'}
+        className={activeTab==='instructions'?'active':''}
+        onClick={()=>changeTab('instructions')}
+      >
+        Instructions
+      </button>
+
+      <button
+        type="button"
+        role="tab"
+        aria-selected={activeTab==='dignitaries'}
+        className={activeTab==='dignitaries'?'active':''}
+        onClick={()=>changeTab('dignitaries')}
+      >
+        Dignitaries
+      </button>
+
+      <button
+        type="button"
+        role="tab"
+        aria-selected={activeTab==='script'}
+        className={activeTab==='script'?'active':''}
+        onClick={()=>changeTab('script')}
+      >
+        Script
+      </button>
+    </div>
+
+    {error&&
+      <p className="error">{error}</p>
+    }
+
+    {message&&
+      <p className="eagle-resource-message">
+        {message}
+      </p>
+    }
+
+    {activeTab==='instructions'&&
+      <>
+        {loading&&documents.length===0?
+          <Loading/>:
+          <div className="eagle-resource-grid">
+            {eagleInstructionResources.map(item=>{
+              const doc=getDocument(item.key);
+              const draft=getDraft(item.key);
+
+              return <section
+                className="card eagle-resource-card"
+                key={item.key}
+              >
+                <h2>{item.label}</h2>
+
+                {mode==='form'?
+                  <>
+                    {doc?.source_type==='upload'&&
+                      <p className="muted eagle-resource-detail">
+                        {doc.original_filename||
+                          'Uploaded document'}
+                      </p>
+                    }
+
+                    {doc?.source_type==='url'&&
+                      <p className="muted eagle-resource-detail">
+                        {doc.external_url}
+                      </p>
+                    }
+
+                    {(!doc||
+                      doc.source_type==='none')&&
+                      <p className="muted">
+                        No resource configured.
+                      </p>
+                    }
+
+                    {doc&&
+                      (
+                        doc.source_type==='upload'||
+                        doc.source_type==='url'
+                      )&&
+                      <button
+                        type="button"
+                        className="button"
+                        onClick={()=>openResource(doc)}
+                      >
+                        {doc.source_type==='url'?
+                          'Open':
+                          'Download'}
+                      </button>
+                    }
+                  </>:
+                  <div className="eagle-resource-editor">
+                    <p className="muted eagle-resource-detail">
+                      Current source:{' '}
+                      {doc?.source_type==='upload'?
+                        (doc.original_filename||'Uploaded file'):
+                      doc?.source_type==='url'?
+                        'Web link':
+                        'None'}
+                    </p>
+
+                    <div className="eagle-resource-source-controls">
+                      <label className="eagle-resource-source-choice">
+                        <input
+                          type="radio"
+                          name={`source-${item.key}`}
+                          checked={draft.sourceType==='upload'}
+                          onChange={()=>
+                            updateDraft(item.key,{
+                              sourceType:'upload'
+                            })
+                          }
+                        />
+                        <span>Upload a File</span>
+                      </label>
+
+                      <label className="eagle-resource-source-choice">
+                        <input
+                          type="radio"
+                          name={`source-${item.key}`}
+                          checked={draft.sourceType==='url'}
+                          onChange={()=>
+                            updateDraft(item.key,{
+                              sourceType:'url'
+                            })
+                          }
+                        />
+                        <span>Web Link</span>
+                      </label>
+
+                      <label className="eagle-resource-source-choice">
+                        <input
+                          type="radio"
+                          name={`source-${item.key}`}
+                          checked={draft.sourceType==='none'}
+                          onChange={()=>
+                            updateDraft(item.key,{
+                              sourceType:'none'
+                            })
+                          }
+                        />
+                        <span>Remove Source</span>
+                      </label>
+                    </div>
+
+                    {draft.sourceType==='upload'&&
+                      <label>
+                        File
+                        <input
+                          type="file"
+                          onChange={e=>
+                            updateDraft(item.key,{
+                              file:e.target.files?.[0]||null
+                            })
+                          }
+                          disabled={savingKey===item.key}
+                        />
+                      </label>
+                    }
+
+                    {draft.sourceType==='url'&&
+                      <label>
+                        URL
+                        <input
+                          type="url"
+                          value={draft.url}
+                          onChange={e=>
+                            updateDraft(item.key,{
+                              url:e.target.value,
+                              file:null
+                            })
+                          }
+                          placeholder="https://"
+                          disabled={savingKey===item.key}
+                        />
+                      </label>
+                    }
+
+                    <div className="eagle-resource-save-actions">
+                      <button
+                        type="button"
+                        className="primary"
+                        disabled={
+                          savingKey===item.key||
+                          !hasChanges(item.key)||
+                          (
+                            draft.sourceType==='upload'&&
+                            !draft.file
+                          )
+                        }
+                        onClick={()=>saveResource(item)}
+                      >
+                        {savingKey===item.key?
+                          'Saving…':
+                          'Save Changes'}
+                      </button>
+                    </div>
+                  </div>
+                }
+              </section>;
+            })}
+          </div>
+        }
+      </>
+    }
+
+    {activeTab==='dignitaries'&&
+      <section className="card eagle-resource-placeholder">
+        <h2>Dignitaries</h2>
+        <p>
+          Dignitary management and invitation forms
+          will be connected in the next implementation step.
+        </p>
+      </section>
+    }
+
+    {activeTab==='script'&&
+      <section className="card eagle-resource-placeholder">
+        <h2>Script</h2>
+        <p>
+          The script editor, variables, and document
+          export will be connected in the next implementation step.
+        </p>
+      </section>
+    }
+  </section>;
 }
 
 function Calendar({me}:{me:any}){
