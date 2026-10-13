@@ -3646,6 +3646,1244 @@ type EagleResourceDraft={
   file:File|null;
 };
 
+type EagleDignitaryGroup='core'|'local'|'national';
+
+type EagleDignitaryRecord={
+  id:number;
+  organization:string;
+  title:string;
+  name:string;
+  expiration_date:string|null;
+  group_key:EagleDignitaryGroup;
+  display_order:number;
+  contact_type:'website'|'email'|'phone'|'address'|null;
+  contact_value:string;
+  street_address_1:string;
+  street_address_2:string;
+  city:string;
+  state:string;
+  zip:string;
+  towns:string[];
+};
+
+type EagleDignitaryDraft=
+  Omit<EagleDignitaryRecord,'id'|'display_order'>;
+
+type EagleDignitaryOptions={
+  scouts:any[];
+  towns:string[];
+};
+
+const eagleDignitaryBlank=(
+  group:EagleDignitaryGroup='local'
+):EagleDignitaryDraft=>({
+  organization:'',
+  title:'',
+  name:'',
+  expiration_date:null,
+  group_key:group,
+  contact_type:'website',
+  contact_value:'',
+  street_address_1:'',
+  street_address_2:'',
+  city:'',
+  state:'',
+  zip:'',
+  towns:[]
+});
+
+const eagleDignitaryTitle=(row:any)=>
+  [row.organization,row.title,row.name]
+    .map((value:any)=>String(value||'').trim())
+    .filter(Boolean)
+    .join(' · ');
+
+const eagleDignitaryScoutName=(scout:any)=>{
+  const middle=String(scout?.middle_name||'').trim();
+
+  return [
+    scout?.prefix,
+    scout?.first_name,
+    middle?`${middle.charAt(0)}.`:'',
+    scout?.last_name,
+    scout?.suffix
+  ]
+    .map((value:any)=>String(value||'').trim())
+    .filter(Boolean)
+    .join(' ');
+};
+
+const eagleDignitaryExpiry=(
+  value:string|null|undefined
+)=>{
+  if(!value)return '';
+
+  const today=new Date();
+  today.setHours(0,0,0,0);
+
+  const expiry=new Date(`${value}T00:00:00`);
+
+  if(Number.isNaN(expiry.getTime()))return '';
+  if(expiry<today)return 'expired';
+
+  const limit=new Date(today);
+  limit.setMonth(limit.getMonth()+2);
+
+  if(expiry<=limit)return 'expiring';
+
+  return '';
+};
+
+const eagleDignitaryIsExpired=(
+  value:string|null|undefined
+)=>{
+  if(!value)return false;
+
+  const today=new Date();
+
+  const todayString=
+    `${today.getFullYear()}-`+
+    `${String(today.getMonth()+1).padStart(2,'0')}-`+
+    `${String(today.getDate()).padStart(2,'0')}`;
+
+  return value<todayString;
+};
+
+const eagleTownKey=(value:any)=>
+  String(value||'').trim().toLocaleLowerCase();
+
+function EagleDignitaryContact({
+  row
+}:{row:EagleDignitaryRecord}){
+  const type=row.contact_type;
+
+  if(type==='website'&&row.contact_value){
+    return <a
+      href={row.contact_value}
+      target="_blank"
+      rel="noreferrer"
+    >
+      {row.contact_value}
+    </a>;
+  }
+
+  if(type==='email'&&row.contact_value){
+    return <a href={`mailto:${row.contact_value}`}>
+      {row.contact_value}
+    </a>;
+  }
+
+  if(type==='phone'&&row.contact_value){
+    const digits=row.contact_value.replace(/\D/g,'');
+
+    const national=
+      digits.length===11&&digits.startsWith('1')?
+        digits.slice(1):
+        digits;
+
+    const shown=national.length===10?
+      `(${national.slice(0,3)}) ${national.slice(3,6)}-${national.slice(6)}`:
+      row.contact_value;
+
+    const dial=national.length===10?
+      `+1${national}`:
+      `+${digits}`;
+
+    return <a href={`tel:${dial}`}>{shown}</a>;
+  }
+
+  if(type==='address'){
+    const lines=[
+      row.street_address_1,
+      row.street_address_2,
+      [row.city,row.state]
+        .map(x=>String(x||'').trim())
+        .filter(Boolean)
+        .join(', '),
+      row.zip
+    ]
+      .map(x=>String(x||'').trim())
+      .filter(Boolean);
+
+    return lines.length?
+      <span className="eagle-dignitary-address">
+        {lines.map((line,index)=>
+          <React.Fragment key={`${line}-${index}`}>
+            {index>0&&<br/>}
+            {line}
+          </React.Fragment>
+        )}
+      </span>:
+      <span className="muted">No contact details</span>;
+  }
+
+  return <span className="muted">No contact details</span>;
+}
+
+function EagleDignitariesPanel({
+  mode,
+  canEdit,
+  onDirtyChange
+}:{
+  mode:'form'|'update';
+  canEdit:boolean;
+  onDirtyChange:(dirty:boolean)=>void;
+}){
+  const [rows,setRows]=
+    useState<EagleDignitaryRecord[]>([]);
+
+  const [options,setOptions]=
+    useState<EagleDignitaryOptions>({
+      scouts:[],
+      towns:[]
+    });
+
+  const [loading,setLoading]=useState(true);
+  const [busy,setBusy]=useState(false);
+  const [error,setError]=useState('');
+  const [notice,setNotice]=useState('');
+
+  const [draft,setDraft]=
+    useState<EagleDignitaryDraft>(
+      eagleDignitaryBlank()
+    );
+
+  const [editingId,setEditingId]=
+    useState<number|null>(null);
+
+  const [creating,setCreating]=useState(false);
+  const [dirty,setDirty]=useState(false);
+  const [draggedId,setDraggedId]=
+    useState<number|null>(null);
+
+  const [selectedScoutId,setSelectedScoutId]=
+    useState('');
+
+  const [extraTowns,setExtraTowns]=
+    useState<string[]>([]);
+
+  const [selectedLocalIds,setSelectedLocalIds]=
+    useState<number[]>([]);
+
+  const [selectedNationalIds,setSelectedNationalIds]=
+    useState<number[]>([]);
+
+  const previousMode=useRef(mode);
+
+  const reportDirty=(value:boolean)=>{
+    setDirty(value);
+    onDirtyChange(value);
+  };
+
+  const refreshRows=async()=>{
+    const result=
+      await api<{
+        dignitaries:EagleDignitaryRecord[]
+      }>('/eagle-resources/dignitaries');
+
+    setRows(
+      (result.dignitaries||[]).map(row=>({
+        ...row,
+        towns:Array.isArray(row.towns)?row.towns:[]
+      }))
+    );
+  };
+
+  const load=async()=>{
+    const [result,optionResult]=await Promise.all([
+      api<{
+        dignitaries:EagleDignitaryRecord[]
+      }>('/eagle-resources/dignitaries'),
+
+      api<EagleDignitaryOptions>(
+        '/eagle-resources/dignitaries/options'
+      )
+    ]);
+
+    setRows(
+      (result.dignitaries||[]).map(row=>({
+        ...row,
+        towns:Array.isArray(row.towns)?row.towns:[]
+      }))
+    );
+
+    setOptions({
+      scouts:optionResult.scouts||[],
+      towns:optionResult.towns||[]
+    });
+  };
+
+  useEffect(()=>{
+    load()
+      .catch((e:any)=>
+        setError(
+          e?.message||'Unable to load dignitaries.'
+        )
+      )
+      .finally(()=>setLoading(false));
+  },[]);
+
+  useEffect(()=>{
+    if(previousMode.current!==mode){
+      previousMode.current=mode;
+      setCreating(false);
+      setEditingId(null);
+      reportDirty(false);
+      setError('');
+      setNotice('');
+    }
+  },[mode]);
+
+  useEffect(
+    ()=>()=>onDirtyChange(false),
+    [onDirtyChange]
+  );
+
+  const editorOpen=creating||editingId!==null;
+
+  const closeEditor=()=>{
+    if(
+      dirty&&
+      !window.confirm(
+        'You have unsaved changes. Discard them?'
+      )
+    )return;
+
+    setCreating(false);
+    setEditingId(null);
+    reportDirty(false);
+    setError('');
+  };
+
+  const openEditor=(
+    row?:EagleDignitaryRecord,
+    group:EagleDignitaryGroup='local'
+  )=>{
+    if(row){
+      setDraft({
+        organization:row.organization||'',
+        title:row.title||'',
+        name:row.name||'',
+        expiration_date:row.expiration_date||null,
+        group_key:row.group_key,
+        contact_type:row.contact_type||'website',
+        contact_value:row.contact_value||'',
+        street_address_1:row.street_address_1||'',
+        street_address_2:row.street_address_2||'',
+        city:row.city||'',
+        state:row.state||'',
+        zip:row.zip||'',
+        towns:[...(row.towns||[])]
+      });
+
+      setEditingId(row.id);
+      setCreating(false);
+    }else{
+      setDraft(eagleDignitaryBlank(group));
+      setEditingId(null);
+      setCreating(true);
+    }
+
+    reportDirty(false);
+    setError('');
+    setNotice('');
+  };
+
+  const updateField=(key:string,value:any)=>{
+    setDraft(previous=>({
+      ...previous,
+      [key]:value
+    }));
+
+    reportDirty(true);
+    setError('');
+    setNotice('');
+  };
+
+  const saveDraft=async(event:React.FormEvent)=>{
+    event.preventDefault();
+    setBusy(true);
+    setError('');
+    setNotice('');
+
+    try{
+      const payload={
+        ...draft,
+        expiration_date:draft.expiration_date||null,
+        towns:draft.group_key==='local'?
+          draft.towns:
+          []
+      };
+
+      if(creating){
+        await post(
+          '/admin/eagle-resources/dignitaries',
+          payload
+        );
+      }else if(editingId!==null){
+        await put(
+          `/admin/eagle-resources/dignitaries/${editingId}`,
+          payload
+        );
+      }
+
+      setCreating(false);
+      setEditingId(null);
+      reportDirty(false);
+
+      await refreshRows();
+      setNotice('Dignitary saved.');
+    }catch(e:any){
+      setError(
+        e?.message||'Unable to save the dignitary.'
+      );
+    }finally{
+      setBusy(false);
+    }
+  };
+
+  const deleteRow=async(row:EagleDignitaryRecord)=>{
+    if(!window.confirm(
+      `Delete ${eagleDignitaryTitle(row)||'this dignitary'}?`
+    ))return;
+
+    setBusy(true);
+    setError('');
+    setNotice('');
+
+    try{
+      await api(
+        `/admin/eagle-resources/dignitaries/${row.id}`,
+        {method:'DELETE'}
+      );
+
+      await refreshRows();
+      setNotice('Dignitary deleted.');
+    }catch(e:any){
+      setError(
+        e?.message||'Unable to delete the dignitary.'
+      );
+    }finally{
+      setBusy(false);
+    }
+  };
+
+  const reorderRows=async(
+    dragId:number,
+    targetId:number|null,
+    targetGroup:EagleDignitaryGroup
+  )=>{
+    if(targetId===dragId){
+      setDraggedId(null);
+      return;
+    }
+
+    const dragged=rows.find(row=>row.id===dragId);
+    if(!dragged)return;
+
+    const groups:Record<
+      EagleDignitaryGroup,
+      EagleDignitaryRecord[]
+    >={
+      core:rows.filter(
+        row=>row.group_key==='core'&&row.id!==dragId
+      ),
+      local:rows.filter(
+        row=>row.group_key==='local'&&row.id!==dragId
+      ),
+      national:rows.filter(
+        row=>row.group_key==='national'&&row.id!==dragId
+      )
+    };
+
+    const moved={
+      ...dragged,
+      group_key:targetGroup
+    };
+
+    const targetRows=groups[targetGroup];
+
+    const targetIndex=targetId===null?
+      targetRows.length:
+      targetRows.findIndex(row=>row.id===targetId);
+
+    targetRows.splice(
+      targetIndex<0?targetRows.length:targetIndex,
+      0,
+      moved
+    );
+
+    const next:EagleDignitaryRecord[]=[];
+
+    for(const group of ['core','local','national'] as const){
+      groups[group].forEach((row,index)=>{
+        next.push({
+          ...row,
+          group_key:group,
+          display_order:index
+        });
+      });
+    }
+
+    setRows(next);
+    setBusy(true);
+    setError('');
+    setNotice('');
+
+    try{
+      await put(
+        '/admin/eagle-resources/dignitaries/order',
+        {
+          items:next.map(row=>({
+            id:row.id,
+            group_key:row.group_key,
+            display_order:row.display_order
+          }))
+        }
+      );
+
+      await refreshRows();
+    }catch(e:any){
+      await refreshRows().catch(()=>setRows(rows));
+      setError(
+        e?.message||'Unable to save the dignitary order.'
+      );
+    }finally{
+      setBusy(false);
+      setDraggedId(null);
+    }
+  };
+
+  const scout=options.scouts.find(
+    person=>String(person.id)===selectedScoutId
+  );
+
+  const scoutTown=String(scout?.town||'').trim();
+
+  const selectedTowns=[scoutTown,...extraTowns]
+    .map(value=>String(value||'').trim())
+    .filter(Boolean)
+    .filter((value,index,all)=>
+      all.findIndex(
+        other=>eagleTownKey(other)===eagleTownKey(value)
+      )===index
+    );
+
+  const activeRows=rows.filter(
+    row=>!eagleDignitaryIsExpired(row.expiration_date)
+  );
+
+  const coreRows=activeRows.filter(
+    row=>row.group_key==='core'
+  );
+
+  const localRows=activeRows.filter(
+    row=>
+      row.group_key==='local'&&
+      row.towns.some(town=>
+        selectedTowns.some(
+          selected=>
+            eagleTownKey(selected)===eagleTownKey(town)
+        )
+      )
+  );
+
+  const nationalRows=activeRows.filter(
+    row=>row.group_key==='national'
+  );
+
+  const localIdsKey=localRows
+    .map(row=>row.id)
+    .join(',');
+
+  const nationalIdsKey=nationalRows
+    .map(row=>row.id)
+    .join(',');
+
+  useEffect(()=>{
+    const valid=new Set(localRows.map(row=>row.id));
+
+    setSelectedLocalIds(previous=>{
+      const next=previous.filter(id=>valid.has(id));
+
+      return next.length===previous.length?
+        previous:
+        next;
+    });
+  },[localIdsKey]);
+
+  useEffect(()=>{
+    const valid=new Set(nationalRows.map(row=>row.id));
+
+    setSelectedNationalIds(previous=>{
+      const next=previous.filter(id=>valid.has(id));
+
+      return next.length===previous.length?
+        previous:
+        next;
+    });
+  },[nationalIdsKey]);
+
+  const changeScout=(id:string)=>{
+    setSelectedScoutId(id);
+    setExtraTowns([]);
+    setSelectedLocalIds([]);
+    setSelectedNationalIds([]);
+  };
+
+  const addExtraTown=()=>
+    setExtraTowns(previous=>[...previous,'']);
+
+  const updateExtraTown=(index:number,value:string)=>{
+    setExtraTowns(previous=>
+      previous.map((town,i)=>i===index?value:town)
+    );
+  };
+
+  const removeExtraTown=(index:number)=>
+    setExtraTowns(previous=>
+      previous.filter((_town,i)=>i!==index)
+    );
+
+  const renderFormContact=(row:EagleDignitaryRecord)=>
+    <EagleDignitaryContact row={row}/>;
+
+  const renderManagementRow=(row:EagleDignitaryRecord)=>{
+    const expiryClass=
+      eagleDignitaryExpiry(row.expiration_date);
+
+    return <div
+      key={row.id}
+      className={
+        `eagle-managed-dignitary`+
+        `${draggedId===row.id?' dragging':''}`
+      }
+      draggable={canEdit&&!busy&&!editorOpen}
+      data-dignitary-id={row.id}
+      data-dignitary-group={row.group_key}
+      onDragStart={event=>{
+        if(!canEdit||editorOpen){
+          event.preventDefault();
+          return;
+        }
+
+        setDraggedId(row.id);
+        event.dataTransfer.effectAllowed='move';
+        event.dataTransfer.setData(
+          'text/plain',
+          String(row.id)
+        );
+      }}
+      onDragEnd={()=>setDraggedId(null)}
+      onDragOver={event=>{
+        if(draggedId!==null){
+          event.preventDefault();
+          event.dataTransfer.dropEffect='move';
+        }
+      }}
+      onDrop={event=>{
+        event.preventDefault();
+        event.stopPropagation();
+
+        const id=draggedId||
+          Number(event.dataTransfer.getData('text/plain'));
+
+        if(id){
+          void reorderRows(id,row.id,row.group_key);
+        }
+      }}
+    >
+      <span
+        className="eagle-dignitary-drag-handle"
+        aria-hidden="true"
+        title="Drag to reorder or change group"
+      >
+        ⠿
+      </span>
+
+      <div className="eagle-managed-dignitary-info">
+        <strong>
+          {eagleDignitaryTitle(row)||'Unnamed dignitary'}
+        </strong>
+
+        {row.expiration_date&&
+          <span className={`eagle-expiration-date ${expiryClass}`}>
+            Expires {row.expiration_date}
+          </span>
+        }
+
+        <div className="eagle-dignitary-contact-summary">
+          {renderFormContact(row)}
+        </div>
+
+        {row.group_key==='local'&&row.towns.length>0&&
+          <div className="eagle-dignitary-town-summary">
+            Towns: {row.towns.join(', ')}
+          </div>
+        }
+      </div>
+
+      {canEdit&&
+        <div className="eagle-managed-actions">
+          <button
+            type="button"
+            className="button"
+            disabled={busy||editorOpen}
+            onClick={()=>openEditor(row)}
+          >
+            Edit
+          </button>
+
+          <button
+            type="button"
+            className="button eagle-dignitary-delete"
+            disabled={busy||editorOpen}
+            onClick={()=>void deleteRow(row)}
+          >
+            Delete
+          </button>
+        </div>
+      }
+    </div>;
+  };
+
+  if(loading){
+    return <div className="card"><Loading/></div>;
+  }
+
+  if(mode==='form'){
+    return <div className="eagle-dignitary-form-view">
+      {error&&<p className="error">{error}</p>}
+
+      <section className="card eagle-dignitary-scout-selector">
+        <label>
+          Scout
+          <select
+            value={selectedScoutId}
+            onChange={event=>changeScout(event.target.value)}
+          >
+            <option value="">Choose a Scout</option>
+
+            {options.scouts.map(person=>
+              <option
+                key={person.id}
+                value={String(person.id)}
+              >
+                {eagleDignitaryScoutName(person)}
+              </option>
+            )}
+          </select>
+        </label>
+
+        {selectedScoutId&&
+          <div className="eagle-dignitary-town-picker">
+            <div className="eagle-dignitary-town-row">
+              <label>
+                Scout's Town
+                <input
+                  value={
+                    scoutTown||
+                    'No town listed in member profile'
+                  }
+                  readOnly
+                />
+              </label>
+            </div>
+
+            {extraTowns.map((value,index)=>{
+              const used=selectedTowns.map(eagleTownKey);
+
+              const choices=options.towns.filter(town=>
+                !used.includes(eagleTownKey(town))||
+                eagleTownKey(town)===eagleTownKey(value)
+              );
+
+              return <div
+                className="eagle-dignitary-town-row"
+                key={`extra-town-${index}`}
+              >
+                <label>
+                  Additional Town {index+1}
+
+                  <select
+                    value={value}
+                    onChange={event=>
+                      updateExtraTown(index,event.target.value)
+                    }
+                  >
+                    <option value="">Choose a town</option>
+
+                    {choices.map(town=>
+                      <option key={town} value={town}>
+                        {town}
+                      </option>
+                    )}
+                  </select>
+                </label>
+
+                <button
+                  type="button"
+                  className="button eagle-town-remove"
+                  aria-label={`Remove additional town ${index+1}`}
+                  onClick={()=>removeExtraTown(index)}
+                >
+                  −
+                </button>
+              </div>;
+            })}
+
+            <button
+              type="button"
+              className="button eagle-town-add"
+              onClick={addExtraTown}
+              disabled={extraTowns.length>=options.towns.length}
+            >
+              + Add Town
+            </button>
+
+            {selectedTowns.length>0&&
+              <p className="muted eagle-selected-town-summary">
+                Applicable towns: {selectedTowns.join(', ')}
+              </p>
+            }
+          </div>
+        }
+      </section>
+
+      {!selectedScoutId?
+        <p className="muted">
+          Choose a Scout to preview the applicable invitations
+          and correspondence.
+        </p>:
+        <>
+          <section className="eagle-dignitary-preview-section eagle-dignitary-invitations">
+            <h2>Invitations</h2>
+
+            <h3>Core Invites</h3>
+
+            {coreRows.length===0?
+              <p className="muted">
+                No active core invitations are configured.
+              </p>:
+              coreRows.map(row=>
+                <article
+                  className="eagle-dignitary-preview-row"
+                  key={row.id}
+                >
+                  <strong>
+                    {eagleDignitaryTitle(row)||'Unnamed dignitary'}
+                  </strong>
+
+                  <div className="eagle-dignitary-preview-contact">
+                    {renderFormContact(row)}
+                  </div>
+                </article>
+              )
+            }
+
+            <h3>Local Invites</h3>
+
+            {localRows.length===0?
+              <p className="muted">
+                No active local invitations match the selected towns.
+              </p>:
+              localRows.map(row=>
+                <label
+                  className="eagle-dignitary-select-row"
+                  key={row.id}
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedLocalIds.includes(row.id)}
+                    onChange={event=>
+                      setSelectedLocalIds(previous=>
+                        event.target.checked?
+                          [...previous,row.id]:
+                          previous.filter(id=>id!==row.id)
+                      )
+                    }
+                  />
+
+                  <span>
+                    <strong>
+                      {eagleDignitaryTitle(row)||'Unnamed dignitary'}
+                    </strong>
+
+                    <span className="eagle-dignitary-preview-contact">
+                      {renderFormContact(row)}
+                    </span>
+                  </span>
+                </label>
+              )
+            }
+          </section>
+
+          <section className="eagle-dignitary-preview-section eagle-dignitary-correspondence">
+            <h2>Correspondence</h2>
+
+            {nationalRows.length===0?
+              <p className="muted">
+                No active national correspondence records are configured.
+              </p>:
+              nationalRows.map(row=>
+                <label
+                  className="eagle-dignitary-select-row"
+                  key={row.id}
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedNationalIds.includes(row.id)}
+                    onChange={event=>
+                      setSelectedNationalIds(previous=>
+                        event.target.checked?
+                          [...previous,row.id]:
+                          previous.filter(id=>id!==row.id)
+                      )
+                    }
+                  />
+
+                  <span>
+                    <strong>
+                      {eagleDignitaryTitle(row)||'Unnamed dignitary'}
+                    </strong>
+
+                    <span className="eagle-dignitary-preview-contact">
+                      {renderFormContact(row)}
+                    </span>
+                  </span>
+                </label>
+              )
+            }
+          </section>
+        </>
+      }
+    </div>;
+  }
+
+  const renderGroup=(
+    group:EagleDignitaryGroup,
+    label:string
+  )=>{
+    const groupRows=rows
+      .filter(row=>row.group_key===group)
+      .sort(
+        (a,b)=>
+          a.display_order-b.display_order||
+          a.id-b.id
+      );
+
+    return <section
+      className="eagle-dignitary-group"
+      key={group}
+      data-dignitary-group={group}
+      onDragOver={event=>{
+        if(draggedId!==null){
+          event.preventDefault();
+          event.dataTransfer.dropEffect='move';
+        }
+      }}
+      onDrop={event=>{
+        event.preventDefault();
+
+        const id=draggedId||
+          Number(event.dataTransfer.getData('text/plain'));
+
+        if(id){
+          void reorderRows(id,null,group);
+        }
+      }}
+    >
+      <div className="eagle-dignitary-group-heading">
+        <h2>{label}</h2>
+
+        {canEdit&&
+          <button
+            type="button"
+            className="button"
+            disabled={busy||editorOpen}
+            onClick={()=>openEditor(undefined,group)}
+          >
+            + Add
+          </button>
+        }
+      </div>
+
+      {groupRows.length===0?
+        <p className="eagle-empty-group">No records.</p>:
+        groupRows.map(renderManagementRow)
+      }
+    </section>;
+  };
+
+  return <div className="eagle-dignitary-management">
+    {error&&<p className="error">{error}</p>}
+    {notice&&
+      <p className="eagle-resource-message">{notice}</p>
+    }
+
+    {editorOpen&&
+      <form
+        className="card eagle-dignitary-editor"
+        onSubmit={saveDraft}
+      >
+        <div className="eagle-dignitary-editor-heading">
+          <h2>{creating?'Add Dignitary':'Edit Dignitary'}</h2>
+
+          <button
+            type="button"
+            className="button"
+            onClick={closeEditor}
+            disabled={busy}
+          >
+            Cancel
+          </button>
+        </div>
+
+        <div className="eagle-dignitary-fields">
+          <label>
+            Organization
+            <input
+              maxLength={250}
+              value={draft.organization}
+              onChange={event=>
+                updateField('organization',event.target.value)
+              }
+            />
+          </label>
+
+          <label>
+            Title
+            <input
+              maxLength={250}
+              value={draft.title}
+              onChange={event=>
+                updateField('title',event.target.value)
+              }
+            />
+          </label>
+
+          <label>
+            Name
+            <input
+              maxLength={250}
+              value={draft.name}
+              onChange={event=>
+                updateField('name',event.target.value)
+              }
+            />
+          </label>
+
+          <label>
+            Group
+            <select
+              value={draft.group_key}
+              onChange={event=>
+                updateField(
+                  'group_key',
+                  event.target.value as EagleDignitaryGroup
+                )
+              }
+            >
+              <option value="core">Core Invites</option>
+              <option value="local">Local Invites</option>
+              <option value="national">National Correspondence</option>
+            </select>
+          </label>
+
+          <label>
+            Expiration Date
+            <input
+              type="date"
+              value={draft.expiration_date||''}
+              onChange={event=>
+                updateField(
+                  'expiration_date',
+                  event.target.value||null
+                )
+              }
+            />
+            <span className="muted">
+              Leave blank for no expiration.
+            </span>
+          </label>
+
+          <label>
+            Contact Type
+            <select
+              value={draft.contact_type||'website'}
+              onChange={event=>
+                updateField('contact_type',event.target.value)
+              }
+            >
+              <option value="website">Website</option>
+              <option value="email">Email</option>
+              <option value="phone">Phone</option>
+              <option value="address">Address</option>
+            </select>
+          </label>
+        </div>
+
+        {draft.contact_type!=='address'?
+          <label className="eagle-dignitary-contact-field">
+            {draft.contact_type==='website'?
+              'Website URL':
+            draft.contact_type==='email'?
+              'Email Address':
+              'Phone Number'}
+
+            <input
+              value={draft.contact_value}
+              maxLength={2000}
+              onChange={event=>
+                updateField('contact_value',event.target.value)
+              }
+              placeholder={
+                draft.contact_type==='website'?
+                  'https://':
+                draft.contact_type==='email'?
+                  'name@example.com':
+                  '(516) 555-1234'
+              }
+              type={
+                draft.contact_type==='email'?
+                  'email':
+                draft.contact_type==='phone'?
+                  'tel':
+                  'url'
+              }
+            />
+          </label>:
+          <div className="eagle-dignitary-address-fields">
+            <label>
+              Street Address
+              <input
+                maxLength={250}
+                value={draft.street_address_1}
+                onChange={event=>
+                  updateField('street_address_1',event.target.value)
+                }
+              />
+            </label>
+
+            <label>
+              Address Line 2
+              <input
+                maxLength={250}
+                value={draft.street_address_2}
+                onChange={event=>
+                  updateField('street_address_2',event.target.value)
+                }
+              />
+            </label>
+
+            <label>
+              City
+              <input
+                maxLength={150}
+                value={draft.city}
+                onChange={event=>
+                  updateField('city',event.target.value)
+                }
+              />
+            </label>
+
+            <label>
+              State
+              <input
+                maxLength={100}
+                value={draft.state}
+                onChange={event=>
+                  updateField('state',event.target.value)
+                }
+              />
+            </label>
+
+            <label>
+              ZIP Code
+              <input
+                maxLength={30}
+                value={draft.zip}
+                onChange={event=>
+                  updateField('zip',event.target.value)
+                }
+              />
+            </label>
+          </div>
+        }
+
+        {draft.group_key==='local'&&
+          <fieldset className="eagle-dignitary-town-assignment">
+            <legend>Applicable Towns</legend>
+
+            <p className="muted">
+              This invitation appears when a Scout's town matches
+              one or more selected towns.
+            </p>
+
+            {options.towns.length===0?
+              <p className="muted">
+                No member towns are available yet.
+              </p>:
+              <div className="eagle-dignitary-town-checkboxes">
+                {options.towns.map(town=>
+                  <label key={town}>
+                    <input
+                      type="checkbox"
+                      checked={draft.towns.some(
+                        value=>
+                          eagleTownKey(value)===eagleTownKey(town)
+                      )}
+                      onChange={event=>
+                        updateField(
+                          'towns',
+                          event.target.checked?
+                            [...draft.towns,town]:
+                            draft.towns.filter(
+                              value=>
+                                eagleTownKey(value)!==eagleTownKey(town)
+                            )
+                        )
+                      }
+                    />
+                    <span>{town}</span>
+                  </label>
+                )}
+              </div>
+            }
+          </fieldset>
+        }
+
+        <div className="eagle-dignitary-editor-actions">
+          <button
+            type="submit"
+            className="primary"
+            disabled={busy}
+          >
+            {busy?'Saving…':'Save Changes'}
+          </button>
+
+          <button
+            type="button"
+            className="button"
+            disabled={busy}
+            onClick={closeEditor}
+          >
+            Cancel
+          </button>
+        </div>
+      </form>
+    }
+
+    {renderGroup('core','Core Invites')}
+    {renderGroup('local','Local Invites')}
+    {renderGroup('national','National Correspondence')}
+
+    {busy&&
+      <p className="muted eagle-dignitary-saving">Saving…</p>
+    }
+  </div>;
+}
+
 function EagleResources({me}:{me:any}){
   const navigate=useNavigate();
 
@@ -3669,6 +4907,8 @@ function EagleResources({me}:{me:any}){
 
   const [error,setError]=useState('');
   const [message,setMessage]=useState('');
+
+  const [dignitaryDirty,setDignitaryDirty]=useState(false);
 
   const canEdit=
     !!me?.isAdministrator&&
@@ -3755,7 +4995,7 @@ function EagleResources({me}:{me:any}){
   const hasUnsavedChanges=
     eagleInstructionResources.some(
       item=>hasChanges(item.key)
-    );
+    )||dignitaryDirty;
 
   const resetDrafts=()=>{
     const next:Record<
@@ -3816,8 +5056,10 @@ function EagleResources({me}:{me:any}){
     if(!confirmDiscard())
       return;
 
-    if(hasUnsavedChanges)
+    if(hasUnsavedChanges){
       resetDrafts();
+      setDignitaryDirty(false);
+    }
 
     setError('');
     setMessage('');
@@ -3833,8 +5075,10 @@ function EagleResources({me}:{me:any}){
     if(!confirmDiscard())
       return;
 
-    if(hasUnsavedChanges)
+    if(hasUnsavedChanges){
       resetDrafts();
+      setDignitaryDirty(false);
+    }
 
     setError('');
     setMessage('');
@@ -4199,13 +5443,11 @@ function EagleResources({me}:{me:any}){
     }
 
     {activeTab==='dignitaries'&&
-      <section className="card eagle-resource-placeholder">
-        <h2>Dignitaries</h2>
-        <p>
-          Dignitary management and invitation forms
-          will be connected in the next implementation step.
-        </p>
-      </section>
+      <EagleDignitariesPanel
+        mode={mode}
+        canEdit={canEdit}
+        onDirtyChange={setDignitaryDirty}
+      />
     }
 
     {activeTab==='script'&&
