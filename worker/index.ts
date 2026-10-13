@@ -6183,6 +6183,583 @@ app.put(
   }
 );
 
+const EAGLE_DIGNITARY_GROUPS=
+  new Set(['core','local','national']);
+
+const EAGLE_DIGNITARY_CONTACT_TYPES=
+  new Set(['website','email','phone','address']);
+
+const eagleDignitaryInput=(body:any)=>{
+  const trim=(value:any,max:number)=>{
+    const result=String(value??'').trim();
+
+    if(result.length>max)
+      throw new Error(`A field exceeds its ${max}-character limit.`);
+
+    return result;
+  };
+
+  const organization=trim(body.organization,250);
+  const title=trim(body.title,250);
+  const name=trim(body.name,250);
+  const groupKey=trim(body.group_key,20).toLowerCase();
+  const contactType=trim(body.contact_type,20).toLowerCase();
+
+  if(!organization&&!title&&!name)
+    throw new Error(
+      'Enter an organization, title, or name.'
+    );
+
+  if(!EAGLE_DIGNITARY_GROUPS.has(groupKey))
+    throw new Error('Choose a valid dignitary group.');
+
+  if(!EAGLE_DIGNITARY_CONTACT_TYPES.has(contactType))
+    throw new Error('Choose a valid contact type.');
+
+  const expiration=trim(body.expiration_date,10)||null;
+
+  if(expiration){
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(expiration))
+      throw new Error(
+        'Use YYYY-MM-DD for the expiration date.'
+      );
+
+    const date=new Date(`${expiration}T00:00:00.000Z`);
+
+    if(
+      Number.isNaN(date.getTime())||
+      date.toISOString().slice(0,10)!==expiration
+    ){
+      throw new Error('Enter a valid expiration date.');
+    }
+  }
+
+  let contactValue=trim(body.contact_value,2000);
+
+  const streetAddress1=trim(body.street_address_1,250);
+  const streetAddress2=trim(body.street_address_2,250);
+  const city=trim(body.city,150);
+  const state=trim(body.state,100);
+  const zip=trim(body.zip,30);
+
+  if(contactType==='website'){
+    if(!contactValue)
+      throw new Error('Enter a website URL.');
+
+    let url:URL;
+
+    try{
+      url=new URL(contactValue);
+    }catch{
+      throw new Error(
+        'Enter a full website URL, including https:// or http://.'
+      );
+    }
+
+    if(url.protocol!=='https:'&&url.protocol!=='http:')
+      throw new Error(
+        'Website URLs must use http:// or https://.'
+      );
+
+    contactValue=url.toString();
+  }else if(contactType==='email'){
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactValue))
+      throw new Error('Enter a valid email address.');
+  }else if(contactType==='phone'){
+    const digits=contactValue.replace(/\D/g,'');
+
+    if(
+      ![10,11].includes(digits.length)||
+      (digits.length===11&&!digits.startsWith('1'))
+    ){
+      throw new Error(
+        'Enter a U.S. phone number with 10 digits, optionally preceded by 1.'
+      );
+    }
+  }else{
+    if(
+      ![
+        streetAddress1,
+        streetAddress2,
+        city,
+        state,
+        zip
+      ].some(Boolean)
+    ){
+      throw new Error(
+        'Enter at least one address field.'
+      );
+    }
+
+    contactValue='';
+  }
+
+  let towns:string[]=[];
+
+  if(Array.isArray(body.towns)){
+    towns=[
+      ...new Set(
+        body.towns
+          .map((value:any)=>trim(value,120))
+          .filter(Boolean)
+      )
+    ];
+  }
+
+  if(towns.length>100)
+    throw new Error('Choose no more than 100 towns.');
+
+  // Core invitations apply regardless of the Scout's town.
+  if(groupKey==='core')
+    towns=[];
+
+  return {
+    organization,
+    title,
+    name,
+    expiration_date:expiration,
+    group_key:groupKey,
+    contact_type:contactType,
+    contact_value:contactValue,
+    street_address_1:streetAddress1,
+    street_address_2:streetAddress2,
+    city,
+    state,
+    zip,
+    towns
+  };
+};
+
+const eagleDignitarySaveTowns=async(
+  c:any,
+  dignitaryId:number,
+  towns:string[]
+)=>{
+  const statements=[
+    c.env.DB.prepare(`
+      DELETE FROM eagle_dignitary_towns
+      WHERE dignitary_id=?
+    `).bind(dignitaryId),
+
+    ...towns.map(town=>
+      c.env.DB.prepare(`
+        INSERT INTO eagle_dignitary_towns(
+          dignitary_id,
+          town
+        )
+        VALUES(?,?)
+      `).bind(dignitaryId,town)
+    )
+  ];
+
+  await c.env.DB.batch(statements);
+};
+
+const eagleDignitaryReadAll=async(c:any)=>{
+  const rows=await c.env.DB.prepare(`
+    SELECT *
+    FROM eagle_dignitaries
+    ORDER BY
+      CASE group_key
+        WHEN 'core' THEN 1
+        WHEN 'local' THEN 2
+        ELSE 3
+      END,
+      display_order,
+      id
+  `).all<any>();
+
+  const townRows=await c.env.DB.prepare(`
+    SELECT dignitary_id,town
+    FROM eagle_dignitary_towns
+    ORDER BY town COLLATE NOCASE
+  `).all<any>();
+
+  const townsById=new Map<number,string[]>();
+
+  for(const row of townRows.results??[]){
+    const id=Number(row.dignitary_id);
+    const towns=townsById.get(id)??[];
+
+    towns.push(String(row.town||''));
+    townsById.set(id,towns);
+  }
+
+  return (rows.results??[]).map((row:any)=>({
+    ...row,
+    towns:townsById.get(Number(row.id))??[]
+  }));
+};
+
+app.get(
+  '/api/eagle-resources/dignitaries',
+  async c=>{
+    const denied=eagleResourcePermission(c,'EGRV');
+
+    if(denied)
+      return denied;
+
+    try{
+      return json(c,{
+        dignitaries:await eagleDignitaryReadAll(c)
+      });
+    }catch{
+      return json(
+        c,
+        {error:'Unable to load dignitaries.'},
+        500
+      );
+    }
+  }
+);
+
+app.get(
+  '/api/eagle-resources/dignitaries/options',
+  async c=>{
+    const denied=eagleResourcePermission(c,'EGRV');
+
+    if(denied)
+      return denied;
+
+    try{
+      const scouts=await c.env.DB.prepare(`
+        SELECT
+          id,
+          prefix,
+          first_name,
+          middle_name,
+          last_name,
+          suffix,
+          town,
+          eagle_scout_archive
+        FROM people
+        WHERE
+          (adult=0 AND archived=0)
+          OR eagle_scout_archive=1
+        ORDER BY
+          last_name COLLATE NOCASE,
+          first_name COLLATE NOCASE,
+          suffix COLLATE NOCASE
+      `).all<any>();
+
+      const towns=await c.env.DB.prepare(`
+        SELECT DISTINCT TRIM(town) AS town
+        FROM people
+        WHERE
+          TRIM(COALESCE(town,''))<>''
+          AND (archived=0 OR eagle_scout_archive=1)
+        ORDER BY town COLLATE NOCASE
+      `).all<any>();
+
+      return json(c,{
+        scouts:scouts.results??[],
+        towns:(towns.results??[])
+          .map((row:any)=>String(row.town||''))
+          .filter(Boolean)
+      });
+    }catch{
+      return json(
+        c,
+        {error:'Unable to load dignitary options.'},
+        500
+      );
+    }
+  }
+);
+
+app.post(
+  '/api/admin/eagle-resources/dignitaries',
+  async c=>{
+    const denied=eagleResourcePermission(c,'EGRE');
+
+    if(denied)
+      return denied;
+
+    let input:any;
+
+    try{
+      input=eagleDignitaryInput(
+        await c.req.json<any>()
+      );
+    }catch(error:any){
+      return json(
+        c,
+        {error:error?.message||'Invalid dignitary details.'},
+        400
+      );
+    }
+
+    try{
+      const nextOrder=await c.env.DB.prepare(`
+        SELECT COALESCE(MAX(display_order),-1)+1 AS next_order
+        FROM eagle_dignitaries
+        WHERE group_key=?
+      `).bind(input.group_key).first<any>();
+
+      const result=await c.env.DB.prepare(`
+        INSERT INTO eagle_dignitaries(
+          organization,
+          title,
+          name,
+          expiration_date,
+          group_key,
+          display_order,
+          contact_type,
+          contact_value,
+          street_address_1,
+          street_address_2,
+          city,
+          state,
+          zip
+        )
+        VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)
+      `).bind(
+        input.organization,
+        input.title,
+        input.name,
+        input.expiration_date,
+        input.group_key,
+        Number(nextOrder?.next_order??0),
+        input.contact_type,
+        input.contact_value,
+        input.street_address_1,
+        input.street_address_2,
+        input.city,
+        input.state,
+        input.zip
+      ).run();
+
+      const id=Number(result.meta.last_row_id);
+
+      await eagleDignitarySaveTowns(c,id,input.towns);
+
+      return json(c,{ok:true,id});
+    }catch{
+      return json(
+        c,
+        {error:'Unable to save the dignitary.'},
+        500
+      );
+    }
+  }
+);
+
+// Declare /order before /:id so "order" is handled as a fixed route.
+app.put(
+  '/api/admin/eagle-resources/dignitaries/order',
+  async c=>{
+    const denied=eagleResourcePermission(c,'EGRE');
+
+    if(denied)
+      return denied;
+
+    let body:any;
+
+    try{
+      body=await c.req.json<any>();
+    }catch{
+      return json(c,{error:'Invalid ordering request.'},400);
+    }
+
+    if(!Array.isArray(body?.items)||body.items.length>500)
+      return json(c,{error:'Invalid ordering request.'},400);
+
+    const seen=new Set<number>();
+    const items:any[]=[];
+
+    for(const item of body.items){
+      const id=Number(item?.id);
+      const groupKey=String(item?.group_key||'').toLowerCase();
+      const order=Number(item?.display_order);
+
+      if(
+        !Number.isSafeInteger(id)||id<1||
+        !EAGLE_DIGNITARY_GROUPS.has(groupKey)||
+        !Number.isInteger(order)||order<0||
+        seen.has(id)
+      ){
+        return json(
+          c,
+          {error:'The ordering request contains an invalid record.'},
+          400
+        );
+      }
+
+      seen.add(id);
+      items.push({id,groupKey,order});
+    }
+
+    try{
+      const statements=items.map(item=>
+        c.env.DB.prepare(`
+          UPDATE eagle_dignitaries
+          SET
+            group_key=?,
+            display_order=?,
+            updated_at=CURRENT_TIMESTAMP
+          WHERE id=?
+        `).bind(
+          item.groupKey,
+          item.order,
+          item.id
+        )
+      );
+
+      if(statements.length)
+        await c.env.DB.batch(statements);
+
+      return json(c,{ok:true});
+    }catch{
+      return json(
+        c,
+        {error:'Unable to save the dignitary order.'},
+        500
+      );
+    }
+  }
+);
+
+app.put(
+  '/api/admin/eagle-resources/dignitaries/:id',
+  async c=>{
+    const denied=eagleResourcePermission(c,'EGRE');
+
+    if(denied)
+      return denied;
+
+    const id=Number(c.req.param('id'));
+
+    if(!Number.isSafeInteger(id)||id<1)
+      return json(c,{error:'Invalid dignitary ID.'},400);
+
+    const existing=await c.env.DB.prepare(`
+      SELECT id,group_key,display_order
+      FROM eagle_dignitaries
+      WHERE id=?
+    `).bind(id).first<any>();
+
+    if(!existing)
+      return json(c,{error:'Dignitary not found.'},404);
+
+    let input:any;
+
+    try{
+      input=eagleDignitaryInput(
+        await c.req.json<any>()
+      );
+    }catch(error:any){
+      return json(
+        c,
+        {error:error?.message||'Invalid dignitary details.'},
+        400
+      );
+    }
+
+    try{
+      let order=Number(existing.display_order);
+
+      if(String(existing.group_key)!==input.group_key){
+        const nextOrder=await c.env.DB.prepare(`
+          SELECT COALESCE(MAX(display_order),-1)+1 AS next_order
+          FROM eagle_dignitaries
+          WHERE group_key=? AND id<>?
+        `).bind(input.group_key,id).first<any>();
+
+        order=Number(nextOrder?.next_order??0);
+      }
+
+      await c.env.DB.prepare(`
+        UPDATE eagle_dignitaries
+        SET
+          organization=?,
+          title=?,
+          name=?,
+          expiration_date=?,
+          group_key=?,
+          display_order=?,
+          contact_type=?,
+          contact_value=?,
+          street_address_1=?,
+          street_address_2=?,
+          city=?,
+          state=?,
+          zip=?,
+          updated_at=CURRENT_TIMESTAMP
+        WHERE id=?
+      `).bind(
+        input.organization,
+        input.title,
+        input.name,
+        input.expiration_date,
+        input.group_key,
+        order,
+        input.contact_type,
+        input.contact_value,
+        input.street_address_1,
+        input.street_address_2,
+        input.city,
+        input.state,
+        input.zip,
+        id
+      ).run();
+
+      await eagleDignitarySaveTowns(c,id,input.towns);
+
+      return json(c,{ok:true,id});
+    }catch{
+      return json(
+        c,
+        {error:'Unable to update the dignitary.'},
+        500
+      );
+    }
+  }
+);
+
+app.delete(
+  '/api/admin/eagle-resources/dignitaries/:id',
+  async c=>{
+    const denied=eagleResourcePermission(c,'EGRE');
+
+    if(denied)
+      return denied;
+
+    const id=Number(c.req.param('id'));
+
+    if(!Number.isSafeInteger(id)||id<1)
+      return json(c,{error:'Invalid dignitary ID.'},400);
+
+    const existing=await c.env.DB.prepare(`
+      SELECT id
+      FROM eagle_dignitaries
+      WHERE id=?
+    `).bind(id).first<any>();
+
+    if(!existing)
+      return json(c,{error:'Dignitary not found.'},404);
+
+    try{
+      await c.env.DB.prepare(`
+        DELETE FROM eagle_dignitary_towns
+        WHERE dignitary_id=?
+      `).bind(id).run();
+
+      await c.env.DB.prepare(`
+        DELETE FROM eagle_dignitaries
+        WHERE id=?
+      `).bind(id).run();
+
+      return json(c,{ok:true});
+    }catch{
+      return json(
+        c,
+        {error:'Unable to delete the dignitary.'},
+        500
+      );
+    }
+  }
+);
+
 app.post(
   '/api/admin/email/test-newsletter',
   async c=>{
