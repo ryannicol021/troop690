@@ -4664,3 +4664,80 @@ footer a:hover{
     padding-left:12px
   }
 }
+
+.eagle-dignitary-management{display:grid;gap:18px}
+.eagle-dignitary-group{min-width:0;padding:16px;border:1px solid var(--border,#ded8cc);border-radius:4px;background:var(--white,#fff)}
+.eagle-dignitary-group-heading,.eagle-dignitary-editor-heading{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.eagle-dignitary-group-heading h2,.eagle-dignitary-editor-heading h2{margin:0;color:var(--navy,#17324d)}
+.eagle-dignitary-group-heading .button{min-height:32px;padding:4px 10px}
+.eagle-managed-dignitary{display:flex;align-items:flex-start;gap:11px;padding:13px 2px;border-top:1px solid var(--border,#ded8cc);cursor:grab}
+.eagle-managed-dignitary:first-of-type{margin-top:12px}
+.eagle-managed-dignitary.dragging{opacity:.45}
+.eagle-dignitary-drag-handle{flex:0 0 auto;color:var(--muted,#666);font-size:1.3rem;line-height:1.25;user-select:none}
+.eagle-managed-dignitary-info{display:flex;flex:1;min-width:0;flex-direction:column;align-items:flex-start;gap:5px}
+.eagle-managed-dignitary-info>strong{color:var(--navy,#17324d);overflow-wrap:anywhere}
+.eagle-managed-dignitary-info a,.eagle-dignitary-preview-contact a{overflow-wrap:anywhere}
+.eagle-expiration-date{display:inline-block;max-width:100%;font-size:.82rem;font-weight:700;font-variant-numeric:tabular-nums;padding:2px 5px;border-radius:2px}
+.eagle-expiration-date.expiring{background:#fff0a6;color:#5f4900}
+.eagle-expiration-date.expired{background:#f5c0c0;color:#8b1111}
+.eagle-dignitary-contact-summary,.eagle-dignitary-town-summary{font-size:.88rem;color:var(--muted,#666);white-space:pre-line;overflow-wrap:anywhere}
+.eagle-dignitary-contact-summary a{color:var(--navy,#17324d)}
+.eagle-managed-actions{display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap}
+.eagle-managed-actions .button{min-height:31px;padding:3px 9px;font-size:.82rem}
+.eagle-dignitary-delete{color:#9b2020}
+.eagle-empty-group{margin:12px 0 2px;color:var(--muted,#666)}
+.eagle-dignitary-editor{display:grid;gap:16px;margin:0}
+.eagle-dignitary-editor-heading{margin-bottom:2px}
+.eagle-dignitary-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.eagle-dignitary-editor label,.eagle-dignitary-scout-selector>label,.eagle-dignitary-town-picker label{display:grid;gap:6px;font-weight:600;min-width:0}
+.eagle-dignitary-editor input:not([type=checkbox]),.eagle-dignitary-editor select,.eagle-dignitary-scout-selector select,.eagle-dignitary-town-picker select,.eagle-dignitary-town-picker input{width:100%;min-width:0;min-height:36px;padding:6px 9px;border:1px solid var(--border,#c8c2b8);border-radius:3px;background:var(--white,#fff);color:inherit}
+.eagle-dignitary-editor input[type=date]{min-height:36px}
+.eagle-dignitary-fields label>span{font-size:.82rem;font-weight:400;color:var(--muted,#666)}
+.eagle-dignitary-contact-field{display:grid;gap:6px;font-weight:600}
+.eagle-dignitary-address-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
+.eagle-dignitary-address-fields label{display:grid;gap:6px;font-weight:600;min-width:0}
+.eagle-dignitary-town-assignment{min-width:0;margin:0;padding:12px;border:1px solid var(--border,#ded8cc);border-radius:3px}
+.eagle-dignitary-town-assignment legend{padding:0 5px;font-weight:700}
+.eagle-dignitary-town-assignment>p{margin:0 0 10px}
+.eagle-dignitary-town-checkboxes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px 14px;max-height:260px;overflow:auto}
+.eagle-dignitary-town-checkboxes label{display:flex;align-items:center;gap:8px;min-width:0;font-weight:400;overflow-wrap:anywhere;cursor:pointer}
+.eagle-dignitary-town-checkboxes input,.eagle-dignitary-select-row input{width:17px;min-width:17px;height:17px;min-height:17px;margin:0;accent-color:var(--navy,#17324d)}
+.eagle-dignitary-editor-actions{display:flex;align-items:center;gap:8px}
+.eagle-dignitary-editor-actions button{min-height:34px;padding:5px 12px}
+.eagle-dignitary-form-view{display:grid;gap:18px}
+.eagle-dignitary-scout-selector{display:grid;gap:16px;margin:0}
+.eagle-dignitary-scout-selector>label{max-width:540px}
+.eagle-dignitary-town-picker{display:grid;gap:12px;max-width:700px}
+.eagle-dignitary-town-row{display:flex;align-items:flex-end;gap:8px}
+.eagle-dignitary-town-row label{flex:1;min-width:0}
+.eagle-dignitary-town-row .button{flex:0 0 36px;min-height:36px;padding:3px;font-size:1.1rem}
+.eagle-town-add{justify-self:start;min-height:33px;padding:4px 10px}
+.eagle-town-add:disabled{opacity:.5;cursor:not-allowed}
+.eagle-selected-town-summary{margin:0;overflow-wrap:anywhere}
+.eagle-dignitary-preview-section{display:grid;gap:0}
+.eagle-dignitary-preview-section h2{margin:0 0 12px;color:var(--navy,#17324d)}
+.eagle-dignitary-preview-section>p{margin:0}
+.eagle-dignitary-preview-row{display:grid;gap:5px;padding:0 0 13px;margin-bottom:13px}
+.eagle-dignitary-preview-row strong,.eagle-dignitary-select-row strong{color:var(--navy,#17324d);overflow-wrap:anywhere}
+.eagle-dignitary-preview-contact{display:block;margin-top:4px;font-size:.9rem;color:var(--muted,#666);overflow-wrap:anywhere}
+.eagle-dignitary-preview-contact a{color:var(--navy,#17324d)}
+.eagle-dignitary-select-row{display:flex;align-items:flex-start;gap:10px;padding:10px 2px;cursor:pointer}
+.eagle-dignitary-select-row>input{margin-top:3px}
+.eagle-dignitary-select-row>span{display:block;min-width:0}
+.eagle-dignitary-correspondence{margin-top:4px;padding-top:17px;border-top:1px solid var(--border,#ded8cc)}
+.eagle-dignitary-saving{margin:0}
+.eagle-dignitary-invitations h3{margin:3px 0 8px;color:var(--navy,#17324d);font-size:1rem}
+.eagle-dignitary-invitations h3:not(:first-of-type){margin-top:16px}
+
+@media(max-width:700px){
+  .eagle-dignitary-fields,.eagle-dignitary-address-fields{grid-template-columns:1fr}
+  .eagle-dignitary-town-checkboxes{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .eagle-managed-dignitary{gap:7px;flex-wrap:wrap}
+  .eagle-managed-dignitary-info{flex-basis:calc(100% - 34px)}
+  .eagle-managed-actions{margin-left:31px}
+  .eagle-dignitary-group{padding:12px}
+}
+
+@media(max-width:420px){
+  .eagle-dignitary-town-checkboxes{grid-template-columns:1fr}
+}
