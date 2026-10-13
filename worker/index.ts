@@ -6295,14 +6295,15 @@ const eagleDignitaryInput=(body:any)=>{
   }
 
   let towns:string[]=[];
-
+  
   if(Array.isArray(body.towns)){
+    const normalizedTowns:string[]=
+      (body.towns as unknown[])
+        .map((value:unknown)=>trim(value,120))
+        .filter((value:string)=>value.length>0);
+  
     towns=[
-      ...new Set(
-        body.towns
-          .map((value:any)=>trim(value,120))
-          .filter(Boolean)
-      )
+      ...new Set<string>(normalizedTowns)
     ];
   }
 
@@ -6355,7 +6356,7 @@ const eagleDignitarySaveTowns=async(
   await c.env.DB.batch(statements);
 };
 
-const eagleDignitaryReadAll=async(c:any)=>{
+const eagleDignitaryReadAll=async(c:Context<AppEnv>)=>{
   const rows=await c.env.DB.prepare(`
     SELECT *
     FROM eagle_dignitaries
