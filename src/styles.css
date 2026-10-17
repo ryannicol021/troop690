@@ -4741,3 +4741,20 @@ footer a:hover{
 @media(max-width:420px){
   .eagle-dignitary-town-checkboxes{grid-template-columns:1fr}
 }
+
+.eagle-dignitary-export-row{
+  display:flex;
+  justify-content:flex-end;
+  margin:0;
+}
+
+.eagle-dignitary-export-row button{
+  min-width:145px;
+  min-height:36px;
+}
+
+@media(max-width:500px){
+  .eagle-dignitary-export-row button{
+    width:100%;
+  }
+}
