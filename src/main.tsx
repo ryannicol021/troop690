@@ -4169,6 +4169,83 @@ function EagleDignitariesPanel({
       )===index
     );
 
+  const exportDignitaries=async()=>{
+  if(!selectedScoutId){
+    setError('Choose a Scout first.');
+    return;
+  }
+
+  setBusy(true);
+  setError('');
+  setNotice('');
+
+  try{
+    const response=await fetch(
+      '/api/eagle-resources/dignitaries/export',
+      {
+        method:'POST',
+        credentials:'include',
+        headers:{
+          'Content-Type':'application/json'
+        },
+        body:JSON.stringify({
+          scout_id:Number(selectedScoutId),
+          towns:selectedTowns,
+          local_ids:selectedLocalIds,
+          national_ids:selectedNationalIds
+        })
+      }
+    );
+
+    if(!response.ok){
+      const result=await response.json().catch(()=>({}));
+
+      throw new Error(
+        result?.error||
+        'Unable to generate the Dignitaries PDF.'
+      );
+    }
+
+    const blob=await response.blob();
+    const scout=options.scouts.find(
+      person=>String(person.id)===selectedScoutId
+    );
+
+    const filePart=(value:any,fallback:string)=>
+      String(value||fallback)
+        .replace(/[^a-z0-9_-]+/gi,'-')
+        .replace(/^-+|-+$/g,'')||fallback;
+
+    const filename=
+      `${filePart(scout?.last_name,'Scout')}-`+
+      `${filePart(scout?.first_name,'Eagle')}.pdf`;
+
+    const url=URL.createObjectURL(blob);
+    const anchor=document.createElement('a');
+
+    anchor.href=url;
+    anchor.download=filename;
+
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+
+    window.setTimeout(
+      ()=>URL.revokeObjectURL(url),
+      1000
+    );
+
+    setNotice('Dignitaries PDF downloaded.');
+  }catch(error:any){
+    setError(
+      error?.message||
+      'Unable to generate the Dignitaries PDF.'
+    );
+  }finally{
+    setBusy(false);
+  }
+};
+
   const activeRows=rows.filter(
     row=>!eagleDignitaryIsExpired(row.expiration_date)
   );
@@ -4555,6 +4632,16 @@ function EagleDignitariesPanel({
               )
             }
           </section>
+          <section className="card eagle-dignitary-export-row">
+  <button
+    type="button"
+    className="primary"
+    disabled={busy}
+    onClick={()=>void exportDignitaries()}
+  >
+    {busy?'Preparing PDF…':'Export PDF'}
+  </button>
+</section>
         </>
       }
     </div>;
