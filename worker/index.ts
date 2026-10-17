@@ -4,7 +4,9 @@ import { setCookie, getCookie, deleteCookie } from 'hono/cookie';
 import {
   PDFDocument,
   StandardFonts,
-  rgb
+  rgb,
+  PDFName,
+  PDFString
 } from 'pdf-lib';
 
 type Env = {
@@ -6755,6 +6757,613 @@ app.delete(
       return json(
         c,
         {error:'Unable to delete the dignitary.'},
+        500
+      );
+    }
+  }
+);
+
+app.post(
+  '/api/eagle-resources/dignitaries/export',
+  async c=>{
+    const denied=eagleResourcePermission(c,'EGRV');
+
+    if(denied)
+      return denied;
+
+    let body:any;
+
+    try{
+      body=await c.req.json<any>();
+    }catch{
+      return json(c,{error:'Invalid PDF export request.'},400);
+    }
+
+    const scoutId=Number(body?.scout_id);
+
+    if(!Number.isSafeInteger(scoutId)||scoutId<1)
+      return json(c,{error:'Choose a Scout first.'},400);
+
+    const parseIds=(value:any,label:string):number[]=>{
+      if(value==null)
+        return [];
+
+      if(!Array.isArray(value)||value.length>500)
+        throw new Error(`Invalid ${label} selection.`);
+
+      const ids=value.map(Number);
+
+      if(ids.some(id=>!Number.isSafeInteger(id)||id<1))
+        throw new Error(`Invalid ${label} selection.`);
+
+      return [...new Set(ids)];
+    };
+
+    let localIds:number[];
+    let nationalIds:number[];
+    let requestedTowns:string[];
+
+    try{
+      localIds=parseIds(body.local_ids,'Local Invites');
+      nationalIds=parseIds(body.national_ids,'National Correspondence');
+
+      if(!Array.isArray(body.towns)||body.towns.length>100)
+        throw new Error('Invalid town selection.');
+
+      requestedTowns=[
+        ...new Set(
+          body.towns
+            .map((value:any)=>String(value??'').trim())
+            .filter(Boolean)
+        )
+      ];
+    }catch(error:any){
+      return json(
+        c,
+        {error:error?.message||'Invalid PDF export request.'},
+        400
+      );
+    }
+
+    try{
+      const scout=await c.env.DB.prepare(`
+        SELECT
+          id,
+          first_name,
+          last_name,
+          town
+        FROM people
+        WHERE
+          id=?
+          AND (
+            (adult=0 AND archived=0)
+            OR eagle_scout_archive=1
+          )
+      `).bind(scoutId).first<any>();
+
+      if(!scout)
+        return json(
+          c,
+          {error:'That person is not an eligible Scout.'},
+          404
+        );
+
+      const getToday=()=>{
+        const parts=new Intl.DateTimeFormat('en-US',{
+          timeZone:'America/New_York',
+          year:'numeric',
+          month:'2-digit',
+          day:'2-digit'
+        }).formatToParts(new Date());
+
+        const part=(type:string)=>
+          parts.find(item=>item.type===type)?.value||'';
+
+        return `${part('year')}-${part('month')}-${part('day')}`;
+      };
+
+      const today=getToday();
+
+      const availableTowns=await c.env.DB.prepare(`
+        SELECT DISTINCT TRIM(town) AS town
+        FROM people
+        WHERE
+          TRIM(COALESCE(town,''))<>''
+          AND (archived=0 OR eagle_scout_archive=1)
+      `).all<any>();
+
+      const townLookup=new Map<string,string>();
+
+      for(const item of availableTowns.results??[]){
+        const name=String(item.town||'').trim();
+
+        if(name)
+          townLookup.set(name.toLocaleLowerCase(),name);
+      }
+
+      const scoutTown=String(scout.town||'').trim();
+
+      const allRequestedTowns=[
+        scoutTown,
+        ...requestedTowns
+      ].filter(Boolean);
+
+      const towns:string[]=[];
+
+      for(const town of allRequestedTowns){
+        const canonical=townLookup.get(
+          town.toLocaleLowerCase()
+        );
+
+        if(!canonical){
+          return json(
+            c,
+            {
+              error:
+                `The town "${town}" is no longer available. Reload the form and try again.`
+            },
+            409
+          );
+        }
+
+        if(!towns.some(
+          value=>
+            value.toLocaleLowerCase()===
+            canonical.toLocaleLowerCase()
+        )){
+          towns.push(canonical);
+        }
+      }
+
+      const coreResult=await c.env.DB.prepare(`
+        SELECT *
+        FROM eagle_dignitaries
+        WHERE
+          group_key='core'
+          AND (
+            expiration_date IS NULL
+            OR TRIM(expiration_date)=''
+            OR expiration_date>=?
+          )
+        ORDER BY display_order,id
+      `).bind(today).all<any>();
+
+      let eligibleLocal:any[]=[];
+
+      if(towns.length){
+        const placeholders=towns.map(()=>'?').join(',');
+
+        const result=await c.env.DB.prepare(`
+          SELECT DISTINCT d.*
+          FROM eagle_dignitaries d
+          JOIN eagle_dignitary_towns t
+            ON t.dignitary_id=d.id
+          WHERE
+            d.group_key='local'
+            AND (
+              d.expiration_date IS NULL
+              OR TRIM(d.expiration_date)=''
+              OR d.expiration_date>=?
+            )
+            AND LOWER(TRIM(t.town)) IN (${placeholders})
+          ORDER BY d.display_order,d.id
+        `).bind(
+          today,
+          ...towns.map(value=>value.toLocaleLowerCase())
+        ).all<any>();
+
+        eligibleLocal=result.results??[];
+      }
+
+      const nationalResult=await c.env.DB.prepare(`
+        SELECT *
+        FROM eagle_dignitaries
+        WHERE
+          group_key='national'
+          AND (
+            expiration_date IS NULL
+            OR TRIM(expiration_date)=''
+            OR expiration_date>=?
+          )
+        ORDER BY display_order,id
+      `).bind(today).all<any>();
+
+      const core=coreResult.results??[];
+      const nationalEligible=nationalResult.results??[];
+
+      const selectedLocal=new Set(localIds);
+      const selectedNational=new Set(nationalIds);
+
+      if(localIds.some(
+        id=>!eligibleLocal.some(
+          row=>Number(row.id)===id
+        )
+      )){
+        return json(
+          c,
+          {
+            error:
+              'A selected Local Invite no longer matches the Scout’s towns or is expired. Reload the form and try again.'
+          },
+          409
+        );
+      }
+
+      if(nationalIds.some(
+        id=>!nationalEligible.some(
+          row=>Number(row.id)===id
+        )
+      )){
+        return json(
+          c,
+          {
+            error:
+              'A selected National Correspondence record is unavailable or expired. Reload the form and try again.'
+          },
+          409
+        );
+      }
+
+      const local=eligibleLocal.filter(
+        row=>selectedLocal.has(Number(row.id))
+      );
+
+      const national=nationalEligible.filter(
+        row=>selectedNational.has(Number(row.id))
+      );
+
+      const invitations=[...core,...local];
+
+      const pdf=await PDFDocument.create();
+
+      const regular=await pdf.embedFont(
+        StandardFonts.Helvetica
+      );
+
+      const bold=await pdf.embedFont(
+        StandardFonts.HelveticaBold
+      );
+
+      const pageWidth=612;
+      const pageHeight=792;
+      const margin=48;
+      const maxWidth=pageWidth-margin*2;
+
+      const black=rgb(0.12,0.12,0.12);
+      const navy=rgb(0.08,0.19,0.32);
+      const linkColor=rgb(0.06,0.27,0.62);
+
+      let page=pdf.addPage([pageWidth,pageHeight]);
+      let y=pageHeight-margin;
+
+      const safeText=(value:any)=>
+        String(value??'')
+          .replace(/\r\n?/g,'\n')
+          .replace(/[‘’]/g,"'")
+          .replace(/[“”]/g,'"')
+          .replace(/[–—]/g,'-')
+          .replace(/\u2026/g,'...');
+
+      const wrapText=(
+        value:string,
+        font:any,
+        size:number
+      ):string[]=>{
+        const words=safeText(value)
+          .split(/\s+/)
+          .filter(Boolean);
+
+        const lines:string[]=[];
+        let line='';
+
+        for(const word of words){
+          const candidate=line?
+            `${line} ${word}`:
+            word;
+
+          if(font.widthOfTextAtSize(candidate,size)<=maxWidth){
+            line=candidate;
+            continue;
+          }
+
+          if(line){
+            lines.push(line);
+            line='';
+          }
+
+          if(font.widthOfTextAtSize(word,size)<=maxWidth){
+            line=word;
+            continue;
+          }
+
+          // Split very long URLs or other unbroken strings.
+          let piece='';
+
+          for(const character of word){
+            if(
+              piece&&
+              font.widthOfTextAtSize(
+                piece+character,
+                size
+              )>maxWidth
+            ){
+              lines.push(piece);
+              piece=character;
+            }else{
+              piece+=character;
+            }
+          }
+
+          line=piece;
+        }
+
+        if(line)
+          lines.push(line);
+
+        return lines;
+      };
+
+      const ensureSpace=(height:number)=>{
+        if(y-height<margin){
+          page=pdf.addPage([pageWidth,pageHeight]);
+          y=pageHeight-margin;
+        }
+      };
+
+      const addLink=(
+        url:string,
+        x:number,
+        baseline:number,
+        width:number,
+        size:number
+      )=>{
+        const annotation=pdf.context.obj({
+          Type:PDFName.of('Annot'),
+          Subtype:PDFName.of('Link'),
+          Rect:[
+            x,
+            baseline-2,
+            x+Math.max(1,width),
+            baseline+size+3
+          ],
+          Border:[0,0,0],
+          A:{
+            Type:PDFName.of('Action'),
+            S:PDFName.of('URI'),
+            URI:PDFString.of(url)
+          }
+        });
+
+        page.node.addAnnot(annotation);
+      };
+
+      const drawWrapped=(
+        value:string,
+        font:any,
+        size:number,
+        color:any=black,
+        linkUrl?:string
+      )=>{
+        const lines=wrapText(value,font,size);
+
+        for(const line of lines){
+          ensureSpace(size+7);
+
+          const baseline=y-size;
+
+          page.drawText(line,{
+            x:margin,
+            y:baseline,
+            size,
+            font,
+            color
+          });
+
+          if(linkUrl){
+            addLink(
+              linkUrl,
+              margin,
+              baseline,
+              font.widthOfTextAtSize(line,size),
+              size
+            );
+          }
+
+          y=baseline-5;
+        }
+      };
+
+      const drawCentered=(
+        value:string,
+        size:number,
+        font:any,
+        color:any
+      )=>{
+        ensureSpace(size+10);
+
+        const text=safeText(value);
+        const textWidth=font.widthOfTextAtSize(text,size);
+
+        page.drawText(text,{
+          x:Math.max(margin,(pageWidth-textWidth)/2),
+          y:y-size,
+          size,
+          font,
+          color
+        });
+
+        y-=size+7;
+      };
+
+      const scoutName=[
+        String(scout.first_name||'').trim(),
+        String(scout.last_name||'').trim()
+      ].filter(Boolean).join(' ')||'Eagle Scout';
+
+      drawCentered(scoutName,20,bold,navy);
+      drawCentered('Dignitary Invitations and Correspondence',10,regular,black);
+
+      y-=10;
+
+      const displayDignitary=(row:any)=>{
+        const label=[
+          row.organization,
+          row.title,
+          row.name
+        ]
+          .map((value:any)=>String(value||'').trim())
+          .filter(Boolean)
+          .join(' | ');
+
+        if(label)
+          drawWrapped(label,bold,11,navy);
+
+        const type=String(row.contact_type||'');
+        const value=String(row.contact_value||'').trim();
+
+        if(type==='website'&&value){
+          let link:string|undefined;
+
+          try{
+            const parsed=new URL(value);
+
+            if(
+              parsed.protocol==='https:'||
+              parsed.protocol==='http:'
+            ){
+              link=parsed.toString();
+            }
+          }catch{}
+
+          drawWrapped(
+            `Website: ${value}`,
+            regular,
+            9,
+            link?linkColor:black,
+            link
+          );
+        }else if(type==='email'&&value){
+          drawWrapped(
+            `Email: ${value}`,
+            regular,
+            9,
+            linkColor,
+            `mailto:${value}`
+          );
+        }else if(type==='phone'&&value){
+          const digits=value.replace(/\D/g,'');
+
+          const nationalDigits=
+            digits.length===11&&digits.startsWith('1')?
+              digits.slice(1):
+              digits;
+
+          const validUS=nationalDigits.length===10;
+
+          const display=validUS?
+            `(${nationalDigits.slice(0,3)}) `+
+            `${nationalDigits.slice(3,6)}-`+
+            nationalDigits.slice(6):
+            value;
+
+          drawWrapped(
+            `Phone: ${display}`,
+            regular,
+            9,
+            validUS?linkColor:black,
+            validUS?`tel:+1${nationalDigits}`:undefined
+          );
+        }else if(type==='address'){
+          const addressLines=[
+            String(row.street_address_1||'').trim(),
+            String(row.street_address_2||'').trim()
+          ].filter(Boolean);
+
+          const city=String(row.city||'').trim();
+          const state=String(row.state||'').trim();
+          const zip=String(row.zip||'').trim();
+
+          const cityState=[city,state]
+            .filter(Boolean)
+            .join(', ');
+
+          const finalLine=[
+            cityState,
+            zip
+          ].filter(Boolean).join(' ');
+
+          if(finalLine)
+            addressLines.push(finalLine);
+
+          for(const line of addressLines)
+            drawWrapped(line,regular,9,black);
+        }
+
+        y-=7;
+      };
+
+      drawWrapped('Invitations',bold,14,navy);
+      y-=2;
+
+      drawWrapped('Core Invites',bold,11,navy);
+
+      if(core.length){
+        for(const row of core)
+          displayDignitary(row);
+      }else{
+        drawWrapped('No active Core Invites are configured.',regular,9,black);
+        y-=3;
+      }
+
+      if(local.length){
+        drawWrapped('Local Invites',bold,11,navy);
+
+        for(const row of local)
+          displayDignitary(row);
+      }
+
+      if(!invitations.length){
+        drawWrapped('No invitations are available.',regular,9,black);
+      }
+
+      if(national.length){
+        y-=9;
+        drawWrapped('Correspondence',bold,14,navy);
+        y-=2;
+
+        for(const row of national)
+          displayDignitary(row);
+      }
+
+      const bytes=await pdf.save();
+
+      const filePart=(value:any,fallback:string)=>
+        safeText(value)
+          .normalize('NFKD')
+          .replace(/[^a-z0-9_-]+/gi,'-')
+          .replace(/^-+|-+$/g,'')||fallback;
+
+      const filename=
+        `${filePart(scout.last_name,'Scout')}-`+
+        `${filePart(scout.first_name,'Eagle')}.pdf`;
+
+      return new Response(bytes as any,{
+        status:200,
+        headers:{
+          'Content-Type':'application/pdf',
+          'Content-Disposition':
+            `attachment; filename="${filename}"`,
+          'Cache-Control':'private, no-store'
+        }
+      });
+    }catch(error:any){
+      return json(
+        c,
+        {
+          error:
+            error?.message||
+            'Unable to generate the Dignitaries PDF.'
+        },
         500
       );
     }
