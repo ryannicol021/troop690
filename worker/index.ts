@@ -6810,12 +6810,13 @@ app.post(
       if(!Array.isArray(body.towns)||body.towns.length>100)
         throw new Error('Invalid town selection.');
 
+      const townValues:string[]=
+        (body.towns as unknown[])
+          .map((value:unknown)=>String(value??'').trim())
+          .filter((value:string)=>value.length>0);
+      
       requestedTowns=[
-        ...new Set(
-          body.towns
-            .map((value:any)=>String(value??'').trim())
-            .filter(Boolean)
-        )
+        ...new Set<string>(townValues)
       ];
     }catch(error:any){
       return json(
@@ -7117,24 +7118,26 @@ app.post(
         width:number,
         size:number
       )=>{
-        const annotation=pdf.context.obj({
-          Type:PDFName.of('Annot'),
-          Subtype:PDFName.of('Link'),
-          Rect:[
-            x,
-            baseline-2,
-            x+Math.max(1,width),
-            baseline+size+3
-          ],
-          Border:[0,0,0],
-          A:{
-            Type:PDFName.of('Action'),
-            S:PDFName.of('URI'),
-            URI:PDFString.of(url)
-          }
-        });
-
-        page.node.addAnnot(annotation);
+        const annotationRef=pdf.context.register(
+          pdf.context.obj({
+            Type:PDFName.of('Annot'),
+            Subtype:PDFName.of('Link'),
+            Rect:[
+              x,
+              baseline-2,
+              x+Math.max(1,width),
+              baseline+size+3
+            ],
+            Border:[0,0,0],
+            A:{
+              Type:PDFName.of('Action'),
+              S:PDFName.of('URI'),
+              URI:PDFString.of(url)
+            }
+          })
+        );
+        
+        page.node.addAnnot(annotationRef);
       };
 
       const drawWrapped=(
