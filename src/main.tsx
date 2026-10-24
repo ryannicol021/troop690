@@ -6298,11 +6298,11 @@ function EagleResources({me}:{me:any}){
     {activeTab==='script'&&
       <section className="card eagle-resource-placeholder">
         <h2>Script</h2>
-        <EagleScriptPanel
-          mode={mode}
-          canEdit={canEdit}
-          onDirtyChange={setScriptDirty}
-        />
+          <EagleScriptPanel
+            mode={mode==='update'?'edit':'view'}
+            canEdit={canEdit}
+            onDirtyChange={setScriptDirty}
+          />
       </section>
     }
   </section>;
