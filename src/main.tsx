@@ -5753,6 +5753,7 @@ function EagleResources({me}:{me:any}){
   const [message,setMessage]=useState('');
 
   const [dignitaryDirty,setDignitaryDirty]=useState(false);
+  const [scriptDirty,setScriptDirty]=useState(false);
 
   const canEdit=
     !!me?.isAdministrator&&
@@ -5839,7 +5840,7 @@ function EagleResources({me}:{me:any}){
   const hasUnsavedChanges=
     eagleInstructionResources.some(
       item=>hasChanges(item.key)
-    )||dignitaryDirty;
+    )||dignitaryDirty||scriptDirty;
 
   const resetDrafts=()=>{
     const next:Record<
@@ -6297,10 +6298,11 @@ function EagleResources({me}:{me:any}){
     {activeTab==='script'&&
       <section className="card eagle-resource-placeholder">
         <h2>Script</h2>
-        <p>
-          The script editor, variables, and document
-          export will be connected in the next implementation step.
-        </p>
+        <EagleScriptPanel
+          mode={mode}
+          canEdit={canEdit}
+          onDirtyChange={setScriptDirty}
+        />
       </section>
     }
   </section>;
