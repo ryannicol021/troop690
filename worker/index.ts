@@ -7373,6 +7373,254 @@ app.post(
   }
 );
 
+function eagleScriptDefault(){
+  return {
+    version:1,
+    title:'Eagle Scout Court of Honor Script',
+    blocks:[]
+  };
+}
+
+function eagleScriptCleanHtml(value:unknown):string{
+  let html=String(value??'').slice(0,50000);
+
+  html=html.replace(
+    /<(script|style|iframe|object|svg|math)\b[^>]*>[\s\S]*?<\/\1\s*>/gi,
+    ''
+  );
+
+  const allowed=new Set([
+    'b','strong','i','em','u',
+    'p','div','br','ul','ol','li',
+    'blockquote','sub','sup','span'
+  ]);
+
+  html=html.replace(
+    /<\/?([a-z][a-z0-9]*)\b[^>]*>/gi,
+    (tag,name)=>{
+      const lower=name.toLowerCase();
+
+      if(!allowed.has(lower))
+        return '';
+
+      return tag.startsWith('</')?
+        `</${lower}>`:
+        `<${lower}>`;
+    }
+  );
+
+  return html;
+}
+
+function eagleScriptNormalize(raw:any){
+  const source=
+    raw&&typeof raw==='object'?
+      raw:
+      {};
+
+  const allowedTypes=[
+    'speaker',
+    'paragraph',
+    'note',
+    'optional',
+    'pageBreak'
+  ];
+
+  const blocks=
+    Array.isArray(source.blocks)?
+      source.blocks.slice(0,300).map((b:any)=>{
+        const type=
+          allowedTypes.includes(String(b?.type))?
+            String(b.type):
+            'paragraph';
+
+        const color=
+          /^#[0-9a-f]{6}$/i.test(String(b?.color||''))?
+            String(b.color):
+            '#003F87';
+
+        return {
+          id:
+            String(b?.id||crypto.randomUUID())
+              .slice(0,100),
+          type,
+          title:String(b?.title||'').slice(0,200),
+          speaker:String(b?.speaker||'').slice(0,200),
+          color,
+          enabled:b?.enabled!==false,
+          html:eagleScriptCleanHtml(b?.html)
+        };
+      }):
+      [];
+
+  return {
+    version:1,
+    title:String(
+      source.title||
+      'Eagle Scout Court of Honor Script'
+    ).trim().slice(0,200)||
+      'Eagle Scout Court of Honor Script',
+    blocks
+  };
+}
+
+async function eagleScriptStorageShape(
+  c:Context<AppEnv>
+){
+  const schema=
+    await c.env.DB
+      .prepare('PRAGMA table_info(eagle_resources_script)')
+      .all<any>();
+
+  const columns=(schema.results||[])
+    .map((x:any)=>String(x.name));
+
+  const contentColumn=[
+    'content_json',
+    'script_json',
+    'document_json',
+    'data_json',
+    'script_content_json',
+    'content',
+    'script',
+    'body_json',
+    'document'
+  ].find(name=>columns.includes(name));
+
+  if(!contentColumn){
+    throw new Error(
+      'The eagle_resources_script table does not have a recognized JSON content column.'
+    );
+  }
+
+  const idColumn=[
+    'id',
+    'script_id'
+  ].find(name=>columns.includes(name));
+
+  return {contentColumn,idColumn};
+}
+
+app.get(
+  '/api/eagle-resources/script',
+  async(c:Context<AppEnv>)=>{
+    if(!await eagleResourcePermission(c,'EGRV')){
+      return c.json({error:'Forbidden'},403);
+    }
+
+    try{
+      const shape=await eagleScriptStorageShape(c);
+
+      const sql=shape.idColumn?
+        `SELECT "${shape.contentColumn}" AS content
+         FROM eagle_resources_script
+         WHERE "${shape.idColumn}"=1
+         LIMIT 1`:
+        `SELECT "${shape.contentColumn}" AS content
+         FROM eagle_resources_script
+         LIMIT 1`;
+
+      const row=await c.env.DB
+        .prepare(sql)
+        .first<any>();
+
+      if(!row?.content){
+        return c.json({
+          script:eagleScriptDefault()
+        });
+      }
+
+      let script:any;
+
+      try{
+        script=JSON.parse(String(row.content));
+      }catch{
+        return c.json({
+          error:'The saved script data is not valid JSON.'
+        },500);
+      }
+
+      return c.json({
+        script:eagleScriptNormalize(script)
+      });
+    }catch(e:any){
+      return c.json({
+        error:e?.message||'Unable to load the script.'
+      },500);
+    }
+  }
+);
+
+app.put(
+  '/api/admin/eagle-resources/script',
+  async(c:Context<AppEnv>)=>{
+    if(!await eagleResourcePermission(c,'EGRE')){
+      return c.json({error:'Forbidden'},403);
+    }
+
+    try{
+      const body=await c.req.json<any>();
+      const script=eagleScriptNormalize(body?.script);
+
+      const json=JSON.stringify(script);
+
+      if(json.length>400000){
+        return c.json({
+          error:'The script is too large to save.'
+        },400);
+      }
+
+      const shape=await eagleScriptStorageShape(c);
+      const contentColumn=`"${shape.contentColumn}"`;
+
+      if(shape.idColumn){
+        const idColumn=`"${shape.idColumn}"`;
+
+        await c.env.DB.prepare(`
+          INSERT INTO eagle_resources_script
+            (${idColumn},${contentColumn})
+          VALUES (1,?)
+          ON CONFLICT(${idColumn})
+          DO UPDATE SET
+            ${contentColumn}=excluded.${contentColumn}
+        `)
+          .bind(json)
+          .run();
+      }else{
+        const row=await c.env.DB.prepare(`
+          SELECT rowid AS script_rowid
+          FROM eagle_resources_script
+          LIMIT 1
+        `).first<any>();
+
+        if(row){
+          await c.env.DB.prepare(`
+            UPDATE eagle_resources_script
+            SET ${contentColumn}=?
+            WHERE rowid=?
+          `)
+            .bind(json,row.script_rowid)
+            .run();
+        }else{
+          await c.env.DB.prepare(`
+            INSERT INTO eagle_resources_script
+              (${contentColumn})
+            VALUES (?)
+          `)
+            .bind(json)
+            .run();
+        }
+      }
+
+      return c.json({ok:true,script});
+    }catch(e:any){
+      return c.json({
+        error:e?.message||'Unable to save the script.'
+      },500);
+    }
+  }
+);
+
 app.post(
   '/api/admin/email/test-newsletter',
   async c=>{
