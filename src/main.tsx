@@ -4971,6 +4971,763 @@ function EagleDignitariesPanel({
   </div>;
 }
 
+type EagleScriptBlock={
+  id:string;
+  type:'speaker'|'paragraph'|'note'|'optional'|'pageBreak';
+  title:string;
+  speaker:string;
+  color:string;
+  enabled:boolean;
+  html:string;
+};
+
+type EagleScriptDocument={
+  version:1;
+  title:string;
+  blocks:EagleScriptBlock[];
+};
+
+function EagleScriptPanel({
+  mode,
+  canEdit,
+  onDirtyChange
+}:{
+  mode:'view'|'edit';
+  canEdit:boolean;
+  onDirtyChange:(dirty:boolean)=>void;
+}){
+  const editing=mode==='edit'&&canEdit;
+
+  const [script,setScript]=useState<EagleScriptDocument>({
+    version:1,
+    title:'Eagle Scout Court of Honor Script',
+    blocks:[]
+  });
+
+  const [loading,setLoading]=useState(true);
+  const [saving,setSaving]=useState(false);
+  const [dirty,setDirty]=useState(false);
+  const [error,setError]=useState('');
+  const [message,setMessage]=useState('');
+  const [activeBlockId,setActiveBlockId]=useState('');
+  const [showVariables,setShowVariables]=useState(false);
+
+  const editors=useRef<
+    Record<string,HTMLDivElement|null>
+  >({});
+
+  const importInput=useRef<HTMLInputElement|null>(null);
+
+  const markDirty=()=>{
+    setDirty(true);
+    onDirtyChange(true);
+    setMessage('');
+  };
+
+  useEffect(()=>{
+    let mounted=true;
+
+    api('/eagle-resources/script')
+      .then((result:any)=>{
+        if(!mounted)
+          return;
+
+        const data=result?.script;
+
+        if(
+          data&&
+          Array.isArray(data.blocks)
+        ){
+          setScript({
+            version:1,
+            title:String(
+              data.title||
+              'Eagle Scout Court of Honor Script'
+            ),
+            blocks:data.blocks
+          });
+        }
+
+        setDirty(false);
+        onDirtyChange(false);
+      })
+      .catch((e:any)=>{
+        if(mounted){
+          setError(
+            e?.message||
+            'Unable to load the script.'
+          );
+        }
+      })
+      .finally(()=>{
+        if(mounted)
+          setLoading(false);
+      });
+
+    return ()=>{
+      mounted=false;
+    };
+  },[onDirtyChange]);
+
+  const getCurrentScript=():EagleScriptDocument=>({
+    ...script,
+    blocks:script.blocks.map(block=>({
+      ...block,
+      html:
+        editors.current[block.id]?.innerHTML??
+        block.html
+    }))
+  });
+
+  const syncBlock=(
+    id:string,
+    html?:string
+  )=>{
+    const value=
+      html??
+      editors.current[id]?.innerHTML??
+      '';
+
+    setScript(current=>({
+      ...current,
+      blocks:current.blocks.map(block=>
+        block.id===id?
+          {...block,html:value}:
+          block
+      )
+    }));
+  };
+
+  const updateBlock=(
+    id:string,
+    updates:Partial<EagleScriptBlock>
+  )=>{
+    setScript(current=>({
+      ...current,
+      blocks:current.blocks.map(block=>
+        block.id===id?
+          {...block,...updates}:
+          block
+      )
+    }));
+
+    markDirty();
+  };
+
+  const addBlock=(
+    type:EagleScriptBlock['type']
+  )=>{
+    const id=crypto.randomUUID();
+
+    const block:EagleScriptBlock={
+      id,
+      type,
+      title:
+        type==='optional'?
+          'Optional Section':
+        type==='note'?
+          'Stage Direction':
+          '',
+      speaker:
+        type==='speaker'?
+          'Speaker Name':
+          '',
+      color:'#003F87',
+      enabled:true,
+      html:'<p></p>'
+    };
+
+    setScript(current=>({
+      ...current,
+      blocks:[...current.blocks,block]
+    }));
+
+    setActiveBlockId(id);
+    markDirty();
+  };
+
+  const removeBlock=(id:string)=>{
+    if(!window.confirm(
+      'Delete this script section?'
+    )){
+      return;
+    }
+
+    setScript(current=>({
+      ...current,
+      blocks:current.blocks.filter(
+        block=>block.id!==id
+      )
+    }));
+
+    delete editors.current[id];
+    markDirty();
+  };
+
+  const moveBlock=(
+    id:string,
+    direction:-1|1
+  )=>{
+    setScript(current=>{
+      const blocks=[...current.blocks];
+      const from=blocks.findIndex(
+        block=>block.id===id
+      );
+
+      const to=from+direction;
+
+      if(
+        from<0||
+        to<0||
+        to>=blocks.length
+      ){
+        return current;
+      }
+
+      [blocks[from],blocks[to]]=[
+        blocks[to],
+        blocks[from]
+      ];
+
+      return {...current,blocks};
+    });
+
+    markDirty();
+  };
+
+  const runFormat=(command:string)=>{
+    const editor=editors.current[activeBlockId];
+
+    if(!editor)
+      return;
+
+    editor.focus();
+    document.execCommand(command,false);
+
+    syncBlock(activeBlockId,editor.innerHTML);
+    markDirty();
+  };
+
+  const insertVariable=(value:string)=>{
+    const editor=editors.current[activeBlockId];
+
+    if(!editor)
+      return;
+
+    editor.focus();
+    document.execCommand('insertText',false,value);
+
+    syncBlock(activeBlockId,editor.innerHTML);
+    markDirty();
+  };
+
+  const saveScript=async()=>{
+    if(!editing)
+      return;
+
+    setSaving(true);
+    setError('');
+    setMessage('');
+
+    try{
+      const current=getCurrentScript();
+
+      const result:any=await put(
+        '/admin/eagle-resources/script',
+        {script:current}
+      );
+
+      const saved=result?.script||current;
+
+      setScript(saved);
+      setDirty(false);
+      onDirtyChange(false);
+      setMessage('Script saved.');
+    }catch(e:any){
+      setError(
+        e?.message||
+        'Unable to save the script.'
+      );
+    }finally{
+      setSaving(false);
+    }
+  };
+
+  const downloadEagleScript=()=>{
+    const current=getCurrentScript();
+
+    const blob=new Blob(
+      [JSON.stringify(current,null,2)],
+      {type:'application/json'}
+    );
+
+    const url=URL.createObjectURL(blob);
+    const anchor=document.createElement('a');
+
+    const filename=
+      current.title
+        .replace(/[^a-z0-9]+/gi,'-')
+        .replace(/^-|-$/g,'')
+        .toLowerCase()||
+      'eagle-scout-script';
+
+    anchor.href=url;
+    anchor.download=`${filename}.eaglescript`;
+    anchor.click();
+
+    URL.revokeObjectURL(url);
+  };
+
+  const importEagleScript=async(
+    event:React.ChangeEvent<HTMLInputElement>
+  )=>{
+    const file=event.target.files?.[0];
+
+    if(!file)
+      return;
+
+    setError('');
+    setMessage('');
+
+    try{
+      if(
+        dirty&&
+        !window.confirm(
+          'Importing will replace the current unsaved script. Continue?'
+        )
+      ){
+        return;
+      }
+
+      if(file.size>400000){
+        throw new Error(
+          'The file is too large to import.'
+        );
+      }
+
+      const parsed=JSON.parse(await file.text());
+
+      if(!Array.isArray(parsed?.blocks)){
+        throw new Error(
+          'This is not a valid .eaglescript file.'
+        );
+      }
+
+      const allowedTypes=[
+        'speaker',
+        'paragraph',
+        'note',
+        'optional',
+        'pageBreak'
+      ];
+
+      const imported:EagleScriptDocument={
+        version:1,
+        title:String(
+          parsed.title||
+          'Eagle Scout Court of Honor Script'
+        ),
+        blocks:parsed.blocks.map((block:any)=>{
+          const type=
+            allowedTypes.includes(block?.type)?
+              block.type:
+              'paragraph';
+
+          return {
+            id:crypto.randomUUID(),
+            type,
+            title:String(block?.title||''),
+            speaker:String(block?.speaker||''),
+            color:
+              /^#[0-9a-f]{6}$/i.test(
+                String(block?.color||'')
+              )?
+                String(block.color):
+                '#003F87',
+            enabled:block?.enabled!==false,
+            html:String(block?.html||'')
+          } as EagleScriptBlock;
+        })
+      };
+
+      editors.current={};
+      setScript(imported);
+      markDirty();
+      setMessage(
+        'Script imported. Save to keep these changes.'
+      );
+    }catch(e:any){
+      setError(
+        e?.message||
+        'Unable to import this script.'
+      );
+    }finally{
+      event.target.value='';
+    }
+  };
+
+  if(loading)
+    return <div className="muted">Loading script…</div>;
+
+  return <div className="eagle-script">
+    {error&&
+      <div className="member-notice">
+        {error}
+      </div>
+    }
+
+    {message&&
+      <p className="muted">{message}</p>
+    }
+
+    {editing&&
+      <>
+        <div className="eagle-script-actions">
+          <button
+            type="button"
+            className="primary"
+            onClick={saveScript}
+            disabled={saving}
+          >
+            {saving?'Saving…':'Save Script'}
+          </button>
+
+          <button
+            type="button"
+            onClick={downloadEagleScript}
+          >
+            Export .eaglescript
+          </button>
+
+          <button
+            type="button"
+            onClick={()=>importInput.current?.click()}
+          >
+            Import .eaglescript
+          </button>
+
+          <input
+            ref={importInput}
+            type="file"
+            accept=".eaglescript,.json,application/json"
+            hidden
+            onChange={importEagleScript}
+          />
+        </div>
+
+        <label className="eagle-script-title">
+          Script Title
+          <input
+            value={script.title}
+            maxLength={200}
+            onChange={e=>{
+              setScript(current=>({
+                ...current,
+                title:e.target.value
+              }));
+              markDirty();
+            }}
+          />
+        </label>
+
+        <div className="eagle-script-toolbar">
+          {[
+            ['bold','B'],
+            ['italic','I'],
+            ['underline','U'],
+            ['insertUnorderedList','• Bullets'],
+            ['insertOrderedList','1. Numbered List']
+          ].map(([command,label])=>
+            <button
+              key={command}
+              type="button"
+              onMouseDown={e=>e.preventDefault()}
+              onClick={()=>runFormat(command)}
+            >
+              {label}
+            </button>
+          )}
+
+          <button
+            type="button"
+            onClick={()=>setShowVariables(v=>!v)}
+          >
+            Insert Variable
+          </button>
+        </div>
+
+        {showVariables&&
+          <div className="eagle-script-variables">
+            {[
+              '{{scout.firstName}}',
+              '{{scout.lastName}}',
+              '{{scout.fullName}}',
+              '{{date}}',
+              '{{troop.number}}'
+            ].map(variable=>
+              <button
+                key={variable}
+                type="button"
+                onMouseDown={e=>e.preventDefault()}
+                onClick={()=>insertVariable(variable)}
+              >
+                {variable}
+              </button>
+            )}
+          </div>
+        }
+
+        <div className="eagle-script-add-block">
+          <span>Add section:</span>
+
+          <button
+            type="button"
+            onClick={()=>addBlock('speaker')}
+          >
+            Speaker
+          </button>
+
+          <button
+            type="button"
+            onClick={()=>addBlock('paragraph')}
+          >
+            Paragraph
+          </button>
+
+          <button
+            type="button"
+            onClick={()=>addBlock('optional')}
+          >
+            Optional Section
+          </button>
+
+          <button
+            type="button"
+            onClick={()=>addBlock('note')}
+          >
+            Note
+          </button>
+
+          <button
+            type="button"
+            onClick={()=>addBlock('pageBreak')}
+          >
+            Page Break
+          </button>
+        </div>
+      </>
+    }
+
+    {!editing&&
+      <h2>{script.title}</h2>
+    }
+
+    <div className="eagle-script-blocks">
+      {script.blocks.map((block,index)=>{
+        if(
+          block.type==='optional'&&
+          !block.enabled&&
+          !editing
+        ){
+          return null;
+        }
+
+        if(block.type==='pageBreak'){
+          return <div
+            key={block.id}
+            className="eagle-script-page-break"
+          >
+            <span>Page Break</span>
+
+            {editing&&
+              <button
+                type="button"
+                onClick={()=>removeBlock(block.id)}
+              >
+                Delete
+              </button>
+            }
+          </div>;
+        }
+
+        return <section
+          key={block.id}
+          className={
+            'eagle-script-block '+
+            (block.type==='note'?
+              'eagle-script-note':
+              '')
+          }
+        >
+          {editing&&
+            <div className="eagle-script-block-actions">
+              <button
+                type="button"
+                aria-label="Move section up"
+                disabled={index===0}
+                onClick={()=>moveBlock(block.id,-1)}
+              >
+                ∧
+              </button>
+
+              <button
+                type="button"
+                aria-label="Move section down"
+                disabled={index===script.blocks.length-1}
+                onClick={()=>moveBlock(block.id,1)}
+              >
+                ∨
+              </button>
+
+              <button
+                type="button"
+                onClick={()=>removeBlock(block.id)}
+              >
+                −
+              </button>
+            </div>
+          }
+
+          {block.type==='speaker'&&
+            <div className="eagle-script-speaker">
+              {editing?
+                <>
+                  <label>
+                    Speaker
+                    <input
+                      value={block.speaker}
+                      onChange={e=>
+                        updateBlock(block.id,{
+                          speaker:e.target.value
+                        })
+                      }
+                    />
+                  </label>
+
+                  <label>
+                    Speaker Color
+                    <select
+                      value={block.color}
+                      onChange={e=>
+                        updateBlock(block.id,{
+                          color:e.target.value
+                        })
+                      }
+                    >
+                      <option value="#003F87">Navy</option>
+                      <option value="#CE1126">Red</option>
+                      <option value="#1A1A1A">Black</option>
+                      <option value="#515354">Gray</option>
+                    </select>
+                  </label>
+                </>:
+                <strong style={{color:block.color}}>
+                  {block.speaker}
+                </strong>
+              }
+            </div>
+          }
+
+          {block.type==='optional'&&
+            <div className="eagle-script-block-heading">
+              {editing?
+                <>
+                  <label>
+                    Optional Section Title
+                    <input
+                      value={block.title}
+                      onChange={e=>
+                        updateBlock(block.id,{
+                          title:e.target.value
+                        })
+                      }
+                    />
+                  </label>
+
+                  <label className="eagle-script-checkbox">
+                    <input
+                      type="checkbox"
+                      checked={block.enabled}
+                      onChange={e=>
+                        updateBlock(block.id,{
+                          enabled:e.target.checked
+                        })
+                      }
+                    />
+                    Include this section
+                  </label>
+                </>:
+                <strong>{block.title}</strong>
+              }
+            </div>
+          }
+
+          {block.type==='note'&&editing&&
+            <label>
+              Note Title
+              <input
+                value={block.title}
+                onChange={e=>
+                  updateBlock(block.id,{
+                    title:e.target.value
+                  })
+                }
+              />
+            </label>
+          }
+
+          {block.type==='note'&&!editing&&
+            block.title&&
+            <strong>{block.title}</strong>
+          }
+
+          {editing?
+            <div
+              ref={element=>{
+                editors.current[block.id]=element;
+
+                if(
+                  element&&
+                  element.dataset.initialized!=='true'
+                ){
+                  element.innerHTML=block.html||'<p></p>';
+                  element.dataset.initialized='true';
+                }
+              }}
+              className="eagle-script-editable"
+              contentEditable
+              suppressContentEditableWarning
+              role="textbox"
+              aria-label={
+                block.type==='note'?
+                  'Script note':
+                  'Script text'
+              }
+              onFocus={()=>setActiveBlockId(block.id)}
+              onInput={markDirty}
+              onBlur={()=>
+                syncBlock(block.id)
+              }
+            />:
+            <div
+              className="eagle-script-rendered"
+              dangerouslySetInnerHTML={{
+                __html:block.html
+              }}
+            />
+          }
+        </section>;
+      })}
+    </div>
+
+    {dirty&&editing&&
+      <p className="muted">
+        Unsaved script changes.
+      </p>
+    }
+  </div>;
+}
+
 function EagleResources({me}:{me:any}){
   const navigate=useNavigate();
 
